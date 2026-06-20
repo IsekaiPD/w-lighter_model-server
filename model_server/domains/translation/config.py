@@ -25,6 +25,17 @@ ALLOWED_TRANSLATION_MODELS = (
 # 텍스트(채팅) 모델 단일 노브 — guide/character/relationship과 같은 env(WLIGHTER_TEXT_MODEL) 공유.
 # 과거 품질모드별(fast/standard/quality/baseline) 모델 차등은 폐지하고 한 모델로 통일.
 DEFAULT_TEXT_MODEL = os.getenv("WLIGHTER_TEXT_MODEL", "gpt-5.4-mini")
+
+# Qdrant 접속: QDRANT_URL이 있으면 서버 모드(url=, self-host 컨테이너), 비면 임베디드(path=) 폴백.
+# core/config.py settings.qdrant_url(/health·lifespan용)과 같은 env를 공유한다.
+DEFAULT_QDRANT_URL = os.getenv("QDRANT_URL", "").strip() or None
+
+# kculture 문화 각주 검색 임계치(코사인). 서술형 원문 vs 서술형 카드는 KURE 코사인이 0.55~0.6 근처라
+# 0.6이면 정답 카드(예: 0.581)도 잘려 endnotes가 안 뜬다. 기본 0.55(정답 통과·과도 주석 억제 균형).
+# 올리면 각주 보수적, 내리면 적극적. env로 배포별 조절.
+DEFAULT_ANNOTATION_SCORE_THRESHOLD = float(os.getenv("WLIGHTER_ANNOTATION_SCORE_THRESHOLD", "0.55"))
+
+
 def validate_translation_model(model: str, *, field_name: str = "model") -> str:
     normalized = str(model or "").strip()
     if normalized not in ALLOWED_TRANSLATION_MODELS:
@@ -54,11 +65,12 @@ class PipelineConfig:
     score_threshold: float = 0.6
     annotation_top_k: int = 2
     annotation_return_k: int = 10
-    annotation_score_threshold: float = 0.6
+    annotation_score_threshold: float = DEFAULT_ANNOTATION_SCORE_THRESHOLD
     mock: bool = False
     embedding_cache_dir: Path | None = None
     chunk_strategy: str = "sentence"
     qdrant_path: str = "qdrant_local"
+    qdrant_url: str | None = DEFAULT_QDRANT_URL
 
     def __post_init__(self) -> None:
         self.allowed_models = tuple(str(model).strip() for model in (self.allowed_models or ALLOWED_TRANSLATION_MODELS))

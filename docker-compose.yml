@@ -23,17 +23,19 @@ services:
     # HF_HUB_OFFLINE=1 재기동에도 warm-up 성공(~1.8s, 재다운로드 0) → 캐시 재사용 증명.
     environment:
       - WARMUP_ON_STARTUP=1            # 첫 요청 콜드스타트 방지(KURE 사전 적재) — 도커 실행에만 적용
-    #   - QDRANT_URL=http://qdrant:6333 # retriever url= 전환(TODO #1) 후에만 유효
+      - QDRANT_URL=http://qdrant:6333  # self-host qdrant 컨테이너(서버 모드 url=). 비면 임베디드 path= 폴백
     restart: unless-stopped
     depends_on:
       - qdrant                          # 시작 순서만 보장(app은 qdrant 없이도 부팅됨)
 
-  # 라이브 번역 RAG용 벡터 DB. stage 1에선 띄워둬도 app이 강결합하지 않음.
+  # 라이브 번역 RAG용 벡터 DB. app은 내부 네트워크로 http://qdrant:6333 접근(서비스명=DNS).
   qdrant:
     image: qdrant/qdrant:latest
-    ports:
-      - "6333:6333"                     # REST/gRPC
-      - "6334:6334"
+    # 포트 미공개(보안 기본): qdrant는 compose 내부망 전용 → app 컨테이너만 접근, 외부·호스트 차단.
+    # 시드는 호스트가 아니라 컨테이너 안에서: docker compose run --rm app python scripts/seed_kculture_from_json.py
+    # 로컬 디버깅으로 호스트에서 직접 보고 싶을 때만 아래 주석 해제(외부 노출 주의).
+    # ports:
+    #   - "127.0.0.1:6333:6333"          # localhost 전용(외부 비공개). REST/gRPC
     volumes:
       - qdrant_data:/qdrant/storage
     restart: unless-stopped
