@@ -1,10 +1,7 @@
 """저장소 인터페이스 — works/episodes/characters/translation_results 영속화 + glossary hydrate 위임.
 
-설계 원칙:
-- 모델/세션은 포터블(SQLite 로컬 ↔ MySQL 배포는 DATABASE_URL로만 전환; `db/session.py`).
-- rdb 비활성(content_store_backend=memory)이면 쓰기 계열은 graceful no-op, 읽기는 빈 결과.
-- glossary는 재작성하지 않는다 — 기존 `domains/translation/glossary/` 추상화(InMemory/MySQL
-  repository + WorkMemory 변환)에 hydrate를 **위임**한다.
+rdb 비활성(content_store_backend=memory)이면 쓰기는 graceful no-op, 읽기는 빈 결과.
+glossary hydrate는 `domains/translation/glossary/` 추상화에 위임한다.
 """
 from __future__ import annotations
 
@@ -19,7 +16,7 @@ logger = get_logger("db.repository")
 
 
 # ------------------------------------------------------------------ #
-# 정규화 헬퍼 (ERD 제약에 맞춤 — "틀리지 않게")
+# 정규화 헬퍼 (ERD 제약에 맞춤)
 # ------------------------------------------------------------------ #
 def _s(value: Any) -> str:
     return str(value or "").strip()
@@ -46,11 +43,7 @@ def normalize_gender(value: Any) -> str:
 
 
 def _map_character(raw: dict[str, Any]) -> dict[str, Any]:
-    """character_extract 출력 1건 → CHARACTERS 컬럼 dict.
-
-    appearance→apperance(컬럼)는 ORM 속성명 appearance로 대입.
-    profile_label은 ERD 컬럼 없음 → 미저장.
-    """
+    """character_extract 출력 1건 → CHARACTERS 컬럼 dict. profile_label은 ERD 컬럼 없어 미저장."""
     return {
         "char_name": _trunc(raw.get("char_name"), 30),
         "gender": normalize_gender(raw.get("gender")),
@@ -129,12 +122,12 @@ def create_episode(*, work_id: int, title: str = "", original_text: str = "") ->
 
 
 # ------------------------------------------------------------------ #
-# characters (character_extract 결과 적재)
+# characters
 # ------------------------------------------------------------------ #
 def save_characters(work_id: int, characters: list[dict[str, Any]]) -> dict[str, Any]:
     """character_extract 결과를 CHARACTERS에 적재 → {saved, count, character_ids}.
 
-    work_id FK는 존재해야 한다(없으면 graceful 실패). gender/role/길이는 ERD에 맞춰 정규화.
+    work_id FK가 없으면 graceful 실패. gender/role/길이는 ERD에 맞춰 정규화.
     """
     if not rdb_enabled():
         return {"saved": False, "count": 0, "character_ids": [], "reason": "persistence_disabled"}
@@ -228,12 +221,12 @@ def save_translation_result(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 # ------------------------------------------------------------------ #
-# glossary hydrate (기존 추상화에 위임 — 재작성 X)
+# glossary hydrate (기존 추상화에 위임)
 # ------------------------------------------------------------------ #
 def _glossary_repository():
     """설정에 맞는 GlossaryRepository 선택.
 
-    - mysql: 기존 MySQLGlossaryRepository(raw PyMySQL, glossary 전용 스키마).
+    - mysql: MySQLGlossaryRepository(raw PyMySQL, glossary 전용 스키마).
     - 그 외(memory/rdb): 프로세스 메모리 기본 repo.
     NOTE: glossary의 SQLite/ERD 정렬은 미해결(ERD 컬럼명 vs 기존 코드 충돌) — TODO #2 참고.
     """
@@ -258,10 +251,9 @@ def _glossary_repository():
 
 
 def hydrate_work_memory(work_id: str, country: str) -> dict[str, Any] | None:
-    """승인 glossary로 WorkMemory를 hydrate → 엔진용 **dict**(없으면 None).
+    """승인 glossary로 WorkMemory를 hydrate → 엔진용 dict(없으면 None).
 
-    엔진(run_v3_literary_package)은 work_memory를 dict로 받아 approvedGlossary를 읽으므로
-    WorkMemory dataclass를 asdict로 변환해 반환한다(dataclass 그대로 넘기면 무시됨).
+    엔진은 work_memory를 dict로 받아 approvedGlossary를 읽으므로 asdict로 변환해 반환한다.
     """
     try:
         repo = _glossary_repository()

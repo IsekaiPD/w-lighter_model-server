@@ -1,4 +1,4 @@
-"""Character extract 라우터 — 기존 api_server.py의 /api/character-extract 대체.
+"""Character extract 라우터.
 
 POST /api/v1/character-extract : 시놉시스 → 등장인물 목록(이름·역할·외형·관계 등).
 """

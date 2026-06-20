@@ -1,8 +1,7 @@
 """애플리케이션 lifespan — startup warm-up / shutdown.
 
-무거운 객체(KURE 임베딩, 번역 파이프라인)는 요청마다 만들면 느리므로 startup에 1회 warm-up해
-프로세스 캐시에 적재한다. 단 Qdrant(self-host)/KURE가 준비 안 된 단계에서도 앱은 떠야 하므로
-warm-up 실패는 graceful하게 로그만 남기고 계속한다. (기본 warmup_on_startup=False)
+무거운 객체(KURE 임베딩, 번역 파이프라인)는 startup에 1회 warm-up해 프로세스 캐시에 적재한다.
+Qdrant/KURE 미준비여도 앱은 떠야 하므로 warm-up 실패는 로그만 남기고 계속한다. (기본 warmup_on_startup=False)
 """
 from __future__ import annotations
 

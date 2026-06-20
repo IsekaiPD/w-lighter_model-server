@@ -8,13 +8,10 @@ from typing import Any, Protocol
 from ..engine.literary_package import GlossaryEntry, WorkMemory
 from ..infra.locale_utils import country_to_locale, normalize_target_country
 
-# Single-table glossary model.
-#
-# The glossary is a flat list of translation rules. Each row maps one source
-# term to one target term for a given work + target country. Aliases are stored
-# as their own rows (one row per surface form), so there is no separate alias
-# table, no priority flag, and no forbidden-term table. Every stored row is an
-# enforced rule.
+# Single-table glossary model: a flat list of translation rules. Each row maps
+# one source term to one target term for a given work + target country. Aliases
+# are their own rows (one per surface form) — no separate alias table, no
+# priority flag, no forbidden-term table. Every stored row is an enforced rule.
 GLOSSARY_CATEGORIES = {"person", "place", "organization"}
 DEFAULT_CATEGORY = "person"
 
@@ -73,11 +70,9 @@ def normalize_category(value: Any) -> str:
 
 @dataclass(slots=True)
 class GlossaryEntryRecord:
-    """ERD GLOSSARY 테이블 행의 1:1 거울.
+    """ERD GLOSSARY 테이블 행의 1:1 거울. 컬럼명은 ERD(`project_docs/ERD_planning.txt`)를 정본으로 따른다.
 
-    컬럼명은 ERD(`project_docs/ERD_planning.txt`)를 따른다 — 저장층 정본은 ERD.
-    엔진 도메인 객체(`GlossaryEntry`: source/target/category)와는 ``glossary_record_to_work_memory_entry``
-    가 변환해 분리한다(엔진/파이프라인은 ERD 컬럼명을 몰라도 됨).
+    엔진 도메인 객체(`GlossaryEntry`)와는 ``glossary_record_to_work_memory_entry`` 가 변환해 분리한다.
     """
 
     glossary_id: int | None
@@ -118,9 +113,9 @@ class GlossaryRepository(Protocol):
 
 
 def glossary_record_to_work_memory_entry(record: GlossaryEntryRecord) -> GlossaryEntry:
-    """저장층(ERD 컬럼) → 엔진 GlossaryEntry(도메인 언어) 변환 — 두 층을 잇는 다리.
+    """저장층(ERD 컬럼) → 엔진 GlossaryEntry(도메인 언어) 변환.
 
-    original_word→source, translated_word→target, glossary_type→category, memo→note 로 매핑한다.
+    original_word→source, translated_word→target, glossary_type→category, memo→note.
     모든 저장 행은 강제 규칙이라 ``priority``는 항상 ``"hard"``. aliases는 별도 행이라 비움.
     """
 

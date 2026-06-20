@@ -1,7 +1,4 @@
-"""Guide 도메인 서비스 — 현지화 가이드 엔진 오케스트레이션.
-
-엔진(`guide_pipeline.generate_guide`)은 재사용(재작성 X). 데이터 자산은 domains/guide/data/ 에 자급자족.
-"""
+"""Guide 도메인 서비스 — 현지화 가이드 엔진 오케스트레이션."""
 from __future__ import annotations
 
 from typing import Any

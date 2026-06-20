@@ -18,16 +18,16 @@ def find_ancestor_containing(start: Path, relative_path: str) -> Path:
 def package_project_root(start: Path | None = None) -> Path:
     """Directory that owns the translation package + its local data (data/, qdrant_local/).
 
-    project_paths.py lives at ``<package>/infra/project_paths.py`` so the package root is
-    ``parents[1]``. 패키지를 통째로 어디로 옮겨도(app/translation -> domains/translation 등)
-    안 깨지도록 파일 위치 기준으로 계산한다. (start 인자는 하위호환용으로만 받고 무시)
+    project_paths.py lives at ``<package>/infra/project_paths.py``이므로 패키지 루트는
+    ``parents[1]``. 파일 위치 기준이라 패키지를 통째로 옮겨도 안 깨진다.
+    (start 인자는 하위호환용으로만 받고 무시)
     """
     del start
     return Path(__file__).resolve().parents[1]
 
 
 def repository_root(start: Path | None = None) -> Path:
-    """Root that owns the prompts/ folder. 프롬프트는 이제 패키지 내부에 있으므로 패키지 루트와 같다."""
+    """Root that owns the prompts/ folder. 프롬프트가 패키지 내부에 있어 패키지 루트와 같다."""
     del start
     return Path(__file__).resolve().parents[1]
 

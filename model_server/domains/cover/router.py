@@ -1,4 +1,4 @@
-"""Cover 도메인 라우터 — 기존 api_server.py의 /api/cover-prompt, /api/generate-cover-image 대체.
+"""Cover 도메인 라우터.
 
 POST /api/v1/cover : 작품·캐릭터 정보 → 표지 이미지(base64). dryRun=true면 최종 프롬프트만.
 """

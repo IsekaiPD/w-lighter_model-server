@@ -52,9 +52,8 @@ class AnnotationRetriever(ChunkingMixin):
     """Retriever for Korean cultural annotation/note candidates.
 
     Unlike the translation RAG retriever, this does not recommend target-language
-    equivalents. It retrieves source-side cultural context that may deserve an
-    inline explanation, first-occurrence note, or no annotation depending on the
-    target reader and source context.
+    equivalents; it retrieves source-side cultural context that may deserve an
+    annotation depending on the target reader and source context.
     """
 
     def __init__(self, config: PipelineConfig):
@@ -118,21 +117,20 @@ class AnnotationRetriever(ChunkingMixin):
 
     @classmethod
     def _trigger_match_boost(cls, item: dict[str, Any], query: str) -> float:
-        """Deprecated compatibility hook.
+        """Deprecated compatibility hook — always 0.0.
 
-        Reviewed annotation RAG now relies on embedding_text similarity only.
-        Keep the method returning 0.0 so older callers/tests do not break while
-        avoiding hidden lexical boosts in production ranking.
+        Ranking relies on embedding_text similarity only; returning 0.0 avoids
+        hidden lexical boosts while keeping older callers working.
         """
         return 0.0
 
     def retrieve(self, query: str, top_k: int | None = None,
                  return_k: int | None = None) -> list[AnnotationResult]:
-        """쿼리 문자열을 받아 청킹+임베딩 후 검색. (단독 사용/하위호환용)
+        """쿼리 문자열을 청킹+임베딩 후 검색한다. (하위호환용 단독 진입점)
 
-        top_k    : (A) 문장(청크) 1개당 가져올 후보 수. 기본 config.annotation_top_k
-        return_k : (B) 통합 후 최종 반환 상한.       기본 config.annotation_return_k
-        idiom과 동일하게 청킹 전략(config.chunk_strategy)을 적용한다.
+        top_k    : 청크 1개당 가져올 후보 수. 기본 config.annotation_top_k
+        return_k : 통합 후 최종 반환 상한. 기본 config.annotation_return_k
+        청킹 전략은 config.chunk_strategy를 따른다.
         """
         chunks = self._chunk_query(query)
         chunk_vectors = self.backend.embed(chunks)

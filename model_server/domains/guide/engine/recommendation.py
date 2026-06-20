@@ -326,9 +326,7 @@ def rank_countries(data: dict[str, Any], *, genre: str | None, synopsis: str | N
             reasons["장르·시놉시스 겹침이 약해 상위 공개 노출을 참고했습니다"] = 1
             score = 0.1
         else:
-            # Normalize so larger crawls do not dominate the "country fit" chart just
-            # because they have more rows. The score remains an overlap reference,
-            # not a market-success prediction.
+            # Normalize so larger crawls do not dominate the fit chart. Score is an overlap reference, not a market-success prediction.
             coverage_bonus = min(1.0, matched_rows / max(1, len(records))) * 20.0
             score = (score / max(1, len(records))) * 100.0 + coverage_bonus
         evidence = [_evidence_from_row(row, reason) for _, row, reason in sorted(evidence_rows, key=lambda x: x[0], reverse=True)[:8]]
@@ -384,7 +382,7 @@ def _section_payload(country_profile: Any, *, target_country: str, genre: str, s
     best_reasons = recommendations[0].reasons if recommendations else []
     genre_label = genre or '미지정'  # '미지정' (py3.10 f-string 백슬래시 제약 회피)
     _top_genre_join = ', '.join(f'{g}({c})' for g, c in top_genres[:5])
-    top_genres_label = _top_genre_join or '근거 부족'  # '근거 부족'
+    top_genres_label = _top_genre_join or '근거 부족'
     synopsis_note = _synopsis_input_note(synopsis)
     inferred_motifs = _synopsis_motifs(synopsis)
     top_tag_line = f"순위권에서 자주 보인 키워드: {', '.join(f'{t}({c})' for t, c in top_tags[:8])}" if top_tags else '순위권 키워드 근거가 충분하지 않습니다.'

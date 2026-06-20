@@ -1,15 +1,6 @@
-"""번역 파이프라인 — 단일 오케스트레이터.
+"""번역 파이프라인 오케스트레이터.
 
-v3 문학 번역 그래프를 "순수 부품"만 조립해 실행하는 유일한 진입점이다.
-다른 파이프라인(레거시/v2)을 import 하지 않는다. 하위 폴더의 부품만 조립한다:
-
-- agents.direct_translator.DirectTranslator : 실제 번역 엔진(translate_once)
-- retrieval.annotation_retriever.AnnotationRetriever : kculture 문화 주석 RAG
-- agents.endnote_writer.EndnoteWriter : 검색된 문화 표현 -> 독자용 각주(LLM)
-- v3_graph_orchestrator / v3_literary_package : 순수 v3 코어(그래프/스텝)
-
-과거 `translation_pipeline.TranslationPipeline.run_v3_literary_package`가 god-object
-위에서 하던 일을 여기로 옮기고, 비어 있던 문화 주석 hook 2개(retrieve/endnote)를 배선했다.
+v3 문학 번역 그래프에 번역기·문화주석 RAG·각주 작성기·리뷰어를 조립해 실행하는 진입점.
 """
 from __future__ import annotations
 
@@ -27,11 +18,7 @@ from .engine.literary_package import V3LiteraryPackageResult
 def build_annotation_retrieval_hook(
     retriever: AnnotationRetriever,
 ) -> Callable[[dict[str, Any]], list[dict[str, Any]]]:
-    """v3 그래프 annotationRetrievalHook 용 클로저.
-
-    원문 전체를 kculture RAG 로 검색해(임계치는 config.annotation_score_threshold)
-    그래프 state 가 쓰는 dict 리스트로 변환한다.
-    """
+    """원문을 kculture RAG로 검색해 그래프 state용 dict 리스트로 변환한다."""
 
     def _hook(state: dict[str, Any]) -> list[dict[str, Any]]:
         source_text = state.get("sourceText") or ""
@@ -79,7 +66,7 @@ def _hard_glossary_context(work_memory: dict[str, Any] | None) -> str:
     )
 
 
-# --- LLM 리뷰어 어댑터: reviewers.py 출력 -> v3 그래프 issue 형식으로 "API 조정" ---
+# 리뷰어 출력(reviewers.py) → v3 그래프 issue 형식 어댑터
 _SECTION_LABELS = {"voice": "말투", "naturalness": "자연스러움", "cultural": "문화권 유의사항"}
 _SEVERITY_TO_PRIORITY = {"CRITICAL": "P1", "HIGH": "P1", "MEDIUM": "P2", "LOW": "P3"}
 
@@ -89,7 +76,7 @@ def _review_issue_to_v3(reviewer_type: str, issue: Any) -> dict[str, Any]:
     return {
         "code": f"{reviewer_type}_review",
         "type": f"{reviewer_type}_review",
-        # advisory: 절대 P0(차단)로 매핑하지 않는다. 카드로만 노출.
+        # advisory 전용: P0(차단)로는 매핑하지 않는다.
         "priority": _SEVERITY_TO_PRIORITY.get(severity, "P3"),
         "severity": severity,
         "message": getattr(issue, "problem", "") or "",
@@ -104,10 +91,9 @@ def _review_issue_to_v3(reviewer_type: str, issue: Any) -> dict[str, Any]:
 
 
 def build_reviewer_hook(reviewers: dict[str, Any]) -> Callable[[dict[str, Any], str], list[dict[str, Any]]]:
-    """v3 그래프 reviewerHook: (state, reviewer_type) -> list[v3 issue dict].
+    """후보 번역을 voice/naturalness/cultural 리뷰어로 검토해 v3 issue 리스트를 만든다.
 
-    advisory — voice/naturalness/cultural 만 LLM 리뷰(그 외 reviewer_type은 빈 리스트).
-    현 후보 번역(draftTranslation)을 리뷰한다. mock 모드면 reviewer가 빈 결과를 낸다.
+    voice/naturalness/cultural 외 reviewer_type과 빈 번역은 빈 리스트를 반환한다.
     """
 
     def _hook(state: dict[str, Any], reviewer_type: str) -> list[dict[str, Any]]:
@@ -197,7 +183,7 @@ class TranslationPipeline:
             reviewer_hook=build_reviewer_hook(self.reviewers),
         )
 
-    # 기존 backend 호출부 호환 별칭 (translation_service 가 이 이름으로 호출).
+    # service가 호출하는 호환 별칭.
     def run_v3_literary_package(
         self,
         source_text: str,

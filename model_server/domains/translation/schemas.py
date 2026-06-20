@@ -1,7 +1,6 @@
-"""Translation 도메인 Pydantic 스키마.
+"""Translation 도메인 Pydantic 스키마 (v3 얇은 응답 계약).
 
-요청/응답 계약은 통합초안 docs/translation_api_contract.md (v3 얇은 응답) 기반.
-중첩 구조(rationale/endnote/card 등)는 현재 유연하게 dict/list로 둔다(엔진 출력 그대로 전달).
+중첩 구조(rationale/endnote/card 등)는 엔진 출력을 그대로 전달하도록 dict/list로 둔다.
 """
 from __future__ import annotations
 

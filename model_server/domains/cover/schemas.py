@@ -1,7 +1,4 @@
-"""Cover 도메인 Pydantic 스키마.
-
-`generate_cover_image(...)` 엔진 호출용. dryRun=true면 이미지 생성(OpenAI 호출) 없이 최종 프롬프트만 반환.
-"""
+"""Cover 도메인 Pydantic 스키마."""
 from __future__ import annotations
 
 from typing import Any
