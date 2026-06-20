@@ -5,16 +5,17 @@ USERS·PAYMENTS·PLAN·CREDITTRANSACTION 등 결제/계정 테이블은 WEB(Djan
 그래서 `works.user_id`는 cross-boundary FK(→USERS)지만 여기선 **제약 없는 INT**로 둔다
 (로컬 SQLite에 USERS 테이블이 없어도 동작; 공유 MySQL에선 실제 FK가 존재).
 
-glossary 테이블은 의도적으로 제외 — 기존 `domains/translation/glossary/`에 영속화 추상화
-(InMemory/MySQL repository + WorkMemory 변환)가 이미 있고, ERD의 컬럼명(original_word/
-translated_word/glossary_type)과 기존 코드(source/target/category)가 **충돌**하기 때문이다.
-정렬 결정 전까지 새 테이블로 굳히지 않는다(TODO #2 참고). hydrate는 기존 repo에 위임한다.
+glossary 테이블은 의도적으로 제외 — 기존 `domains/translation/glossary/`에 자체 영속화 추상화
+(InMemory/MySQL repository + WorkMemory 변환)가 이미 있어 그쪽이 소유한다. 저장층 컬럼명은
+ERD(original_word/translated_word/glossary_type/target_country/memo)로 **정렬 완료**(2026-06-20);
+엔진 GlossaryEntry(source/target/category)와는 `glossary_record_to_work_memory_entry`가 변환한다.
+db_repo.hydrate_work_memory는 그 repo에 위임한다.
 """
 from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import CHAR, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -88,7 +89,7 @@ class TranslationResult(Base):
 
     translation_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     episode_id: Mapped[int] = mapped_column(ForeignKey("episodes.episode_id"), nullable=False, index=True)
-    target_country: Mapped[str] = mapped_column(String(2), nullable=False)  # US/CN/JP/TH
+    target_country: Mapped[str] = mapped_column(CHAR(2), nullable=False)  # ERD CHAR(2): US/CN/JP/TH
     translated_text: Mapped[str] = mapped_column(Text, nullable=False, default="")
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     glossary_can: Mapped[dict | list | None] = mapped_column(JSON, nullable=True)

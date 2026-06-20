@@ -73,12 +73,20 @@ def normalize_category(value: Any) -> str:
 
 @dataclass(slots=True)
 class GlossaryEntryRecord:
-    id: int | None
+    """ERD GLOSSARY 테이블 행의 1:1 거울.
+
+    컬럼명은 ERD(`project_docs/ERD_planning.txt`)를 따른다 — 저장층 정본은 ERD.
+    엔진 도메인 객체(`GlossaryEntry`: source/target/category)와는 ``glossary_record_to_work_memory_entry``
+    가 변환해 분리한다(엔진/파이프라인은 ERD 컬럼명을 몰라도 됨).
+    """
+
+    glossary_id: int | None
     work_id: str
-    country: str
-    source: str
-    target: str
-    category: str = DEFAULT_CATEGORY
+    target_country: str
+    original_word: str
+    translated_word: str
+    glossary_type: str = DEFAULT_CATEGORY
+    memo: str | None = None
     created_at: str = field(default_factory=_now_iso)
     updated_at: str = field(default_factory=_now_iso)
 
@@ -88,14 +96,15 @@ class GlossaryRepository(Protocol):
         self,
         *,
         work_id: str,
-        country: str,
-        source: str,
-        target: str,
-        category: str = DEFAULT_CATEGORY,
+        target_country: str,
+        original_word: str,
+        translated_word: str,
+        glossary_type: str = DEFAULT_CATEGORY,
+        memo: str | None = None,
     ) -> GlossaryEntryRecord:
         ...
 
-    def list_glossary(self, work_id: str, country: str, *, limit: int = 50) -> list[GlossaryEntryRecord]:
+    def list_glossary(self, work_id: str, target_country: str, *, limit: int = 50) -> list[GlossaryEntryRecord]:
         ...
 
     def get_entry(self, entry_id: int) -> GlossaryEntryRecord | None:
@@ -104,32 +113,31 @@ class GlossaryRepository(Protocol):
     def delete_entry(self, entry_id: int) -> bool:
         ...
 
-    def hydrate_work_memory(self, work_id: str, country: str, *, limit: int = 50) -> WorkMemory | None:
+    def hydrate_work_memory(self, work_id: str, target_country: str, *, limit: int = 50) -> WorkMemory | None:
         ...
 
 
 def glossary_record_to_work_memory_entry(record: GlossaryEntryRecord) -> GlossaryEntry:
-    """Convert a stored row into the engine-facing glossary entry.
+    """저장층(ERD 컬럼) → 엔진 GlossaryEntry(도메인 언어) 변환 — 두 층을 잇는 다리.
 
-    Every stored row is an enforced rule, so ``priority`` is always ``"hard"``.
-    Aliases live in their own rows, so per-entry ``aliases``/``forbidden`` lists
-    are always empty here.
+    original_word→source, translated_word→target, glossary_type→category, memo→note 로 매핑한다.
+    모든 저장 행은 강제 규칙이라 ``priority``는 항상 ``"hard"``. aliases는 별도 행이라 비움.
     """
 
     return GlossaryEntry(
-        source=record.source,
-        target=record.target,
-        category=record.category if record.category in GLOSSARY_CATEGORIES else DEFAULT_CATEGORY,
+        source=record.original_word,
+        target=record.translated_word,
+        category=record.glossary_type if record.glossary_type in GLOSSARY_CATEGORIES else DEFAULT_CATEGORY,
         priority="hard",
         aliases=[],
         forbidden=[],
-        note=None,
+        note=record.memo or None,
     )
 
 
 def hydrate_work_memory_from_records(
     work_id: str,
-    country: str,
+    target_country: str,
     records: list[GlossaryEntryRecord],
     *,
     limit: int = 50,
@@ -146,7 +154,7 @@ def hydrate_work_memory_from_records(
         return None
     return WorkMemory(
         workId=_clean(work_id) or None,
-        targetLocale=country_to_locale(country),
+        targetLocale=country_to_locale(target_country),
         approvedGlossary=[glossary_record_to_work_memory_entry(row) for row in selected],
         styleMemory={},
         previousSummary=None,
@@ -170,29 +178,31 @@ class InMemoryGlossaryRepository:
         self,
         *,
         work_id: str,
-        country: str,
-        source: str,
-        target: str,
-        category: str = DEFAULT_CATEGORY,
+        target_country: str,
+        original_word: str,
+        translated_word: str,
+        glossary_type: str = DEFAULT_CATEGORY,
+        memo: str | None = None,
     ) -> GlossaryEntryRecord:
         work_id = _clean(work_id)
-        country = normalize_target_country(country) or ""
-        source = _clean(source)
-        target = _clean(target)
-        category = normalize_category(category)
-        if not work_id or not country or not source or not target:
-            raise ValueError("work_id, country, source, and target are required")
-        if is_contextual_reference(source):
-            raise ValueError("source is a contextual reference and should not be persisted as a glossary entry")
+        target_country = normalize_target_country(target_country) or ""
+        original_word = _clean(original_word)[:30]  # ERD VARCHAR(30)
+        translated_word = _clean(translated_word)[:30]  # ERD VARCHAR(30)
+        glossary_type = normalize_category(glossary_type)
+        memo_value = _clean(memo)[:500] or None  # ERD memo VARCHAR(500)
+        if not work_id or not target_country or not original_word or not translated_word:
+            raise ValueError("work_id, target_country, original_word, and translated_word are required")
+        if is_contextual_reference(original_word):
+            raise ValueError("original_word is a contextual reference and should not be persisted as a glossary entry")
         with self._lock:
             existing = next(
                 (
                     row
                     for row in self._entries.values()
                     if row.work_id == work_id
-                    and row.country == country
-                    and row.source == source
-                    and row.category == category
+                    and row.target_country == target_country
+                    and row.original_word == original_word
+                    and row.glossary_type == glossary_type
                 ),
                 None,
             )
@@ -201,31 +211,34 @@ class InMemoryGlossaryRepository:
                 entry_id = self._next_entry_id
                 self._next_entry_id += 1
                 existing = GlossaryEntryRecord(
-                    id=entry_id,
+                    glossary_id=entry_id,
                     work_id=work_id,
-                    country=country,
-                    source=source,
-                    target=target,
-                    category=category,
+                    target_country=target_country,
+                    original_word=original_word,
+                    translated_word=translated_word,
+                    glossary_type=glossary_type,
+                    memo=memo_value,
                     created_at=now,
                     updated_at=now,
                 )
                 self._entries[entry_id] = existing
             else:
-                existing.target = target
+                existing.translated_word = translated_word
+                if memo is not None:
+                    existing.memo = memo_value
                 existing.updated_at = now
             return self._clone_entry(existing)
 
-    def list_glossary(self, work_id: str, country: str, *, limit: int = 50) -> list[GlossaryEntryRecord]:
+    def list_glossary(self, work_id: str, target_country: str, *, limit: int = 50) -> list[GlossaryEntryRecord]:
         work_id = _clean(work_id)
-        country = normalize_target_country(country) or ""
+        target_country = normalize_target_country(target_country) or ""
         with self._lock:
             rows = [
                 self._clone_entry(row)
                 for row in self._entries.values()
-                if row.work_id == work_id and row.country == country
+                if row.work_id == work_id and row.target_country == target_country
             ]
-        rows.sort(key=lambda row: (row.source.casefold(), row.category))
+        rows.sort(key=lambda row: (row.original_word.casefold(), row.glossary_type))
         return rows[: max(0, limit)]
 
     def get_entry(self, entry_id: int) -> GlossaryEntryRecord | None:
@@ -237,9 +250,9 @@ class InMemoryGlossaryRepository:
         with self._lock:
             return self._entries.pop(int(entry_id), None) is not None
 
-    def hydrate_work_memory(self, work_id: str, country: str, *, limit: int = 50) -> WorkMemory | None:
-        records = self.list_glossary(work_id, country, limit=limit)
-        return hydrate_work_memory_from_records(work_id, country, records, limit=limit)
+    def hydrate_work_memory(self, work_id: str, target_country: str, *, limit: int = 50) -> WorkMemory | None:
+        records = self.list_glossary(work_id, target_country, limit=limit)
+        return hydrate_work_memory_from_records(work_id, target_country, records, limit=limit)
 
     @staticmethod
     def _clone_entry(row: GlossaryEntryRecord) -> GlossaryEntryRecord:
