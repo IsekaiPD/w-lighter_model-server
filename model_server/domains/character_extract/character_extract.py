@@ -1,18 +1,13 @@
 import json
 import os
-import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from .character_prompts import SYSTEM_PROMPT, build_character_extract_prompt
+
 CURRENT_DIR = Path(__file__).resolve().parent
-if str(CURRENT_DIR) not in sys.path:
-    sys.path.insert(0, str(CURRENT_DIR))
-
-from character_prompts import SYSTEM_PROMPT, build_character_extract_prompt
-
-
 load_dotenv(dotenv_path=CURRENT_DIR.parent / ".env")
 
 TEXT_MODEL = os.getenv("WLIGHTER_TEXT_MODEL", "gpt-5.4-mini")

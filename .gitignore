@@ -14,7 +14,12 @@ venv/
 qdrant_local/
 data/embedding_cache/
 .omc/
+.claude/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# 프로젝트 참고 파일
+CLAUDE.md
+project_docs/
