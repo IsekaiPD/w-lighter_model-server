@@ -1,0 +1,26 @@
+# 빌드 컨텍스트 = model_server/ . 아래는 이미지에 넣지 않을 것들.
+
+# 시크릿 — 절대 이미지에 굽지 않음(런타임 env_file로 주입). .gitignore와 같은 철학.
+.env
+.env.*
+
+# 로컬 DB / 런타임 생성물 / 캐시
+*.db
+qdrant_local/
+data/embedding_cache/
+
+# 파이썬 캐시
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# 일회성 스크립트 / 툴 메타
+smoke_*.py
+.omc/
+.claude/
+
+# git (컨텍스트에 섞여도 제외)
+.git/
+.gitignore
