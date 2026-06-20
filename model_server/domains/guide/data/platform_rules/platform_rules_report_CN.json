@@ -1,0 +1,1153 @@
+[
+  {
+    "rule_id": "CN_JJWXC_0001",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "작품에 동시에 여러 사람과 성관계를 하는 묘사를 포함할 수 없다.",
+    "guide_message_ko": "작품의 표지, 줄거리, 회차 본문, 인물 설정 등에서 동시에 여러 사람과 성관계를 묘사한 부분이 있는지 확인하고, 해당 부분을 삭제하거나 수정하세요.",
+    "keywords_ko": [
+      "다자간 성관계",
+      "동시 성관계",
+      "성적 콘텐츠",
+      "금지 묘사"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0002",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "혈연 관계인 인물 간의 연애·성적 관계는 작품에서 금지되며, 단 고대 배경의 사촌 관계는 예외이다.",
+    "guide_message_ko": "인물 설정, 표지, 회차 본문 및 줄거리에서 혈연 관계의 연애·성적 묘사가 포함되어 있는지 확인하고 해당 표현이 있으면 삭제하거나 인물 관계를 재설정하세요. 고대 배경의 사촌 관계는 예외이나 오해 소지가 있으면 명확히 수정하십시오.",
+    "keywords_ko": [
+      "근친 금지",
+      "혈연 관계",
+      "연애·성적 묘사 금지",
+      "고대 사촌 예외"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0003",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "입양 등으로 형성된 의사혈연은 혈연 아님이 확인되기 전까지, 사회적 친족 관계는 관계 존속 기간 동안 연애·감정 묘사와 성적 관계를 금지한다.",
+    "guide_message_ko": "작품의 가족·친족 설정을 확인해 의사혈연이나 사회적 친족이 있을 경우 혈연 여부를 명확히 밝히거나, 해당 관계가 유지되는 동안 연애·감정 묘사와 성적 장면을 삭제하거나 수정하세요.",
+    "keywords_ko": [
+      "의사혈연",
+      "사회적 친족",
+      "입양",
+      "연애 금지",
+      "성적 묘사 금지"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0004",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "작품에 인간과 인간과 같은 의식을 갖지 않은 순종 동물 간의 성관계 묘사를 금지한다.",
+    "guide_message_ko": "시놉시스, 등장인물 설정, 회차 본문 및 표지를 확인해 인간과 인간과 같은 의식을 갖지 않은 순종 동물 간의 성관계 묘사나 암시를 삭제하거나 수정하고, 필요하면 관련 캐릭터 분류를 재검토하세요.",
+    "keywords_ko": [
+      "인간-동물 성관계",
+      "수간",
+      "성적 묘사 제한",
+      "캐릭터 설정 검토"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0005",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "미성년자 보호"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "현대 배경 작품에서 주인공의 미성년자 성관계는 금지되며, 모든 작품에서 연령을 이용한 연애·아동 성애 묘사는 금지되고 조연은 비판적으로 다뤄야 합니다.",
+    "guide_message_ko": "작품 설정, 표지, 줄거리, 회차 본문을 점검해 주인공 연령과 관련된 성적 서술을 확인하고, 미성년자와의 성관계 묘사는 삭제 또는 수정하며 조연 관련 표현은 비판적 관점으로 재작성하세요.",
+    "keywords_ko": [
+      "미성년자 성관계 금지",
+      "연령 착취 금지",
+      "아동 성애 금지",
+      "조연 비판적 묘사",
+      "표지·줄거리·본문 점검"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0006",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "현대 배경 작품에서 교사와 학생의 관계가 유지되는 동안 성적 관계를 묘사할 수 없으며, 조연은 필요 시 비판적 시각으로 다뤄야 합니다.",
+    "guide_message_ko": "작품 설정·시놉시스·회차를 확인해 교사·학생 관계에서 성적 묘사가 포함된 부분은 삭제하거나 수정하고, 조연 묘사는 비판적 관점을 유지하도록 조정하세요.",
+    "keywords_ko": [
+      "교사-학생",
+      "현대 배경",
+      "성적 묘사 금지",
+      "조연 비판",
+      "인물 설정 검토"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0008",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "정치/국가/역사 민감"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "근현대의 특정 역사 시기와 사건에서 국가 지도자, 공산당, 혁명열사 등을 비방하거나 역사를 조작·왜곡하는 내용은 금지된다.",
+    "guide_message_ko": "작품의 설정·회차·줄거리를 점검하여 국가 지도자·공산당·혁명열사에 대한 비방·모독 표현이나 역사 조작·왜곡, 근현대 인물의 희화화가 있으면 즉시 삭제하거나 적절히 수정하고 필요 시 묘사를 재분류하세요.",
+    "keywords_ko": [
+      "정치 민감",
+      "역사 왜곡",
+      "국가 지도자 비방",
+      "공산당 비방",
+      "혁명열사 모독"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0010",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "괴롭힘/위협",
+      "정치/국가/역사 민감"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "현대 현실 배경의 군사물과 고위 공직자 관련 작품은 공직자 직책 암시, 특권 남용·사적 무장·무기거래 묘사 및 공직자 모욕을 금지한다.",
+    "guide_message_ko": "원고에서 현대 현실 배경 사용 여부와 공직자 직책 암시, 특권·사적 무장·무기거래 묘사, 공직자 모욕 표현을 확인하고 해당 내용은 삭제하거나 수정하며 작품 주제는 긍정적 가치로 유지하세요.",
+    "keywords_ko": [
+      "군사물",
+      "고위 공직자 묘사 금지",
+      "특권 남용 금지",
+      "사적 무장 금지",
+      "무기거래 금지"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0011",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "정치/국가/역사 민감"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "근현대 현실 배경 작품에서는 SP, 훈계, BDSM 등 성적 요소와 감금 소재의 주제화를 제한하며, 감금은 일부 장르의 소재로만 허용되고 국가 금지 수준을 초과해서는 안 됩니다.",
+    "guide_message_ko": "원고·표지·줄거리에서 SP·훈계·BDSM 관련 표현을 제거하거나 수정하고, 감금 소재는 주제화하지 말고 필요 시 소재 수준으로 축소하여 국가 금지 기준을 초과하지 않도록 확인하세요.",
+    "keywords_ko": [
+      "SP",
+      "훈계",
+      "BDSM",
+      "감금",
+      "근현대 배경"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0013",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "폭력/잔혹 묘사",
+      "2차창작/팬콘텐츠"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "다음에 열거된 특정 애니메이션을 단일 원작으로 한 동인 팬픽은 게시할 수 없습니다.",
+    "guide_message_ko": "작품이 아래 목록의 애니메이션 중 하나를 단일 원작으로 한 동인 팬픽인지 확인하고, 해당된다면 게시하지 않거나 원작 의존도를 낮추어 수정하거나 다른 기획으로 재작성해 주세요.",
+    "keywords_ko": [
+      "동인 팬픽",
+      "애니메이션 원작 금지",
+      "제한 목록",
+      "2차 창작"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0014",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "불법/범죄 행위",
+      "정치/국가/역사 민감"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "파생 작품은 비현실향으로 분류되며, 중국 근현대 정치·관료 관련 내용과 법률·공서양속 위반, 극단적 집단 대립·반사회적·반인류적 선동은 금지된다.",
+    "guide_message_ko": "작품을 파생물로 설정할 경우 비현실향으로 분류하고, 중국 근현대 정치나 관료 관련 묘사는 삭제하거나 설정을 변경하세요. 법률·공서양속 위반, 극단적 집단 대립 또는 반사회·반인류적 선동으로 해석될 여지가 있는 표현은 즉시 수정하거나 삭제하세요.",
+    "keywords_ko": [
+      "파생물 비현실향",
+      "중국 근현대 정치 금지",
+      "관료 사회 금지",
+      "법·공서양속 위반 금지",
+      "극단적 집단 대립 금지"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0002",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10222&rank3=0",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "미성년자 보호",
+      "폭력/잔혹 묘사",
+      "혐오/차별",
+      "괴롭힘/위협",
+      "불법/범죄 행위",
+      "정치/국가/역사 민감",
+      "종교/민족 민감",
+      "저작권/상표권/IP",
+      "개인정보/사생활"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "플랫폼의 모든 위치에서 국가법과 관련 정책을 위반하는 내용의 게시를 금지하며 위반 시 제재될 수 있다.",
+    "guide_message_ko": "작품 원고, 커뮤니티 게시글, 프로필 등 모든 게시물을 점검해 법률·정책 위반 소지가 있는 표현은 즉시 수정하거나 삭제하고, 타인의 권리 침해 여부를 반드시 확인하세요.",
+    "keywords_ko": [
+      "법령 위반",
+      "국가·정치 민감",
+      "종교·민족 민감",
+      "미성년자 보호",
+      "음란·범죄선동",
+      "지적재산권 침해"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0009",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10061&rank3=0",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "미성년자 보호",
+      "폭력/잔혹 묘사",
+      "혐오/차별",
+      "불법/범죄 행위",
+      "정치/국가/역사 민감",
+      "종교/민족 민감",
+      "저작권/상표권/IP",
+      "스팸/어뷰징/조작",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "헌법·국가안보·민족·종교·미성년자 보호 관련 민감 내용과 음란·도박·마약·폭력 미화, 타인 권리 침해 및 표절·중복 게재는 금지된다.",
+    "guide_message_ko": "업로드 전 금지 항목을 확인하고 문제 소지가 있는 문장·설정·표지·소개 등을 수정·삭제하거나 원고의 독창성을 확인한 뒤 도움말 센터의 심사 상담을 통해 재검토를 요청하세요.",
+    "keywords_ko": [
+      "국가안보·정치 민감",
+      "테러·극단주의 금지",
+      "음란·도박·마약 금지",
+      "미성년자 보호",
+      "저작권·표절 금지"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0016",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10116&rank3=0",
+    "risk_type_labels_ko": [
+      "정치/국가/역사 민감",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "역사적 사실과 역사 인물에 대한 악의적 왜곡·중상 내용 및 이미지는 수록되지 않습니다.",
+    "guide_message_ko": "원고와 표지·회차 이미지를 검토해 역사 사실이나 인물에 대한 악의적 왜곡이나 중상이 발견되면 해당 문장과 이미지를 수정하거나 삭제한 뒤 재제출하세요.",
+    "keywords_ko": [
+      "역사 왜곡",
+      "역사 인물 비방",
+      "게재 불가",
+      "표지·이미지",
+      "수정·삭제"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0017",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10116&rank3=0",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "미성년자 보호",
+      "불법/범죄 행위",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "노골적 성적 대화·행동·신체 묘사, 성기·나체 표현, 성적 기구 사용 및 광고, 미성년자 성행위, 근친·다자 성행위와 여성 대상 성적 대상화 등 음란·저속한 내용은 게재 불가.",
+    "guide_message_ko": "회차 본문과 이미지, 표지, 제목, 소개 등에서 노골적 성적 묘사(대화·행동·심리·신체 묘사), 성기·나체 표현, 성적 기구 사용·광고, 미성년자 성행위, 근친·다자 성행위, 여성 대상 성적 대상화가 포함되어 있는지 확인하고 해당 부분은 수정하거나 삭제한 뒤 재심사를 요청하세요.",
+    "keywords_ko": [
+      "노골적 성적 묘사",
+      "성기·나체 표현",
+      "성적 기구·광고",
+      "미성년자 성행위",
+      "근친·다자 성행위",
+      "여성 대상 성적 대상화"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0018",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10116&rank3=0",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "미성년자 보호",
+      "자해/자살",
+      "불법/범죄 행위",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "미성년자에게 유해하거나 범죄·성적·자해 행위를 묘사하거나 조장하는 내용은 미성년자에 대한 부정적 안내로 간주됩니다.",
+    "guide_message_ko": "제목·소개·표지·회차·본문을 점검하여 미성년자에게 유해한 묘사(미성년자 성행위, 자살·자해 유발 묘사, 범죄·도박·약물 참여, 교사·학생 관계 등)는 수정·삭제하거나 적절히 재분류하세요.",
+    "keywords_ko": [
+      "미성년자 보호",
+      "미성년자 성적 묘사",
+      "자살·자해 묘사",
+      "범죄·도박·약물",
+      "교사·학생 관계"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0019",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10116&rank3=0",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "폭력/잔혹 묘사",
+      "혐오/차별",
+      "불법/범죄 행위",
+      "정치/국가/역사 민감",
+      "종교/민족 민감",
+      "저작권/상표권/IP",
+      "개인정보/사생활",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "국가 안보·통합 훼손, 음란·도박·마약·폭력 미화, 종교·민족·정치적 민감 사안 및 타인의 권리 침해 등 민감하거나 불법적인 내용은 게시할 수 없다.",
+    "guide_message_ko": "제목·소개·표지·회차·본문·설정 등 작품 전반을 점검해 위반 요소(국가 모독·허위·음란·폭력·종교·민족 차별·저작권·초상권·사생활 침해 등)가 있으면 즉시 삭제하거나 수정하고 재등록하세요.",
+    "keywords_ko": [
+      "국가안보 위협",
+      "음란·도박·마약",
+      "폭력 미화",
+      "종교·민족 민감",
+      "허위·명예훼손",
+      "저작권·초상권 침해"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0029",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "정치/국가/역사 민감",
+      "저작권/상표권/IP"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "과거에 이미 계약·연재한 자신의 창작 작품 내용을 그대로 옮기거나 차용·개작해 재사용하면 표절로 간주된다.",
+    "guide_message_ko": "과거에 이미 계약한 작품의 내용을 그대로 사용하지 마세요; 저작권 귀속 여부와 관계없이 표절로 처리됩니다. 기존 원고를 재사용할 필요가 있으면 해당 부분을 삭제하거나 충분히 수정해 새로 작성하고 분류를 변경하세요.",
+    "keywords_ko": [
+      "자기표절",
+      "기존작품 재사용",
+      "표절",
+      "저작권 귀속 무관",
+      "계약 작품"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0042",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10232&rank3=0",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시",
+      "성적 콘텐츠",
+      "저작권/상표권/IP"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "침해 신고 시 작품명·저자·사이트 링크·스크린샷·유사성 비교 등 초기 증거를 제출하면 플랫폼이 확인 후 차단·삭제 등 조치를 취합니다.",
+    "guide_message_ko": "작품명, 저자, 사이트 링크, 스크린샷 및 텍스트 유사성 비교 자료를 준비해 fanqiejubao@bytedance.com로 보내세요. 접수된 신고에 대해 플랫폼은 3영업일 내 회신하며 증거가 불충분하면 보완을 요청하고 그 전까지 삭제·하향 조치는 보류됩니다.",
+    "keywords_ko": [
+      "침해증거",
+      "저작권신고",
+      "스크린샷",
+      "텍스트비교",
+      "신고메일"
+    ]
+  },
+  {
+    "rule_id": "CN_YUEWEN_0002",
+    "country": "CN",
+    "platform_display_name": "阅文(웨원)",
+    "source_url": "https://jubao.yuewen.com/notice/detail/931757508",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "미성년자 보호",
+      "폭력/잔혹 묘사",
+      "혐오/차별",
+      "괴롭힘/위협",
+      "불법/범죄 행위",
+      "정치/국가/역사 민감",
+      "종교/민족 민감",
+      "저작권/상표권/IP",
+      "개인정보/사생활",
+      "제목/소개/표지/회차 형식",
+      "상업화/수익화"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "정치적 민감, 음란·저속, 폭력·잔혹, 사기 광고, 유언비어, 도박 선전, 인신공격, 표절·저작권 침해 등 각종 불량 정보를 신고 대상으로 규정한다.",
+    "guide_message_ko": "제목·소개·회차·본문·표지 등 작품의 모든 요소에서 정치적 민감 표현, 음란·저속한 묘사, 과도한 폭력·잔혹 묘사, 사기성 광고·유언비어·도박 선전, 인신공격이나 표절·저작권 침해 여부를 확인하고 위반 시 즉시 수정·삭제하거나 신고 절차를 진행하세요.",
+    "keywords_ko": [
+      "정치적 민감",
+      "음란·저속",
+      "폭력·잔혹",
+      "사기·광고",
+      "유언비어",
+      "표절·저작권 침해"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0007",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "불법/범죄 행위"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "현대 배경 작품에서 주인공의 불법·범죄 행위는 법적 제재를 분명히 묘사해야 하며, 인신매매 등 공분을 일으키는 범죄의 미화·합리화·주인공화는 금지된다.",
+    "guide_message_ko": "주인공이 범죄에 연루될 경우 법적 책임과 처벌을 명확히 서술하고, 인신매매 등 공분을 초래하는 범죄를 직업으로 설정하거나 미화하지 마세요; 해당 부분은 필요하면 수정·삭제하거나 재분류하여 문제를 제거하십시오.",
+    "keywords_ko": [
+      "불법행위",
+      "범죄 미화 금지",
+      "법적 제재",
+      "인신매매",
+      "주인공 직업 제한"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0009",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "종교/민족 민감"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "작품에 타인의 종교 신념을 모욕하거나 민족 감정을 해치는 내용은 포함할 수 없다.",
+    "guide_message_ko": "작품을 검토해 종교 신념을 모욕하거나 민족 감정을 해치는 문장과 설정은 삭제하거나 수정하세요. 문제가 되는 장면은 재분류하거나 서술 방식을 바꿔 민감 표현을 제거하세요.",
+    "keywords_ko": [
+      "종교모욕",
+      "민족차별",
+      "혐오표현",
+      "감정침해"
+    ]
+  },
+  {
+    "rule_id": "CN_JJWXC_0012",
+    "country": "CN",
+    "platform_display_name": "晋江文学城(진장문학성)",
+    "source_url": "https://www.jjwxc.net/backend/forbiddensubject.php",
+    "risk_type_labels_ko": [
+      "폭력/잔혹 묘사"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "어둡고 폭력적이며 유혈 묘사가 포함된 동화와 아동 대상의 儿童邪典 장르는 금지된다.",
+    "guide_message_ko": "작품의 설정, 줄거리, 회차 및 표지에서 해당 금지 항목에 해당하는 요소가 있는지 확인하고, 포함되어 있으면 즉시 내용을 수정하거나 해당 분류에서 삭제·재분류하세요.",
+    "keywords_ko": [
+      "어두운 동화",
+      "폭력·유혈",
+      "아동 유해",
+      "장르 금지"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0001",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10222&rank3=0",
+    "risk_type_labels_ko": [],
+    "severity": "medium",
+    "rule_summary_ko": "사용자는 게시 전 규정을 준수해야 하며, 위반 시 심사에서 통과되지 않거나 노출 제한, 계정 음소거·계정 정지 등의 제재가 적용될 수 있다.",
+    "guide_message_ko": "게시 전에 규정을 꼼꼼히 확인하고 문제가 될 수 있는 문구나 내용을 수정·삭제하세요. 위반 시 심사 거부, 추천 제한 또는 계정 제재가 있을 수 있으니 주의하시기 바랍니다.",
+    "keywords_ko": [
+      "규정 준수",
+      "심사",
+      "추천 제한",
+      "계정 음소거",
+      "계정 정지"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0003",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10222&rank3=0",
+    "risk_type_labels_ko": [
+      "불법/범죄 행위",
+      "상업화/수익화"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "작품 내 광고성·상업적 홍보, 거래 유도, 사기·불법모금 및 불법 출판물의 판매·유포 등 부당한 수익 행위를 금지합니다.",
+    "guide_message_ko": "작품에 광고·제품 홍보, 거래 유도, 사기·불법모금 또는 불법 출판물 관련 내용이 포함되어 있으면 즉시 해당 문구를 삭제하거나 상업적 요소를 제거하고 필요 시 내용을 수정하거나 재분류하고 외부 거래 유도 링크/연락처를 삭제하세요.",
+    "keywords_ko": [
+      "광고성 콘텐츠",
+      "거래 유도",
+      "사기·불법모금",
+      "불법 출판물"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0005",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10222&rank3=0",
+    "risk_type_labels_ko": [
+      "스팸/어뷰징/조작"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "작품 본문·커뮤니티·개인 페이지 등에서 대량 또는 악의적으로 저질·비논리적 내용을 반복 게시하는 행위를 금지한다.",
+    "guide_message_ko": "원고와 커뮤니티 게시물을 점검해 연속적이거나 논리 연결이 없는 저질 문단을 수정·삭제하거나 적절히 재분류하고, 사용자 신고가 접수된 부분은 우선 확인하세요.",
+    "keywords_ko": [
+      "저질 글",
+      "대량 게시",
+      "논리 연결 부족",
+      "무의미한 묘사",
+      "빈약한 인물 묘사"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0006",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10222&rank3=0",
+    "risk_type_labels_ko": [
+      "괴롭힘/위협",
+      "불법/범죄 행위",
+      "개인정보/사생활"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "타인을 공격하거나 선동해 집단적인 온라인 폭력이나 인신공격 및 개인정보 유포를 조장하는 게시물을 금지한다.",
+    "guide_message_ko": "타인을 협박·모욕하거나 개인정보를 유포·요청하는 내용은 즉시 삭제하거나 수정하고, 타인의 정보를 공개하지 않도록 주의하며 관련 행위를 발견하면 플랫폼에 신고하세요.",
+    "keywords_ko": [
+      "선동",
+      "사이버불링",
+      "인신공격",
+      "개인정보 유포",
+      "모욕·명예훼손"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0007",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10222&rank3=0",
+    "risk_type_labels_ko": [],
+    "severity": "medium",
+    "rule_summary_ko": "플랫폼 내에서 취약점을 탐색·악용하거나 위반 경험을 전수하여 플랫폼이나 이용자에게 피해를 줄 수 있는 행위는 금지된다.",
+    "guide_message_ko": "작가는 작품 본문, 커뮤니티 글, 개인 페이지 등에서 취약점 활용 방법이나 위반 사례 전수를 포함한 내용을 즉시 삭제하거나 수정하고, 유사 게시를 올리지 않도록 주의하세요.",
+    "keywords_ko": [
+      "취약점 악용",
+      "위반 경험 전수",
+      "이용자 피해 유발",
+      "콘텐츠 수정·삭제"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0008",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10222&rank3=0",
+    "risk_type_labels_ko": [],
+    "severity": "medium",
+    "rule_summary_ko": "규정을 위반한 계정에 대해 기능 제한, 권한 동결·취소, 계정 봉인 등 단계적 제재를 실시하며 심각한 경우 추가 조치를 취한다.",
+    "guide_message_ko": "게시물의 규정 준수 여부를 사전에 확인하고 위반 소지가 있으면 즉시 해당 내용을 수정·삭제하거나 분류를 변경하며, 계정 기능 제한이나 권한 정지 통지를 받으면 계정 상태와 권한을 확인하세요.",
+    "keywords_ko": [
+      "기능 제한",
+      "권한 동결",
+      "보상 취소",
+      "계정 봉인",
+      "게시물 수정·삭제"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0011",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10116&rank3=0",
+    "risk_type_labels_ko": [
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "책 제목이나 회차 제목에 금지되거나 민감한 정보가 포함되거나 작품 내용과 일치하지 않으면 부적절합니다.",
+    "guide_message_ko": "제목과 회차명을 확인해 금지되거나 민감한 표현이 포함되지 않았는지 점검하고, 작품 내용과 일치하도록 제목을 수정하거나 불필요한 제목은 삭제·재분류하세요.",
+    "keywords_ko": [
+      "제목 규정",
+      "민감 정보",
+      "내용 불일치",
+      "회차 제목",
+      "메타데이터"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0012",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10116&rank3=0",
+    "risk_type_labels_ko": [
+      "불법/범죄 행위",
+      "저작권/상표권/IP",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "표지에 책 제목·저자명이 누락되거나 표지의 제목·저자명이 실제 정보와 일치하지 않거나, 표지에 저작권 침해 또는 불법 이미지가 포함되어서는 안 됩니다.",
+    "guide_message_ko": "표지의 제목·저자명을 메타정보와 일치하도록 확인하고, 글자 누락·가독성 문제는 폰트나 파일을 교체해 재업로드하며, 침해·불법 이미지가 있을 경우 즉시 교체하거나 삭제하세요.",
+    "keywords_ko": [
+      "표지",
+      "제목·저자 불일치",
+      "저작권 침해",
+      "저자명 누락",
+      "이미지 규정"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0024",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10227&rank3=0",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시",
+      "저작권/상표권/IP",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "플랫폼에는 독점 계약된 창작 원고만 허용되며, 저작권을 저자가 단독 보유하고 타 플랫폼 중복 게재나 기존 원고 재사용을 금지합니다.",
+    "guide_message_ko": "타 플랫폼에 이미 게시되었거나 계약된 작품은 계약 전 해당 플랫폼에서 해지·삭제하거나 별도 창작물을 등록하고, 무단복제 사이트가 있으면 신고 후 게시 사이트명·작품명·필명·링크·백엔드 스크린샷 등 증빙을 fanqiejubao@bytedance.com으로 제출하세요.",
+    "keywords_ko": [
+      "독점 원고",
+      "저작권 보유",
+      "중복 게재 금지",
+      "타 플랫폼 삭제·해지",
+      "저작권 증빙 제출"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0025",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "불법/범죄 행위",
+      "저작권/상표권/IP"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "플랫폼은 표절·저작권 침해에 대해 작가가 민사·행정적 책임을 지며 위약금·배상·게시중단·수정명령 등 강력한 제재를 시행한다고 규정한다.",
+    "guide_message_ko": "원작 사용 여부와 저작권 관계를 반드시 확인하고, 의심되는 부분은 즉시 삭제하거나 수정하고 필요시 게시를 중단해 권리 확인을 진행하세요. 표절 판정 시 위약금·배상·게시중단·수정 요구 등 제재를 받을 수 있으니 계약과 저작권을 꼼꼼히 검토하세요.",
+    "keywords_ko": [
+      "표절",
+      "저작권 침해",
+      "위약금",
+      "배상",
+      "게시 중단"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0026",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "작품은 독점적인 원작이어야 하며 저작권을 저자가 보유해야 하고, 타 플랫폼 게재·중복 계약·제3자 권리 침해를 금지합니다.",
+    "guide_message_ko": "출품 전 해당 작품이 타 사이트에 게시되었는지와 저작권 보유 여부를 확인하고, 타 플랫폼에 이미 계약되어 있다면 해당 사이트에서 계약 해지 및 게시물 삭제 조치를 취한 후 계약하거나 신규 원고로 제출하세요.",
+    "keywords_ko": [
+      "독점 원작",
+      "저작권 보유",
+      "중복 게재 금지",
+      "타 플랫폼 계약 해지",
+      "외부 게시물 삭제"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0027",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "표절 위반 행위는 다음과 같은 사례를 포함하되 이에 국한되지 않는다.",
+    "guide_message_ko": "원고 제출 전 표절 여부와 저작권 문제를 반드시 확인하고, 타인의 작품을 무단 복제하거나 도용한 내용은 수정하거나 삭제해 주십시오.",
+    "keywords_ko": [
+      "표절",
+      "저작권",
+      "원작성",
+      "내용 도용",
+      "지적재산권"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0028",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP",
+      "상업화/수익화"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "타인의 작품을 전부 또는 일부 그대로 옮기거나 문장을 재조합·동의어 치환으로 변형하거나 배경·인물·전개가 다수 유사한 경우 저작권 침해로 간주합니다.",
+    "guide_message_ko": "작품의 모든 내용이 직접 창작되었는지 확인하고, 표절로 의심되는 문장·설정·줄거리는 삭제하거나 재작성하여 유사성을 제거하세요.",
+    "keywords_ko": [
+      "표절",
+      "저작권 침해",
+      "문장 재배열",
+      "유사한 설정",
+      "동의어 치환"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0032",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "불법/범죄 행위",
+      "저작권/상표권/IP",
+      "상업화/수익화"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "플랫폼은 표절의 침해 정도에 따라 작품 차단·삭제, 지급 중단·위약금·배상 등 제재를 가하고 법적 책임을 추궁할 수 있다.",
+    "guide_message_ko": "작품의 독창성을 확인하고 표절 의심 부분이 있으면 즉시 수정하거나 삭제하며, 원고료 배상 처리 등 관련 공지를 확인해 필요한 조치를 취하세요.",
+    "keywords_ko": [
+      "표절",
+      "저작권 침해",
+      "작품 차단·삭제",
+      "위약금·배상",
+      "법적 책임"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0034",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "단일 작품의 심각한 표절 또는 다수 작품의 표절 의혹이 있는 작가는 계정 정지와 계약 작품에 대한 플랫폼 서비스 중단을 당하며, 다수 의혹의 경우 플랫폼은 전체 작품을 우선 내릴 수 있고 작가가 충분한 증빙을 제출하면 복구할 수 있다.",
+    "guide_message_ko": "표절 의혹을 통지받으면 해당 작품이 표절이 아님을 입증하는 원자료와 충분한 증빙을 준비해 플랫폼에 제출하여 복구를 요청하세요.",
+    "keywords_ko": [
+      "표절",
+      "계정 정지",
+      "서비스 중단",
+      "작품 일괄 하향",
+      "증빙 제출"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0039",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10229&rank3=0",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "작품은 수시로 실시되는 안전·저작권 심사에서 부적합 판정이 나오면 추천 및 분배가 중단될 수 있습니다.",
+    "guide_message_ko": "사이트 내 알림을 확인해 문제 사유를 파악하고, 해결이 필요하면 작품 제목·책번호·문제 상세와 알림 스크린샷을 첨부해 고객센터에 문의하세요; 계약 여부에 따라 처리 방식이 달라집니다.",
+    "keywords_ko": [
+      "저작권 심사",
+      "안전 심사",
+      "추천 중단",
+      "사이트 내 메시지",
+      "고객센터 문의"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0040",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10232&rank3=0",
+    "risk_type_labels_ko": [
+      "불법/범죄 행위",
+      "저작권/상표권/IP"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "권리자가 플랫폼 내 업로드물이 자신의 저작권을 침해한다고 판단하면 안내된 방식으로 신고하면 플랫폼이 신속히 확인·처리합니다.",
+    "guide_message_ko": "권리자라면 안내된 절차와 방식에 따라 반드시 플랫폼에 신고해 주세요. 접수 후 플랫폼이 가능한 한 빨리 사실을 확인하고 적극적으로 처리합니다.",
+    "keywords_ko": [
+      "저작권 침해",
+      "권리자 신고",
+      "지식재산권 보호",
+      "신고·조사"
+    ]
+  },
+  {
+    "rule_id": "CN_YUEWEN_0001",
+    "country": "CN",
+    "platform_display_name": "阅文(웨원)",
+    "source_url": "https://jubao.yuewen.com/notice/detail/931757508",
+    "risk_type_labels_ko": [
+      "불법/범죄 행위",
+      "저작권/상표권/IP"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "이 안내서는 이용자가 불법·유해 정보를 신고해 플랫폼 내 콘텐츠 안전을 공동으로 유지하도록 돕는 것을 목적으로 합니다.",
+    "guide_message_ko": "위반 또는 유해한 콘텐츠를 발견하면 본 안내에 따라 신고 절차를 진행하여 신고에 참여하고 콘텐츠 안전 관리에 협력하세요.",
+    "keywords_ko": [
+      "신고 가이드",
+      "콘텐츠 안전",
+      "불법·유해 정보",
+      "사용자 참여",
+      "정보보안 관리"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0004",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10222&rank3=0",
+    "risk_type_labels_ko": [
+      "스팸/어뷰징/조작"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "중복이거나 무의미·저품질의 콘텐츠를 대량으로 반복 게시하는 행위를 금지합니다.",
+    "guide_message_ko": "중복 게시물, 무의미한 이미지·기호·무질서한 문자나 앞뒤 연결이 없는 문단, 외부 자료의 단순 복사·붙여넣기 등은 삭제하거나 수정해 재분류하고, 게시 전 내용을 반드시 확인하세요.",
+    "keywords_ko": [
+      "중복 게시",
+      "무의미 콘텐츠",
+      "저품질",
+      "내용 연결성 부족",
+      "복사·붙여넣기"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0010",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10116&rank3=0",
+    "risk_type_labels_ko": [
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "심사에서 반려되는 일반적 사유와 이를 확인·대응할 수 있는 경로를 안내하는 도움말 모음입니다.",
+    "guide_message_ko": "사이트 내 메시지의 반려 사유를 확인해 문제 원인을 파악하고, 수정이 필요하면 문서에 요구된 형식대로 작품 정보를 작성하여 도움말의 심사 상담 경로로 문의하세요.",
+    "keywords_ko": [
+      "반려사유",
+      "심사절차",
+      "수정요청",
+      "심사상담"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0013",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10116&rank3=0",
+    "risk_type_labels_ko": [
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "이미지 손상, 문자 인코딩 오류, 문단 미구분 등 콘텐츠 형식상의 오류가 있으면 문제로 간주됩니다.",
+    "guide_message_ko": "이미지 파손, 문자 깨짐(외국어 포함), 문단 구분 여부(공백 대신 엔터 사용), 빈 회차·중복·글꼴·회차 순서 등을 확인해 필요 시 수정·삭제하거나 재업로드하세요.",
+    "keywords_ko": [
+      "이미지 손상",
+      "문자 깨짐",
+      "문단 미구분",
+      "빈 회차",
+      "내용 중복"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0014",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10116&rank3=0",
+    "risk_type_labels_ko": [
+      "스팸/어뷰징/조작"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "연속적·대량으로 중복되거나 무의미하고 저품질인 콘텐츠, 예컨대 이미지, 기호, 이모지, 깨진 문자 등의 게시를 금지한다.",
+    "guide_message_ko": "중복 또는 무의미한 콘텐츠를 반복 게시하지 마십시오. 이미 게시한 반복물은 삭제하거나 수정하고, 업로드 전 내용의 의미와 가독성을 반드시 확인하세요.",
+    "keywords_ko": [
+      "중복게시",
+      "무의미 콘텐츠",
+      "저품질",
+      "스팸/어뷰징",
+      "깨진 문자"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0015",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10116&rank3=0",
+    "risk_type_labels_ko": [
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "본문·회차 이미지·표지·제목·소개에 외부 링크·광고·모임 정보·연락처 등 내용과 무관한 정보를 포함하면 안 됩니다.",
+    "guide_message_ko": "각 회차 본문과 표지, 제목, 소개란에 외부 링크·광고·모임 정보·연락처(예: QQ, 위챗)가 포함되어 있지 않은지 확인하고, 발견 시 즉시 삭제하거나 수정하여 규정에 맞추세요.",
+    "keywords_ko": [
+      "외부 링크",
+      "광고",
+      "연락처 노출",
+      "무관 정보",
+      "표지·소개"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0020",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10097&rank3=0",
+    "risk_type_labels_ko": [],
+    "severity": "low",
+    "rule_summary_ko": "심사 불통과 사유를 확인하려면 본문을 확인하고 요구된 정보를 제출해 직원의 도움을 받으세요.",
+    "guide_message_ko": "이 문서를 확인한 뒤 안내에 따라 요구되는 정보를 정확히 제출해 직원의 도움을 요청하세요.",
+    "keywords_ko": [
+      "심사 불통과",
+      "심사 문의",
+      "작가 지원",
+      "제출 정보",
+      "도움 요청"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0021",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10097&rank3=0",
+    "risk_type_labels_ko": [
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "계정, 제목·표지·소개 등 작품 정보와 안전, 회차 및 회차 말미의 작가 한마디 등 다양한 심사에 대해 안내에 따라 정보를 제출해야 합니다.",
+    "guide_message_ko": "심사 문의 시 제시된 항목을 확인하고 계정, 제목, 표지, 소개, 회차, 작가 한마디 등 요청된 정보를 설정·수정해 제출하세요. 요청 정보가 부족하면 빠짐없이 보완해 직원의 도움을 받으세요.",
+    "keywords_ko": [
+      "계정 심사",
+      "작품 정보",
+      "표지",
+      "소개",
+      "회차 심사",
+      "작가 한마디"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0022",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10019&rank2=10097&rank3=0",
+    "risk_type_labels_ko": [
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "작품 추천 배포 중단의 원인 확인과 작품 고유번호 확인 및 문제 유형별 문의 절차를 안내한다.",
+    "guide_message_ko": "웹사이트나 작가 앱에서 작품 고유번호를 확인한 뒤, 문제 유형(계정, 작품 정보, 챕션 등)을 선택하고 서번호·작품명·문제 챕터명을 정확히 기재해 피드백 센터의 인력 서비스로 문의하세요. 챕터명은 정확히 복사해 붙여넣고, 번호만 스크린샷한 문의는 접수되지 않습니다.",
+    "keywords_ko": [
+      "작품 고유번호",
+      "추천 중단",
+      "문의 절차",
+      "챕터 심사",
+      "계정 심사"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0023",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10006&rank2=10162&rank3=10164",
+    "risk_type_labels_ko": [
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "모든 회차(정식 회차·작품 서문 등)는 최소 1000자, 최대 50000자로 작성해야 하며 미충족 시 게시(다음 단계)할 수 없습니다.",
+    "guide_message_ko": "각 회차를 올리기 전 원고 분량이 최소 1000자 이상·최대 50000자 이하인지 확인하고, 필요하면 회차를 분할하거나 합쳐 분량을 조정한 뒤 게시하세요. 조건을 충족하지 않으면 다음 단계로 진행할 수 없습니다.",
+    "keywords_ko": [
+      "최소 1000자",
+      "최대 50000자",
+      "회차 분량",
+      "게시 제한"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0030",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "영화·드라마·애니·단편영상·오디오·인터랙티브 게임 등 다른 형태의 작품 내용을 그대로 옮기거나 변형해 사용하는 행위는 표절로 간주된다.",
+    "guide_message_ko": "줄거리·인물·대사·화면·음성 등을 다른 매체에서 그대로 가져오거나 수정·재사용하지 말고, 의심되는 부분은 삭제하거나 독창적으로 재작성하세요.",
+    "keywords_ko": [
+      "표절",
+      "줄거리 도용",
+      "인물 도용",
+      "대사 복사",
+      "영상·음성 변형"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0031",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "표절이 의심되는 작품은 플랫폼 규정에 따라 제재 대상이 된다.",
+    "guide_message_ko": "작품의 원본성을 반드시 확인하고, 표절로 의심되는 내용이 있으면 즉시 수정하거나 삭제해 규정 위반을 예방하세요.",
+    "keywords_ko": [
+      "표절",
+      "제재",
+      "저작권"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0033",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "표절 작품은 당월 및 이후 창작 혜택 지급 자격이 박탈되며, 해당 보상은 지급되지 않고 이미 지급된 보상과 플랫폼 손실을 환수할 수 있습니다.",
+    "guide_message_ko": "작품의 표절 여부를 즉시 확인하고 의심되는 부분은 수정하거나 삭제하세요. 표절이 확인되면 창작 혜택이 박탈되고 이미 지급된 보상 및 플랫폼 손실은 환수될 수 있으니 관련 증빙을 보관하세요.",
+    "keywords_ko": [
+      "표절",
+      "창작혜택 박탈",
+      "보상 환수",
+      "플랫폼 손실"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0035",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "작품 도용 또는 표절 의심 신고 시, 필요한 증거를 제출하면 플랫폼이 접수 후 3영업일 이내에 회신하고 조사·처리합니다.",
+    "guide_message_ko": "작품이 도용되었거나 표절이 의심되면 원본과 의심작의 작품명·저자명·저작권 플랫폼명·링크 등 기본정보와 스크린샷 및 텍스트 비교 증거를 공식 신고 채널에 제출하세요. 접수 후 3영업일(주말·공휴일 제외) 내에 답변을 받습니다.",
+    "keywords_ko": [
+      "표절 신고",
+      "저작권 침해",
+      "증거 제출",
+      "스크린샷",
+      "텍스트 비교"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0036",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "의심되는 표절 작품 페이지에서 리더 메뉴의 '더보기'→'신고 및 피드백'→'표절/침해'를 선택해 신고 내용을 작성하면 표절 신고가 접수됩니다.",
+    "guide_message_ko": "의심되는 표절을 발견하면 해당 작품의 리더 메뉴 '더보기'에서 '신고 및 피드백'을 선택한 뒤 '표절/침해' 항목에 구체적인 신고 사유를 작성해 제출하세요.",
+    "keywords_ko": [
+      "표절 신고",
+      "신고 경로",
+      "리더 메뉴",
+      "신고 내용 작성",
+      "저작권 침해"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0037",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10228&rank3=0",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "플랫폼의 공식 신고용 이메일 주소는 fanqiejubao@bytedance.com이다.",
+    "guide_message_ko": "문제 콘텐츠를 발견하면 fanqiejubao@bytedance.com으로 신고하십시오.",
+    "keywords_ko": [
+      "신고 이메일",
+      "제보",
+      "위반 신고"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0038",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10229&rank3=0",
+    "risk_type_labels_ko": [
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "동적 심사 중에는 작품의 제목·소개·표지·회차 등 수정이 제한되며, 업데이트는 가능하고 심사는 보통 3~5일 내 완료됩니다.",
+    "guide_message_ko": "작품이 동적 심사 상태이면 수정 대신 신규 회차로 업데이트하고, 수정이 필요하면 심사 종료(보통 3~5일) 이후에 다시 시도하세요. 수정 버튼을 누르면 안내 문구가 표시됩니다.",
+    "keywords_ko": [
+      "동적 심사",
+      "수정 불가",
+      "업데이트 가능",
+      "3-5일 소요",
+      "노출 영향 없음"
+    ]
+  },
+  {
+    "rule_id": "CN_FANQIENOVEL_0041",
+    "country": "CN",
+    "platform_display_name": "番茄小说(판치에소설)",
+    "source_url": "https://fanqienovel.com/writer/zone/help/article?rank1=10226&rank2=10232&rank3=0",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "저작권 등록증, 원고 원본, 창작 기록 등으로 저작권 소유를 증명해야 합니다.",
+    "guide_message_ko": "저작권 등록증, 원고 원본, 창작 기록 등을 준비해 등록 또는 플랫폼 요청 시 제출하세요. 증빙 원본은 안전하게 보관하세요.",
+    "keywords_ko": [
+      "저작권 증빙",
+      "저작권 등록증",
+      "원고 원본",
+      "창작 기록"
+    ]
+  }
+]

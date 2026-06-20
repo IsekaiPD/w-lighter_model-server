@@ -1,0 +1,2220 @@
+{
+  "market": "Thailand",
+  "market_ko": "태국",
+  "generated_at": "2026-06-07T16:25:46.149442+00:00",
+  "analysis_scope": "platform_observation_context_only",
+  "record_count": 220,
+  "platforms": [
+    "Dek-D",
+    "Joylada",
+    "ReadAWrite"
+  ],
+  "signal_types": [
+    "homepage_ranking",
+    "popular"
+  ],
+  "use_limits": [
+    "랭킹/인기 페이지 공개 샘플에서 관찰된 라벨·공개 지표 집계입니다.",
+    "추천, 성과 예측, 시장 적합도 판단, 창작 방향 제안에 사용하지 않습니다.",
+    "표현은 '관찰됨', '샘플 내 빈도', '검토 참고 항목'으로 제한합니다.",
+    "플랫폼 간 public metric은 의미가 달라 직접 비교하지 않습니다.",
+    "개별 작품명과 시놉시스는 대표 사례/근거 인용 없이 context pack에 넣지 않습니다."
+  ],
+  "observed_top_labels": [
+    {
+      "label_original": "Love Novel",
+      "label_ko": "로맨스 소설",
+      "count": 100,
+      "share": 0.4545
+    },
+    {
+      "label_original": "โรแมนติก",
+      "label_ko": "로맨틱",
+      "count": 52,
+      "share": 0.2364
+    },
+    {
+      "label_original": "นิยายรัก",
+      "label_ko": "로맨스 소설",
+      "count": 40,
+      "share": 0.1818
+    },
+    {
+      "label_original": "มหาวิทยาลัย",
+      "label_ko": "대학",
+      "count": 35,
+      "share": 0.1591
+    },
+    {
+      "label_original": "น่ารัก",
+      "label_ko": "귀여움",
+      "count": 28,
+      "share": 0.1273
+    },
+    {
+      "label_original": "วิศวะ",
+      "label_ko": "공대",
+      "count": 28,
+      "share": 0.1273
+    },
+    {
+      "label_original": "รักวัยรุ่น",
+      "label_ko": "청춘 로맨스",
+      "count": 28,
+      "share": 0.1273
+    },
+    {
+      "label_original": "โรมานซ์",
+      "label_ko": "로맨스",
+      "count": 27,
+      "share": 0.1227
+    },
+    {
+      "label_original": "18+",
+      "label_ko": "18+",
+      "count": 25,
+      "share": 0.1136
+    },
+    {
+      "label_original": "แอบรัก",
+      "label_ko": "짝사랑",
+      "count": 24,
+      "share": 0.1091
+    },
+    {
+      "label_original": "ดรามา",
+      "label_ko": "드라마",
+      "count": 24,
+      "share": 0.1091
+    },
+    {
+      "label_original": "Feel good",
+      "label_ko": "필굿",
+      "count": 23,
+      "share": 0.1045
+    },
+    {
+      "label_original": "นิยายโรแมนติก",
+      "label_ko": "로맨스 소설",
+      "count": 23,
+      "share": 0.1045
+    },
+    {
+      "label_original": "ความรัก",
+      "label_ko": "사랑",
+      "count": 22,
+      "share": 0.1
+    },
+    {
+      "label_original": "ตลก",
+      "label_ko": "코미디",
+      "count": 21,
+      "share": 0.0955
+    },
+    {
+      "label_original": "นิยายรักวัยรุ่น",
+      "label_ko": "청춘 로맨스 소설",
+      "count": 21,
+      "share": 0.0955
+    },
+    {
+      "label_original": "นิยายโรมานซ์",
+      "label_ko": "로맨스 소설",
+      "count": 20,
+      "share": 0.0909
+    },
+    {
+      "label_original": "นิยายรักจีนโบราณ",
+      "label_ko": "중국 고전풍 로맨스",
+      "count": 20,
+      "share": 0.0909
+    },
+    {
+      "label_original": "นิยายรักวัยว้าวุ่น",
+      "label_ko": "청춘 로맨스",
+      "count": 20,
+      "share": 0.0909
+    },
+    {
+      "label_original": "หวาน",
+      "label_ko": "달달함",
+      "count": 17,
+      "share": 0.0773
+    },
+    {
+      "label_original": "ทะลุมิติ",
+      "label_ko": "차원이동/빙의",
+      "count": 16,
+      "share": 0.0727
+    },
+    {
+      "label_original": "ดราม่า",
+      "label_ko": "드라마",
+      "count": 15,
+      "share": 0.0682
+    },
+    {
+      "label_original": "มาเฟีย",
+      "label_ko": "마피아",
+      "count": 14,
+      "share": 0.0636
+    },
+    {
+      "label_original": "เพื่อนสนิท",
+      "label_ko": "절친",
+      "count": 13,
+      "share": 0.0591
+    },
+    {
+      "label_original": "อดีต ปัจจุบัน อนาคต",
+      "label_ko": "과거/현재/미래",
+      "count": 12,
+      "share": 0.0545
+    },
+    {
+      "label_original": "รุ่นพี่",
+      "label_ko": "선배",
+      "count": 12,
+      "share": 0.0545
+    },
+    {
+      "label_original": "เกิดใหม่",
+      "label_ko": "환생/전생",
+      "count": 11,
+      "share": 0.05
+    },
+    {
+      "label_original": "ย้อนอดีต",
+      "label_ko": "과거 회귀",
+      "count": 10,
+      "share": 0.0455
+    },
+    {
+      "label_original": "นิยายจีน",
+      "label_ko": "중국 소설",
+      "count": 10,
+      "share": 0.0455
+    },
+    {
+      "label_original": "แต่งงาน",
+      "label_ko": "결혼",
+      "count": 9,
+      "share": 0.0409
+    }
+  ],
+  "observed_top_label_groups": [
+    {
+      "label_ko": "로맨스 소설",
+      "count": 100,
+      "share": 0.4545,
+      "source_labels": [
+        "Love Novel",
+        "นิยายรัก",
+        "นิยายโรแมนติก",
+        "นิยายโรมานซ์"
+      ]
+    },
+    {
+      "label_ko": "로맨틱",
+      "count": 52,
+      "share": 0.2364,
+      "source_labels": [
+        "โรแมนติก"
+      ]
+    },
+    {
+      "label_ko": "청춘 로맨스",
+      "count": 38,
+      "share": 0.1727,
+      "source_labels": [
+        "รักวัยรุ่น",
+        "นิยายรักวัยว้าวุ่น"
+      ]
+    },
+    {
+      "label_ko": "대학",
+      "count": 36,
+      "share": 0.1636,
+      "source_labels": [
+        "มหาวิทยาลัย",
+        "มหาลัย"
+      ]
+    },
+    {
+      "label_ko": "드라마",
+      "count": 31,
+      "share": 0.1409,
+      "source_labels": [
+        "ดรามา",
+        "ดราม่า"
+      ]
+    },
+    {
+      "label_ko": "귀여움",
+      "count": 28,
+      "share": 0.1273,
+      "source_labels": [
+        "น่ารัก"
+      ]
+    },
+    {
+      "label_ko": "공대",
+      "count": 28,
+      "share": 0.1273,
+      "source_labels": [
+        "วิศวะ"
+      ]
+    },
+    {
+      "label_ko": "로맨스",
+      "count": 27,
+      "share": 0.1227,
+      "source_labels": [
+        "โรมานซ์"
+      ]
+    },
+    {
+      "label_ko": "18+",
+      "count": 25,
+      "share": 0.1136,
+      "source_labels": [
+        "18+"
+      ]
+    },
+    {
+      "label_ko": "짝사랑",
+      "count": 24,
+      "share": 0.1091,
+      "source_labels": [
+        "แอบรัก"
+      ]
+    },
+    {
+      "label_ko": "필굿",
+      "count": 23,
+      "share": 0.1045,
+      "source_labels": [
+        "Feel good"
+      ]
+    },
+    {
+      "label_ko": "사랑",
+      "count": 22,
+      "share": 0.1,
+      "source_labels": [
+        "ความรัก"
+      ]
+    },
+    {
+      "label_ko": "코미디",
+      "count": 21,
+      "share": 0.0955,
+      "source_labels": [
+        "ตลก"
+      ]
+    },
+    {
+      "label_ko": "청춘 로맨스 소설",
+      "count": 21,
+      "share": 0.0955,
+      "source_labels": [
+        "นิยายรักวัยรุ่น"
+      ]
+    },
+    {
+      "label_ko": "중국 고전풍 로맨스",
+      "count": 20,
+      "share": 0.0909,
+      "source_labels": [
+        "นิยายรักจีนโบราณ"
+      ]
+    },
+    {
+      "label_ko": "달달함",
+      "count": 17,
+      "share": 0.0773,
+      "source_labels": [
+        "หวาน"
+      ]
+    },
+    {
+      "label_ko": "차원이동/빙의",
+      "count": 16,
+      "share": 0.0727,
+      "source_labels": [
+        "ทะลุมิติ"
+      ]
+    },
+    {
+      "label_ko": "마피아",
+      "count": 14,
+      "share": 0.0636,
+      "source_labels": [
+        "มาเฟีย"
+      ]
+    },
+    {
+      "label_ko": "절친",
+      "count": 13,
+      "share": 0.0591,
+      "source_labels": [
+        "เพื่อนสนิท"
+      ]
+    },
+    {
+      "label_ko": "과거/현재/미래",
+      "count": 12,
+      "share": 0.0545,
+      "source_labels": [
+        "อดีต ปัจจุบัน อนาคต"
+      ]
+    },
+    {
+      "label_ko": "선배",
+      "count": 12,
+      "share": 0.0545,
+      "source_labels": [
+        "รุ่นพี่"
+      ]
+    },
+    {
+      "label_ko": "환생/전생",
+      "count": 11,
+      "share": 0.05,
+      "source_labels": [
+        "เกิดใหม่"
+      ]
+    },
+    {
+      "label_ko": "과거 회귀",
+      "count": 10,
+      "share": 0.0455,
+      "source_labels": [
+        "ย้อนอดีต"
+      ]
+    },
+    {
+      "label_ko": "중국 소설",
+      "count": 10,
+      "share": 0.0455,
+      "source_labels": [
+        "นิยายจีน"
+      ]
+    },
+    {
+      "label_ko": "결혼",
+      "count": 9,
+      "share": 0.0409,
+      "source_labels": [
+        "แต่งงาน"
+      ]
+    },
+    {
+      "label_ko": "중국 시대극/고전",
+      "count": 9,
+      "share": 0.0409,
+      "source_labels": [
+        "พีเรียดจีน (จีนโบราณ)"
+      ]
+    },
+    {
+      "label_ko": "중국 고전 소설",
+      "count": 9,
+      "share": 0.0409,
+      "source_labels": [
+        "นิยายจีนโบราณ"
+      ]
+    },
+    {
+      "label_ko": "나이차 로맨스",
+      "count": 8,
+      "share": 0.0364,
+      "source_labels": [
+        "รักต่างวัย",
+        "โคแก่"
+      ]
+    },
+    {
+      "label_ko": "선후배",
+      "count": 7,
+      "share": 0.0318,
+      "source_labels": [
+        "รุ่นพี่รุ่นน้อง"
+      ]
+    },
+    {
+      "label_ko": "강압적 로맨스",
+      "count": 7,
+      "share": 0.0318,
+      "source_labels": [
+        "ตบจูบ"
+      ]
+    }
+  ],
+  "platform_balanced_label_groups": [
+    {
+      "label_ko": "로맨스 소설",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.3333,
+      "max_platform_share": 1.0,
+      "source_labels": [
+        "Love Novel",
+        "นิยายรัก",
+        "นิยายโรแมนติก",
+        "นิยายโรมานซ์"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 100,
+          "record_count": 100,
+          "share": 1.0
+        }
+      ]
+    },
+    {
+      "label_ko": "과거/현재/미래",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.2,
+      "max_platform_share": 0.6,
+      "source_labels": [
+        "อดีต ปัจจุบัน อนาคต"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Dek-D",
+          "count": 12,
+          "record_count": 20,
+          "share": 0.6
+        }
+      ]
+    },
+    {
+      "label_ko": "로맨틱",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.1733,
+      "max_platform_share": 0.52,
+      "source_labels": [
+        "โรแมนติก"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 52,
+          "record_count": 100,
+          "share": 0.52
+        }
+      ]
+    },
+    {
+      "label_ko": "청춘 로맨스",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.1267,
+      "max_platform_share": 0.38,
+      "source_labels": [
+        "รักวัยรุ่น",
+        "นิยายรักวัยว้าวุ่น"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 38,
+          "record_count": 100,
+          "share": 0.38
+        }
+      ]
+    },
+    {
+      "label_ko": "대학",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.12,
+      "max_platform_share": 0.36,
+      "source_labels": [
+        "มหาวิทยาลัย",
+        "มหาลัย"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 36,
+          "record_count": 100,
+          "share": 0.36
+        }
+      ]
+    },
+    {
+      "label_ko": "드라마",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.1033,
+      "max_platform_share": 0.31,
+      "source_labels": [
+        "ดรามา",
+        "ดราม่า"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 31,
+          "record_count": 100,
+          "share": 0.31
+        }
+      ]
+    },
+    {
+      "label_ko": "공대",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0933,
+      "max_platform_share": 0.28,
+      "source_labels": [
+        "วิศวะ"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 28,
+          "record_count": 100,
+          "share": 0.28
+        }
+      ]
+    },
+    {
+      "label_ko": "귀여움",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0933,
+      "max_platform_share": 0.28,
+      "source_labels": [
+        "น่ารัก"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 28,
+          "record_count": 100,
+          "share": 0.28
+        }
+      ]
+    },
+    {
+      "label_ko": "로맨스",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.09,
+      "max_platform_share": 0.27,
+      "source_labels": [
+        "โรมานซ์"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 27,
+          "record_count": 100,
+          "share": 0.27
+        }
+      ]
+    },
+    {
+      "label_ko": "18+",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0833,
+      "max_platform_share": 0.25,
+      "source_labels": [
+        "18+"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 25,
+          "record_count": 100,
+          "share": 0.25
+        }
+      ]
+    },
+    {
+      "label_ko": "짝사랑",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.08,
+      "max_platform_share": 0.24,
+      "source_labels": [
+        "แอบรัก"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 24,
+          "record_count": 100,
+          "share": 0.24
+        }
+      ]
+    },
+    {
+      "label_ko": "필굿",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0767,
+      "max_platform_share": 0.23,
+      "source_labels": [
+        "Feel good"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 23,
+          "record_count": 100,
+          "share": 0.23
+        }
+      ]
+    },
+    {
+      "label_ko": "사랑",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0733,
+      "max_platform_share": 0.22,
+      "source_labels": [
+        "ความรัก"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 22,
+          "record_count": 100,
+          "share": 0.22
+        }
+      ]
+    },
+    {
+      "label_ko": "청춘 로맨스 소설",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.07,
+      "max_platform_share": 0.21,
+      "source_labels": [
+        "นิยายรักวัยรุ่น"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 21,
+          "record_count": 100,
+          "share": 0.21
+        }
+      ]
+    },
+    {
+      "label_ko": "코미디",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.07,
+      "max_platform_share": 0.21,
+      "source_labels": [
+        "ตลก"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 21,
+          "record_count": 100,
+          "share": 0.21
+        }
+      ]
+    },
+    {
+      "label_ko": "중국 고전풍 로맨스",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0667,
+      "max_platform_share": 0.2,
+      "source_labels": [
+        "นิยายรักจีนโบราณ"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 20,
+          "record_count": 100,
+          "share": 0.2
+        }
+      ]
+    },
+    {
+      "label_ko": "팬픽션",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0667,
+      "max_platform_share": 0.2,
+      "source_labels": [
+        "แฟนฟิคนิยาย การ์ตูน เกม"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Dek-D",
+          "count": 4,
+          "record_count": 20,
+          "share": 0.2
+        }
+      ]
+    },
+    {
+      "label_ko": "달달함",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0567,
+      "max_platform_share": 0.17,
+      "source_labels": [
+        "หวาน"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 17,
+          "record_count": 100,
+          "share": 0.17
+        }
+      ]
+    },
+    {
+      "label_ko": "차원이동/빙의",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0533,
+      "max_platform_share": 0.16,
+      "source_labels": [
+        "ทะลุมิติ"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 16,
+          "record_count": 100,
+          "share": 0.16
+        }
+      ]
+    },
+    {
+      "label_ko": "จีนย้อนยุค",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.05,
+      "max_platform_share": 0.15,
+      "source_labels": [
+        "จีนย้อนยุค"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Dek-D",
+          "count": 3,
+          "record_count": 20,
+          "share": 0.15
+        }
+      ]
+    },
+    {
+      "label_ko": "마피아",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0467,
+      "max_platform_share": 0.14,
+      "source_labels": [
+        "มาเฟีย"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 14,
+          "record_count": 100,
+          "share": 0.14
+        }
+      ]
+    },
+    {
+      "label_ko": "절친",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0433,
+      "max_platform_share": 0.13,
+      "source_labels": [
+        "เพื่อนสนิท"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 13,
+          "record_count": 100,
+          "share": 0.13
+        }
+      ]
+    },
+    {
+      "label_ko": "선배",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.04,
+      "max_platform_share": 0.12,
+      "source_labels": [
+        "รุ่นพี่"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 12,
+          "record_count": 100,
+          "share": 0.12
+        }
+      ]
+    },
+    {
+      "label_ko": "환생/전생",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0367,
+      "max_platform_share": 0.11,
+      "source_labels": [
+        "เกิดใหม่"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 11,
+          "record_count": 100,
+          "share": 0.11
+        }
+      ]
+    },
+    {
+      "label_ko": "과거 회귀",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0333,
+      "max_platform_share": 0.1,
+      "source_labels": [
+        "ย้อนอดีต"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 10,
+          "record_count": 100,
+          "share": 0.1
+        }
+      ]
+    },
+    {
+      "label_ko": "중국 소설",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0333,
+      "max_platform_share": 0.1,
+      "source_labels": [
+        "นิยายจีน"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 10,
+          "record_count": 100,
+          "share": 0.1
+        }
+      ]
+    },
+    {
+      "label_ko": "결혼",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.03,
+      "max_platform_share": 0.09,
+      "source_labels": [
+        "แต่งงาน"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 9,
+          "record_count": 100,
+          "share": 0.09
+        }
+      ]
+    },
+    {
+      "label_ko": "중국 고전 소설",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.03,
+      "max_platform_share": 0.09,
+      "source_labels": [
+        "นิยายจีนโบราณ"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 9,
+          "record_count": 100,
+          "share": 0.09
+        }
+      ]
+    },
+    {
+      "label_ko": "중국 시대극/고전",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.03,
+      "max_platform_share": 0.09,
+      "source_labels": [
+        "พีเรียดจีน (จีนโบราณ)"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 9,
+          "record_count": 100,
+          "share": 0.09
+        }
+      ]
+    },
+    {
+      "label_ko": "나이차 로맨스",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0267,
+      "max_platform_share": 0.08,
+      "source_labels": [
+        "รักต่างวัย",
+        "โคแก่"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "ReadAWrite",
+          "count": 8,
+          "record_count": 100,
+          "share": 0.08
+        }
+      ]
+    }
+  ],
+  "platform_summaries": [
+    {
+      "platform": "Dek-D",
+      "market": "Thailand",
+      "record_count": 20,
+      "signal_types": [
+        "popular"
+      ],
+      "top_labels": [
+        {
+          "label_original": "อดีต ปัจจุบัน อนาคต",
+          "label_ko": "과거/현재/미래",
+          "count": 12,
+          "share": 0.6
+        },
+        {
+          "label_original": "แฟนฟิคนิยาย การ์ตูน เกม",
+          "label_ko": "팬픽션",
+          "count": 4,
+          "share": 0.2
+        },
+        {
+          "label_original": "จีนย้อนยุค",
+          "label_ko": "จีนย้อนยุค",
+          "count": 3,
+          "share": 0.15
+        },
+        {
+          "label_original": "วาย",
+          "label_ko": "BL/보이즈러브",
+          "count": 1,
+          "share": 0.05
+        }
+      ],
+      "top_label_groups": [
+        {
+          "label_ko": "과거/현재/미래",
+          "count": 12,
+          "share": 0.6,
+          "source_labels": [
+            "อดีต ปัจจุบัน อนาคต"
+          ]
+        },
+        {
+          "label_ko": "팬픽션",
+          "count": 4,
+          "share": 0.2,
+          "source_labels": [
+            "แฟนฟิคนิยาย การ์ตูน เกม"
+          ]
+        },
+        {
+          "label_ko": "จีนย้อนยุค",
+          "count": 3,
+          "share": 0.15,
+          "source_labels": [
+            "จีนย้อนยุค"
+          ]
+        },
+        {
+          "label_ko": "BL/보이즈러브",
+          "count": 1,
+          "share": 0.05,
+          "source_labels": [
+            "วาย"
+          ]
+        }
+      ],
+      "available_metrics": [],
+      "synopsis_present_share": 0.95
+    },
+    {
+      "platform": "Joylada",
+      "market": "Thailand",
+      "record_count": 100,
+      "signal_types": [
+        "homepage_ranking"
+      ],
+      "top_labels": [],
+      "top_label_groups": [],
+      "available_metrics": [
+        "category_rank",
+        "ranking_box",
+        "reads_or_views"
+      ],
+      "synopsis_present_share": 0.0
+    },
+    {
+      "platform": "ReadAWrite",
+      "market": "Thailand",
+      "record_count": 100,
+      "signal_types": [
+        "popular"
+      ],
+      "top_labels": [
+        {
+          "label_original": "Love Novel",
+          "label_ko": "로맨스 소설",
+          "count": 100,
+          "share": 1.0
+        },
+        {
+          "label_original": "โรแมนติก",
+          "label_ko": "로맨틱",
+          "count": 52,
+          "share": 0.52
+        },
+        {
+          "label_original": "นิยายรัก",
+          "label_ko": "로맨스 소설",
+          "count": 40,
+          "share": 0.4
+        },
+        {
+          "label_original": "มหาวิทยาลัย",
+          "label_ko": "대학",
+          "count": 35,
+          "share": 0.35
+        },
+        {
+          "label_original": "น่ารัก",
+          "label_ko": "귀여움",
+          "count": 28,
+          "share": 0.28
+        },
+        {
+          "label_original": "วิศวะ",
+          "label_ko": "공대",
+          "count": 28,
+          "share": 0.28
+        },
+        {
+          "label_original": "รักวัยรุ่น",
+          "label_ko": "청춘 로맨스",
+          "count": 28,
+          "share": 0.28
+        },
+        {
+          "label_original": "โรมานซ์",
+          "label_ko": "로맨스",
+          "count": 27,
+          "share": 0.27
+        },
+        {
+          "label_original": "18+",
+          "label_ko": "18+",
+          "count": 25,
+          "share": 0.25
+        },
+        {
+          "label_original": "แอบรัก",
+          "label_ko": "짝사랑",
+          "count": 24,
+          "share": 0.24
+        },
+        {
+          "label_original": "ดรามา",
+          "label_ko": "드라마",
+          "count": 24,
+          "share": 0.24
+        },
+        {
+          "label_original": "Feel good",
+          "label_ko": "필굿",
+          "count": 23,
+          "share": 0.23
+        }
+      ],
+      "top_label_groups": [
+        {
+          "label_ko": "로맨스 소설",
+          "count": 100,
+          "share": 1.0,
+          "source_labels": [
+            "Love Novel",
+            "นิยายรัก",
+            "นิยายโรแมนติก",
+            "นิยายโรมานซ์"
+          ]
+        },
+        {
+          "label_ko": "로맨틱",
+          "count": 52,
+          "share": 0.52,
+          "source_labels": [
+            "โรแมนติก"
+          ]
+        },
+        {
+          "label_ko": "청춘 로맨스",
+          "count": 38,
+          "share": 0.38,
+          "source_labels": [
+            "รักวัยรุ่น",
+            "นิยายรักวัยว้าวุ่น"
+          ]
+        },
+        {
+          "label_ko": "대학",
+          "count": 36,
+          "share": 0.36,
+          "source_labels": [
+            "มหาวิทยาลัย",
+            "มหาลัย"
+          ]
+        },
+        {
+          "label_ko": "드라마",
+          "count": 31,
+          "share": 0.31,
+          "source_labels": [
+            "ดรามา",
+            "ดราม่า"
+          ]
+        },
+        {
+          "label_ko": "귀여움",
+          "count": 28,
+          "share": 0.28,
+          "source_labels": [
+            "น่ารัก"
+          ]
+        },
+        {
+          "label_ko": "공대",
+          "count": 28,
+          "share": 0.28,
+          "source_labels": [
+            "วิศวะ"
+          ]
+        },
+        {
+          "label_ko": "로맨스",
+          "count": 27,
+          "share": 0.27,
+          "source_labels": [
+            "โรมานซ์"
+          ]
+        },
+        {
+          "label_ko": "18+",
+          "count": 25,
+          "share": 0.25,
+          "source_labels": [
+            "18+"
+          ]
+        },
+        {
+          "label_ko": "짝사랑",
+          "count": 24,
+          "share": 0.24,
+          "source_labels": [
+            "แอบรัก"
+          ]
+        },
+        {
+          "label_ko": "필굿",
+          "count": 23,
+          "share": 0.23,
+          "source_labels": [
+            "Feel good"
+          ]
+        },
+        {
+          "label_ko": "사랑",
+          "count": 22,
+          "share": 0.22,
+          "source_labels": [
+            "ความรัก"
+          ]
+        }
+      ],
+      "available_metrics": [
+        "chapters",
+        "comments",
+        "rating_count",
+        "views"
+      ],
+      "synopsis_present_share": 0.98
+    }
+  ],
+  "signal_type_summaries": [
+    {
+      "platform": "Dek-D",
+      "signal_type": "popular",
+      "record_count": 20,
+      "top_label_groups": [
+        {
+          "label_ko": "과거/현재/미래",
+          "count": 12,
+          "share": 0.6,
+          "source_labels": [
+            "อดีต ปัจจุบัน อนาคต"
+          ]
+        },
+        {
+          "label_ko": "팬픽션",
+          "count": 4,
+          "share": 0.2,
+          "source_labels": [
+            "แฟนฟิคนิยาย การ์ตูน เกม"
+          ]
+        },
+        {
+          "label_ko": "จีนย้อนยุค",
+          "count": 3,
+          "share": 0.15,
+          "source_labels": [
+            "จีนย้อนยุค"
+          ]
+        },
+        {
+          "label_ko": "BL/보이즈러브",
+          "count": 1,
+          "share": 0.05,
+          "source_labels": [
+            "วาย"
+          ]
+        }
+      ],
+      "synopsis_present_share": 0.95
+    },
+    {
+      "platform": "Joylada",
+      "signal_type": "homepage_ranking",
+      "record_count": 100,
+      "top_label_groups": [],
+      "synopsis_present_share": 0.0
+    },
+    {
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "record_count": 100,
+      "top_label_groups": [
+        {
+          "label_ko": "로맨스 소설",
+          "count": 100,
+          "share": 1.0,
+          "source_labels": [
+            "Love Novel",
+            "นิยายรัก",
+            "นิยายโรแมนติก",
+            "นิยายโรมานซ์"
+          ]
+        },
+        {
+          "label_ko": "로맨틱",
+          "count": 52,
+          "share": 0.52,
+          "source_labels": [
+            "โรแมนติก"
+          ]
+        },
+        {
+          "label_ko": "청춘 로맨스",
+          "count": 38,
+          "share": 0.38,
+          "source_labels": [
+            "รักวัยรุ่น",
+            "นิยายรักวัยว้าวุ่น"
+          ]
+        },
+        {
+          "label_ko": "대학",
+          "count": 36,
+          "share": 0.36,
+          "source_labels": [
+            "มหาวิทยาลัย",
+            "มหาลัย"
+          ]
+        },
+        {
+          "label_ko": "드라마",
+          "count": 31,
+          "share": 0.31,
+          "source_labels": [
+            "ดรามา",
+            "ดราม่า"
+          ]
+        },
+        {
+          "label_ko": "귀여움",
+          "count": 28,
+          "share": 0.28,
+          "source_labels": [
+            "น่ารัก"
+          ]
+        },
+        {
+          "label_ko": "공대",
+          "count": 28,
+          "share": 0.28,
+          "source_labels": [
+            "วิศวะ"
+          ]
+        },
+        {
+          "label_ko": "로맨스",
+          "count": 27,
+          "share": 0.27,
+          "source_labels": [
+            "โรมานซ์"
+          ]
+        }
+      ],
+      "synopsis_present_share": 0.98
+    }
+  ],
+  "frequent_label_pairs": [
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "โรแมนติก",
+      "label_b_ko": "로맨틱",
+      "co_count": 52,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "มหาวิทยาลัย",
+      "label_b_ko": "대학",
+      "co_count": 35,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "น่ารัก",
+      "label_b_ko": "귀여움",
+      "co_count": 28,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "วิศวะ",
+      "label_b_ko": "공대",
+      "co_count": 28,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "รักวัยรุ่น",
+      "label_b_ko": "청춘 로맨스",
+      "co_count": 28,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "โรมานซ์",
+      "label_b_ko": "로맨스",
+      "co_count": 27,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "18+",
+      "label_a_ko": "18+",
+      "label_b_original": "Love Novel",
+      "label_b_ko": "로맨스 소설",
+      "co_count": 25,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "ดรามา",
+      "label_b_ko": "드라마",
+      "co_count": 24,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "แอบรัก",
+      "label_b_ko": "짝사랑",
+      "co_count": 24,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "มหาวิทยาลัย",
+      "label_a_ko": "대학",
+      "label_b_original": "วิศวะ",
+      "label_b_ko": "공대",
+      "co_count": 24,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Feel good",
+      "label_a_ko": "필굿",
+      "label_b_original": "Love Novel",
+      "label_b_ko": "로맨스 소설",
+      "co_count": 23,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "มหาวิทยาลัย",
+      "label_a_ko": "대학",
+      "label_b_original": "รักวัยรุ่น",
+      "label_b_ko": "청춘 로맨스",
+      "co_count": 23,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "นิยายรัก",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "โรแมนติก",
+      "label_b_ko": "로맨틱",
+      "co_count": 22,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "ความรัก",
+      "label_b_ko": "사랑",
+      "co_count": 22,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "ตลก",
+      "label_b_ko": "코미디",
+      "co_count": 21,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "นิยายรักวัยรุ่น",
+      "label_b_ko": "청춘 로맨스 소설",
+      "co_count": 21,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "นิยายรักจีนโบราณ",
+      "label_b_ko": "중국 고전풍 로맨스",
+      "co_count": 20,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "นิยายรักวัยว้าวุ่น",
+      "label_b_ko": "청춘 로맨스",
+      "co_count": 20,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "มหาวิทยาลัย",
+      "label_a_ko": "대학",
+      "label_b_original": "โรแมนติก",
+      "label_b_ko": "로맨틱",
+      "co_count": 19,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "น่ารัก",
+      "label_a_ko": "귀여움",
+      "label_b_original": "รักวัยรุ่น",
+      "label_b_ko": "청춘 로맨스",
+      "co_count": 18,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "น่ารัก",
+      "label_a_ko": "귀여움",
+      "label_b_original": "มหาวิทยาลัย",
+      "label_b_ko": "대학",
+      "co_count": 18,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "18+",
+      "label_a_ko": "18+",
+      "label_b_original": "นิยายรัก",
+      "label_b_ko": "로맨스 소설",
+      "co_count": 17,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "หวาน",
+      "label_b_ko": "달달함",
+      "co_count": 17,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "รักวัยรุ่น",
+      "label_a_ko": "청춘 로맨스",
+      "label_b_original": "วิศวะ",
+      "label_b_ko": "공대",
+      "co_count": 17,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Feel good",
+      "label_a_ko": "필굿",
+      "label_b_original": "โรแมนติก",
+      "label_b_ko": "로맨틱",
+      "co_count": 16,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "Love Novel",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "ทะลุมิติ",
+      "label_b_ko": "차원이동/빙의",
+      "co_count": 16,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "ดรามา",
+      "label_a_ko": "드라마",
+      "label_b_original": "โรแมนติก",
+      "label_b_ko": "로맨틱",
+      "co_count": 16,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "นิยายรัก",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "โรมานซ์",
+      "label_b_ko": "로맨스",
+      "co_count": 16,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "นิยายโรแมนติก",
+      "label_a_ko": "로맨스 소설",
+      "label_b_original": "โรแมนติก",
+      "label_b_ko": "로맨틱",
+      "co_count": 16,
+      "records_with_label_pairs": 100
+    },
+    {
+      "market": "Thailand",
+      "label_a_original": "น่ารัก",
+      "label_a_ko": "귀여움",
+      "label_b_original": "โรแมนติก",
+      "label_b_ko": "로맨틱",
+      "co_count": 16,
+      "records_with_label_pairs": 100
+    }
+  ],
+  "metric_coverage": [
+    {
+      "platform": "Joylada",
+      "record_count": 100,
+      "metric": "category_rank",
+      "available_count": 100,
+      "min": 1.0,
+      "median": 35.5,
+      "max": 85.0
+    },
+    {
+      "platform": "Joylada",
+      "record_count": 100,
+      "metric": "ranking_box",
+      "available_count": 100,
+      "min": 1.0,
+      "median": 1.0,
+      "max": 3.0
+    },
+    {
+      "platform": "Joylada",
+      "record_count": 100,
+      "metric": "reads_or_views",
+      "available_count": 100,
+      "min": 1315561.0,
+      "median": 2928743.0,
+      "max": 1477996480.0
+    },
+    {
+      "platform": "ReadAWrite",
+      "record_count": 100,
+      "metric": "chapters",
+      "available_count": 100,
+      "min": 1.0,
+      "median": 10.0,
+      "max": 54.0
+    },
+    {
+      "platform": "ReadAWrite",
+      "record_count": 100,
+      "metric": "comments",
+      "available_count": 100,
+      "min": 8.0,
+      "median": 215.0,
+      "max": 2737.0
+    },
+    {
+      "platform": "ReadAWrite",
+      "record_count": 100,
+      "metric": "rating_count",
+      "available_count": 100,
+      "min": 7.0,
+      "median": 135.5,
+      "max": 1144.0
+    },
+    {
+      "platform": "ReadAWrite",
+      "record_count": 100,
+      "metric": "views",
+      "available_count": 100,
+      "min": 317.0,
+      "median": 14265.5,
+      "max": 194606.0
+    }
+  ],
+  "synopsis_coverage": [
+    {
+      "platform": "Dek-D",
+      "record_count": 20,
+      "synopsis_present_count": 19,
+      "synopsis_present_share": 0.95,
+      "usage_note": "시놉 기반 내용 신호 보조 가능"
+    },
+    {
+      "platform": "Joylada",
+      "record_count": 100,
+      "synopsis_present_count": 0,
+      "synopsis_present_share": 0.0,
+      "usage_note": "시놉 기반 분석 제한"
+    },
+    {
+      "platform": "ReadAWrite",
+      "record_count": 100,
+      "synopsis_present_count": 98,
+      "synopsis_present_share": 0.98,
+      "usage_note": "시놉 기반 내용 신호 보조 가능"
+    }
+  ],
+  "sensitive_label_candidates": [
+    {
+      "record_id": "Thailand::Dek-D::popular::1::1",
+      "market": "Thailand",
+      "platform": "Dek-D",
+      "signal_type": "popular",
+      "rank": 1,
+      "matched_labels": [
+        {
+          "label_original": "วาย",
+          "label_ko": "BL/보이즈러브"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::4::4",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 4,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::6::6",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 6,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::11::11",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 11,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::21::21",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 21,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::24::24",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 24,
+      "matched_labels": [
+        {
+          "label_original": "18+.",
+          "label_ko": "18+."
+        },
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::27::27",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 27,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::29::29",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 29,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::32::32",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 32,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        },
+        {
+          "label_original": "18+￼",
+          "label_ko": "18+￼"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::33::33",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 33,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        },
+        {
+          "label_original": "นิยาย18+",
+          "label_ko": "นิยาย18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::35::35",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 35,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::39::39",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 39,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::40::40",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 40,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::42::42",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 42,
+      "matched_labels": [
+        {
+          "label_original": "วายจีนโบราณ",
+          "label_ko": "วายจีนโบราณ"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::43::43",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 43,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::53::53",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 53,
+      "matched_labels": [
+        {
+          "label_original": "18+￼",
+          "label_ko": "18+￼"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::64::64",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 64,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::67::67",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 67,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::71::71",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 71,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::72::72",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 72,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::80::80",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 80,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::83::83",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 83,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::86::86",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 86,
+      "matched_labels": [
+        {
+          "label_original": "คลั่งรัก18+",
+          "label_ko": "คลั่งรัก18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::87::87",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 87,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::92::92",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 92,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::93::93",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 93,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::95::95",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 95,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::97::97",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 97,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Thailand::ReadAWrite::popular::100::100",
+      "market": "Thailand",
+      "platform": "ReadAWrite",
+      "signal_type": "popular",
+      "rank": 100,
+      "matched_labels": [
+        {
+          "label_original": "18+",
+          "label_ko": "18+"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    }
+  ]
+}

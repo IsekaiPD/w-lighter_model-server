@@ -1,0 +1,2050 @@
+[
+  {
+    "market": "China",
+    "market_ko": "중국",
+    "platform_profiles": [
+      {
+        "platform": "JJWXC",
+        "signal_types": [
+          "monthly_rank"
+        ],
+        "record_count": 100,
+        "top_labels": [
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "사랑/로맨스",
+            "category": "genre",
+            "count": 62,
+            "share": 0.62,
+            "raw_examples": [
+              "爱情"
+            ]
+          },
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "로맨스",
+            "category": "genre",
+            "count": 56,
+            "share": 0.56,
+            "raw_examples": [
+              "言情"
+            ]
+          },
+          {
+            "canonical_label_id": "label_72e830718e",
+            "label_ko": "여성 주인공 시점",
+            "category": "character",
+            "count": 49,
+            "share": 0.49,
+            "raw_examples": [
+              "女主视角"
+            ]
+          },
+          {
+            "canonical_label_id": "label_a4f0f30daa",
+            "label_ko": "근현대",
+            "category": "setting",
+            "count": 46,
+            "share": 0.46,
+            "raw_examples": [
+              "近代现代"
+            ]
+          },
+          {
+            "canonical_label_id": "label_1a56156702",
+            "label_ko": "달달한 이야기",
+            "category": "tone",
+            "count": 40,
+            "share": 0.4,
+            "raw_examples": [
+              "甜文"
+            ]
+          },
+          {
+            "canonical_label_id": "label_680f55e3cf",
+            "label_ko": "BL/순애",
+            "category": "content_flag",
+            "count": 37,
+            "share": 0.37,
+            "raw_examples": [
+              "纯爱"
+            ]
+          },
+          {
+            "canonical_label_id": "label_eb0fe40dbd",
+            "label_ko": "수 시점/BL",
+            "category": "content_flag",
+            "count": 36,
+            "share": 0.36,
+            "raw_examples": [
+              "主受视角"
+            ]
+          },
+          {
+            "canonical_label_id": "label_d104ad80e1",
+            "label_ko": "가상 역사",
+            "category": "setting",
+            "count": 34,
+            "share": 0.34,
+            "raw_examples": [
+              "架空历史"
+            ]
+          },
+          {
+            "canonical_label_id": "label_fbbbdde909",
+            "label_ko": "일편단심",
+            "category": "other",
+            "count": 29,
+            "share": 0.29,
+            "raw_examples": [
+              "情有独钟"
+            ]
+          },
+          {
+            "canonical_label_id": "revenge_payoff",
+            "label_ko": "사이다/쾌감형",
+            "category": "plot_device",
+            "count": 27,
+            "share": 0.27,
+            "raw_examples": [
+              "爽文"
+            ]
+          },
+          {
+            "canonical_label_id": "label_1467b6d280",
+            "label_ko": "가벼운 톤",
+            "category": "tone",
+            "count": 21,
+            "share": 0.21,
+            "raw_examples": [
+              "轻松"
+            ]
+          },
+          {
+            "canonical_label_id": "label_cdaabb79c2",
+            "label_ko": "엘리트/천재형 인물",
+            "category": "character",
+            "count": 18,
+            "share": 0.18,
+            "raw_examples": [
+              "天之骄子"
+            ]
+          }
+        ],
+        "distinctive_labels": [
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "사랑/로맨스",
+            "category": "genre",
+            "platform_share": 0.62,
+            "market_share": 0.4559,
+            "lift": 1.36
+          },
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "로맨스",
+            "category": "genre",
+            "platform_share": 0.56,
+            "market_share": 0.4118,
+            "lift": 1.36
+          },
+          {
+            "canonical_label_id": "label_72e830718e",
+            "label_ko": "여성 주인공 시점",
+            "category": "character",
+            "platform_share": 0.49,
+            "market_share": 0.3603,
+            "lift": 1.36
+          },
+          {
+            "canonical_label_id": "label_a4f0f30daa",
+            "label_ko": "근현대",
+            "category": "setting",
+            "platform_share": 0.46,
+            "market_share": 0.3382,
+            "lift": 1.36
+          },
+          {
+            "canonical_label_id": "label_1a56156702",
+            "label_ko": "달달한 이야기",
+            "category": "tone",
+            "platform_share": 0.4,
+            "market_share": 0.2941,
+            "lift": 1.36
+          },
+          {
+            "canonical_label_id": "label_680f55e3cf",
+            "label_ko": "BL/순애",
+            "category": "content_flag",
+            "platform_share": 0.37,
+            "market_share": 0.2721,
+            "lift": 1.36
+          },
+          {
+            "canonical_label_id": "label_eb0fe40dbd",
+            "label_ko": "수 시점/BL",
+            "category": "content_flag",
+            "platform_share": 0.36,
+            "market_share": 0.2647,
+            "lift": 1.36
+          },
+          {
+            "canonical_label_id": "label_d104ad80e1",
+            "label_ko": "가상 역사",
+            "category": "setting",
+            "platform_share": 0.34,
+            "market_share": 0.25,
+            "lift": 1.36
+          }
+        ],
+        "available_metrics": [
+          "comments",
+          "favorites",
+          "words"
+        ],
+        "synopsis_present_share": 1.0,
+        "summary_sentence": "JJWXC 순위권 작품에서는 사랑/로맨스, 로맨스, 여성 주인공 시점, 근현대 계열 태그가 상대적으로 눈에 띕니다."
+      },
+      {
+        "platform": "Zongheng",
+        "signal_types": [
+          "monthly_ticket"
+        ],
+        "record_count": 36,
+        "top_labels": [
+          {
+            "canonical_label_id": "label_ce282b93b5",
+            "label_ko": "열혈",
+            "category": "tone",
+            "count": 20,
+            "share": 0.5556,
+            "raw_examples": [
+              "热血"
+            ]
+          },
+          {
+            "canonical_label_id": "revenge_payoff",
+            "label_ko": "사이다/쾌감형",
+            "category": "plot_device",
+            "count": 12,
+            "share": 0.3333,
+            "raw_examples": [
+              "爽文"
+            ]
+          },
+          {
+            "canonical_label_id": "label_d4768a5f8b",
+            "label_ko": "현환/판타지",
+            "category": "genre",
+            "count": 11,
+            "share": 0.3056,
+            "raw_examples": [
+              "玄幻奇幻"
+            ]
+          },
+          {
+            "canonical_label_id": "label_b758701b48",
+            "label_ko": "동양 판타지",
+            "category": "genre",
+            "count": 10,
+            "share": 0.2778,
+            "raw_examples": [
+              "东方玄幻"
+            ]
+          },
+          {
+            "canonical_label_id": "label_d991a5dc67",
+            "label_ko": "검도/검술",
+            "category": "other",
+            "count": 5,
+            "share": 0.1389,
+            "raw_examples": [
+              "剑道"
+            ]
+          },
+          {
+            "canonical_label_id": "label_170e6e1324",
+            "label_ko": "무협/선협",
+            "category": "genre",
+            "count": 4,
+            "share": 0.1111,
+            "raw_examples": [
+              "武侠仙侠"
+            ]
+          },
+          {
+            "canonical_label_id": "label_4bf4d1181b",
+            "label_ko": "소년",
+            "category": "other",
+            "count": 3,
+            "share": 0.0833,
+            "raw_examples": [
+              "少年"
+            ]
+          },
+          {
+            "canonical_label_id": "label_494c0d4881",
+            "label_ko": "家族崛起",
+            "category": "other",
+            "count": 2,
+            "share": 0.0556,
+            "raw_examples": [
+              "家族崛起"
+            ]
+          },
+          {
+            "canonical_label_id": "label_68114f8199",
+            "label_ko": "전통 판타지",
+            "category": "genre",
+            "count": 2,
+            "share": 0.0556,
+            "raw_examples": [
+              "传统玄幻"
+            ]
+          },
+          {
+            "canonical_label_id": "label_ba33946376",
+            "label_ko": "现代言情",
+            "category": "other",
+            "count": 1,
+            "share": 0.0278,
+            "raw_examples": [
+              "现代言情"
+            ]
+          },
+          {
+            "canonical_label_id": "label_57a38b2e37",
+            "label_ko": "古代言情",
+            "category": "other",
+            "count": 1,
+            "share": 0.0278,
+            "raw_examples": [
+              "古代言情"
+            ]
+          }
+        ],
+        "distinctive_labels": [
+          {
+            "canonical_label_id": "label_ce282b93b5",
+            "label_ko": "열혈",
+            "category": "tone",
+            "platform_share": 0.5556,
+            "market_share": 0.1471,
+            "lift": 3.78
+          },
+          {
+            "canonical_label_id": "label_d4768a5f8b",
+            "label_ko": "현환/판타지",
+            "category": "genre",
+            "platform_share": 0.3056,
+            "market_share": 0.0809,
+            "lift": 3.78
+          },
+          {
+            "canonical_label_id": "label_170e6e1324",
+            "label_ko": "무협/선협",
+            "category": "genre",
+            "platform_share": 0.1111,
+            "market_share": 0.0294,
+            "lift": 3.78
+          },
+          {
+            "canonical_label_id": "label_d991a5dc67",
+            "label_ko": "검도/검술",
+            "category": "other",
+            "platform_share": 0.1389,
+            "market_share": 0.0368,
+            "lift": 3.77
+          },
+          {
+            "canonical_label_id": "label_4bf4d1181b",
+            "label_ko": "소년",
+            "category": "other",
+            "platform_share": 0.0833,
+            "market_share": 0.0221,
+            "lift": 3.77
+          },
+          {
+            "canonical_label_id": "label_b758701b48",
+            "label_ko": "동양 판타지",
+            "category": "genre",
+            "platform_share": 0.2778,
+            "market_share": 0.0809,
+            "lift": 3.43
+          }
+        ],
+        "available_metrics": [
+          "total_clicks_wan",
+          "total_recommend_wan",
+          "weekly_recommend",
+          "words_wan"
+        ],
+        "synopsis_present_share": 0.0,
+        "summary_sentence": "Zongheng 순위권 작품에서는 열혈, 사이다/쾌감형, 현환/판타지, 동양 판타지 계열 태그가 상대적으로 눈에 띕니다."
+      }
+    ]
+  },
+  {
+    "market": "Japan",
+    "market_ko": "일본",
+    "platform_profiles": [
+      {
+        "platform": "Alphapolis",
+        "signal_types": [
+          "hot_24h"
+        ],
+        "record_count": 40,
+        "top_labels": [
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "연애/로맨스",
+            "category": "genre",
+            "count": 35,
+            "share": 0.875,
+            "raw_examples": [
+              "恋愛"
+            ]
+          },
+          {
+            "canonical_label_id": "happy_ending",
+            "label_ko": "해피엔딩",
+            "category": "ending_signal",
+            "count": 20,
+            "share": 0.5,
+            "raw_examples": [
+              "ハッピーエンド"
+            ]
+          },
+          {
+            "canonical_label_id": "revenge_payoff",
+            "label_ko": "사이다/복수",
+            "category": "plot_device",
+            "count": 16,
+            "share": 0.4,
+            "raw_examples": [
+              "ざまぁ"
+            ]
+          },
+          {
+            "canonical_label_id": "isekai",
+            "label_ko": "이세계",
+            "category": "plot_device",
+            "count": 16,
+            "share": 0.4,
+            "raw_examples": [
+              "異世界"
+            ]
+          },
+          {
+            "canonical_label_id": "r15",
+            "label_ko": "R15",
+            "category": "content_flag",
+            "count": 11,
+            "share": 0.275,
+            "raw_examples": [
+              "R15"
+            ]
+          },
+          {
+            "canonical_label_id": "engagement_break",
+            "label_ko": "혼약 파기",
+            "category": "plot_device",
+            "count": 11,
+            "share": 0.275,
+            "raw_examples": [
+              "婚約破棄"
+            ]
+          },
+          {
+            "canonical_label_id": "label_2770dadc72",
+            "label_ko": "애절함",
+            "category": "tone",
+            "count": 7,
+            "share": 0.175,
+            "raw_examples": [
+              "切ない"
+            ]
+          },
+          {
+            "canonical_label_id": "label_b346eb907e",
+            "label_ko": "집착적 사랑/溺愛",
+            "category": "tone",
+            "count": 6,
+            "share": 0.15,
+            "raw_examples": [
+              "溺愛"
+            ]
+          },
+          {
+            "canonical_label_id": "label_26bfd8f7bd",
+            "label_ko": "異世界恋愛",
+            "category": "other",
+            "count": 5,
+            "share": 0.125,
+            "raw_examples": [
+              "異世界恋愛"
+            ]
+          },
+          {
+            "canonical_label_id": "label_dff65e09c2",
+            "label_ko": "여성 주인공",
+            "category": "character",
+            "count": 5,
+            "share": 0.125,
+            "raw_examples": [
+              "女主人公"
+            ]
+          },
+          {
+            "canonical_label_id": "label_5d782cef50",
+            "label_ko": "판타지",
+            "category": "genre",
+            "count": 5,
+            "share": 0.125,
+            "raw_examples": [
+              "ファンタジー"
+            ]
+          },
+          {
+            "canonical_label_id": "label_bf66672655",
+            "label_ko": "離縁",
+            "category": "other",
+            "count": 4,
+            "share": 0.1,
+            "raw_examples": [
+              "離縁"
+            ]
+          }
+        ],
+        "distinctive_labels": [
+          {
+            "canonical_label_id": "label_2770dadc72",
+            "label_ko": "애절함",
+            "category": "tone",
+            "platform_share": 0.175,
+            "market_share": 0.0235,
+            "lift": 7.45
+          },
+          {
+            "canonical_label_id": "label_26bfd8f7bd",
+            "label_ko": "異世界恋愛",
+            "category": "other",
+            "platform_share": 0.125,
+            "market_share": 0.0206,
+            "lift": 6.07
+          },
+          {
+            "canonical_label_id": "label_bf66672655",
+            "label_ko": "離縁",
+            "category": "other",
+            "platform_share": 0.1,
+            "market_share": 0.0176,
+            "lift": 5.68
+          },
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "연애/로맨스",
+            "category": "genre",
+            "platform_share": 0.875,
+            "market_share": 0.1824,
+            "lift": 4.8
+          },
+          {
+            "canonical_label_id": "isekai",
+            "label_ko": "이세계",
+            "category": "plot_device",
+            "platform_share": 0.4,
+            "market_share": 0.1029,
+            "lift": 3.89
+          },
+          {
+            "canonical_label_id": "engagement_break",
+            "label_ko": "혼약 파기",
+            "category": "plot_device",
+            "platform_share": 0.275,
+            "market_share": 0.0941,
+            "lift": 2.92
+          },
+          {
+            "canonical_label_id": "happy_ending",
+            "label_ko": "해피엔딩",
+            "category": "ending_signal",
+            "platform_share": 0.5,
+            "market_share": 0.2412,
+            "lift": 2.07
+          },
+          {
+            "canonical_label_id": "label_b346eb907e",
+            "label_ko": "집착적 사랑/溺愛",
+            "category": "tone",
+            "platform_share": 0.15,
+            "market_share": 0.0735,
+            "lift": 2.04
+          }
+        ],
+        "available_metrics": [
+          "characters",
+          "comments",
+          "platform_rank",
+          "points_24h"
+        ],
+        "synopsis_present_share": 1.0,
+        "summary_sentence": "Alphapolis 순위권 작품에서는 연애/로맨스, 해피엔딩, 사이다/복수, 이세계 계열 태그가 상대적으로 눈에 띕니다."
+      },
+      {
+        "platform": "Kakuyomu",
+        "signal_types": [
+          "weekly_ranking"
+        ],
+        "record_count": 100,
+        "top_labels": [
+          {
+            "canonical_label_id": "label_79b95a647e",
+            "label_ko": "이세계 판타지",
+            "category": "genre",
+            "count": 54,
+            "share": 0.54,
+            "raw_examples": [
+              "異世界ファンタジー"
+            ]
+          },
+          {
+            "canonical_label_id": "revenge_payoff",
+            "label_ko": "사이다/복수",
+            "category": "plot_device",
+            "count": 27,
+            "share": 0.27,
+            "raw_examples": [
+              "ざまぁ",
+              "ざまあ"
+            ]
+          },
+          {
+            "canonical_label_id": "label_89ea0e9e40",
+            "label_ko": "러브 코미디",
+            "category": "genre",
+            "count": 24,
+            "share": 0.24,
+            "raw_examples": [
+              "ラブコメ"
+            ]
+          },
+          {
+            "canonical_label_id": "label_03e2087580",
+            "label_ko": "현대 판타지",
+            "category": "genre",
+            "count": 24,
+            "share": 0.24,
+            "raw_examples": [
+              "現代ファンタジー"
+            ]
+          },
+          {
+            "canonical_label_id": "label_33ddb39fae",
+            "label_ko": "얀데레",
+            "category": "other",
+            "count": 20,
+            "share": 0.2,
+            "raw_examples": [
+              "ヤンデレ"
+            ]
+          },
+          {
+            "canonical_label_id": "label_e576b06b0a",
+            "label_ko": "최강 주인공",
+            "category": "character",
+            "count": 20,
+            "share": 0.2,
+            "raw_examples": [
+              "主人公最強"
+            ]
+          },
+          {
+            "canonical_label_id": "isekai_reincarnation",
+            "label_ko": "이세계 전생",
+            "category": "plot_device",
+            "count": 18,
+            "share": 0.18,
+            "raw_examples": [
+              "異世界転生"
+            ]
+          },
+          {
+            "canonical_label_id": "label_ed9ee6cb39",
+            "label_ko": "신분상승/성공담",
+            "category": "other",
+            "count": 18,
+            "share": 0.18,
+            "raw_examples": [
+              "成り上がり"
+            ]
+          },
+          {
+            "canonical_label_id": "label_a2e3851553",
+            "label_ko": "남성 주인공",
+            "category": "character",
+            "count": 16,
+            "share": 0.16,
+            "raw_examples": [
+              "男主人公"
+            ]
+          },
+          {
+            "canonical_label_id": "label_cac867529b",
+            "label_ko": "고통/피폐 전개",
+            "category": "content_flag",
+            "count": 14,
+            "share": 0.14,
+            "raw_examples": [
+              "曇らせ"
+            ]
+          },
+          {
+            "canonical_label_id": "label_2d89825625",
+            "label_ko": "하렘",
+            "category": "content_flag",
+            "count": 12,
+            "share": 0.12,
+            "raw_examples": [
+              "ハーレム"
+            ]
+          },
+          {
+            "canonical_label_id": "magic",
+            "label_ko": "마법",
+            "category": "other",
+            "count": 12,
+            "share": 0.12,
+            "raw_examples": [
+              "魔法"
+            ]
+          }
+        ],
+        "distinctive_labels": [
+          {
+            "canonical_label_id": "label_79b95a647e",
+            "label_ko": "이세계 판타지",
+            "category": "genre",
+            "platform_share": 0.54,
+            "market_share": 0.1588,
+            "lift": 3.4
+          },
+          {
+            "canonical_label_id": "label_03e2087580",
+            "label_ko": "현대 판타지",
+            "category": "genre",
+            "platform_share": 0.24,
+            "market_share": 0.0706,
+            "lift": 3.4
+          },
+          {
+            "canonical_label_id": "label_cac867529b",
+            "label_ko": "고통/피폐 전개",
+            "category": "content_flag",
+            "platform_share": 0.14,
+            "market_share": 0.0412,
+            "lift": 3.4
+          },
+          {
+            "canonical_label_id": "label_33ddb39fae",
+            "label_ko": "얀데레",
+            "category": "other",
+            "platform_share": 0.2,
+            "market_share": 0.0647,
+            "lift": 3.09
+          },
+          {
+            "canonical_label_id": "label_89ea0e9e40",
+            "label_ko": "러브 코미디",
+            "category": "genre",
+            "platform_share": 0.24,
+            "market_share": 0.1059,
+            "lift": 2.27
+          },
+          {
+            "canonical_label_id": "label_e576b06b0a",
+            "label_ko": "최강 주인공",
+            "category": "character",
+            "platform_share": 0.2,
+            "market_share": 0.0912,
+            "lift": 2.19
+          },
+          {
+            "canonical_label_id": "label_ed9ee6cb39",
+            "label_ko": "신분상승/성공담",
+            "category": "other",
+            "platform_share": 0.18,
+            "market_share": 0.1029,
+            "lift": 1.75
+          },
+          {
+            "canonical_label_id": "label_2d89825625",
+            "label_ko": "하렘",
+            "category": "content_flag",
+            "platform_share": 0.12,
+            "market_share": 0.0706,
+            "lift": 1.7
+          }
+        ],
+        "available_metrics": [
+          "platform_rank",
+          "stars"
+        ],
+        "synopsis_present_share": 1.0,
+        "summary_sentence": "Kakuyomu 순위권 작품에서는 이세계 판타지, 사이다/복수, 러브 코미디, 현대 판타지 계열 태그가 상대적으로 눈에 띕니다."
+      },
+      {
+        "platform": "Syosetu",
+        "signal_types": [
+          "monthly_ranking",
+          "weekly_ranking"
+        ],
+        "record_count": 200,
+        "top_labels": [
+          {
+            "canonical_label_id": "r15",
+            "label_ko": "R15",
+            "category": "content_flag",
+            "count": 93,
+            "share": 0.465,
+            "raw_examples": [
+              "R15"
+            ]
+          },
+          {
+            "canonical_label_id": "cruel_depiction",
+            "label_ko": "잔혹 묘사 있음",
+            "category": "content_flag",
+            "count": 87,
+            "share": 0.435,
+            "raw_examples": [
+              "残酷な描写あり"
+            ]
+          },
+          {
+            "canonical_label_id": "isekai_reincarnation",
+            "label_ko": "이세계 전생",
+            "category": "plot_device",
+            "count": 79,
+            "share": 0.395,
+            "raw_examples": [
+              "異世界転生"
+            ]
+          },
+          {
+            "canonical_label_id": "label_057cf04487",
+            "label_ko": "하이 판타지",
+            "category": "genre",
+            "count": 74,
+            "share": 0.37,
+            "raw_examples": [
+              "ハイファンタジー〔ファンタジー〕"
+            ]
+          },
+          {
+            "canonical_label_id": "label_a2e3851553",
+            "label_ko": "남성 주인공",
+            "category": "character",
+            "count": 74,
+            "share": 0.37,
+            "raw_examples": [
+              "男主人公"
+            ]
+          },
+          {
+            "canonical_label_id": "label_c476a4937e",
+            "label_ko": "이세계 로맨스",
+            "category": "genre",
+            "count": 63,
+            "share": 0.315,
+            "raw_examples": [
+              "異世界〔恋愛〕"
+            ]
+          },
+          {
+            "canonical_label_id": "label_dff65e09c2",
+            "label_ko": "여성 주인공",
+            "category": "character",
+            "count": 63,
+            "share": 0.315,
+            "raw_examples": [
+              "女主人公"
+            ]
+          },
+          {
+            "canonical_label_id": "happy_ending",
+            "label_ko": "해피엔딩",
+            "category": "ending_signal",
+            "count": 55,
+            "share": 0.275,
+            "raw_examples": [
+              "ハッピーエンド"
+            ]
+          },
+          {
+            "canonical_label_id": "magic",
+            "label_ko": "마법",
+            "category": "other",
+            "count": 53,
+            "share": 0.265,
+            "raw_examples": [
+              "魔法"
+            ]
+          },
+          {
+            "canonical_label_id": "label_981d956c28",
+            "label_ko": "훈훈함/잔잔함",
+            "category": "tone",
+            "count": 43,
+            "share": 0.215,
+            "raw_examples": [
+              "ほのぼの"
+            ]
+          },
+          {
+            "canonical_label_id": "label_e834b42cbb",
+            "label_ko": "서양풍",
+            "category": "setting",
+            "count": 43,
+            "share": 0.215,
+            "raw_examples": [
+              "西洋"
+            ]
+          },
+          {
+            "canonical_label_id": "revenge_payoff",
+            "label_ko": "사이다/복수",
+            "category": "plot_device",
+            "count": 40,
+            "share": 0.2,
+            "raw_examples": [
+              "ざまぁ",
+              "ざまあ"
+            ]
+          }
+        ],
+        "distinctive_labels": [
+          {
+            "canonical_label_id": "cruel_depiction",
+            "label_ko": "잔혹 묘사 있음",
+            "category": "content_flag",
+            "platform_share": 0.435,
+            "market_share": 0.2559,
+            "lift": 1.7
+          },
+          {
+            "canonical_label_id": "label_057cf04487",
+            "label_ko": "하이 판타지",
+            "category": "genre",
+            "platform_share": 0.37,
+            "market_share": 0.2176,
+            "lift": 1.7
+          },
+          {
+            "canonical_label_id": "label_c476a4937e",
+            "label_ko": "이세계 로맨스",
+            "category": "genre",
+            "platform_share": 0.315,
+            "market_share": 0.1853,
+            "lift": 1.7
+          },
+          {
+            "canonical_label_id": "label_e834b42cbb",
+            "label_ko": "서양풍",
+            "category": "setting",
+            "platform_share": 0.215,
+            "market_share": 0.1265,
+            "lift": 1.7
+          },
+          {
+            "canonical_label_id": "label_981d956c28",
+            "label_ko": "훈훈함/잔잔함",
+            "category": "tone",
+            "platform_share": 0.215,
+            "market_share": 0.1382,
+            "lift": 1.56
+          },
+          {
+            "canonical_label_id": "r15",
+            "label_ko": "R15",
+            "category": "content_flag",
+            "platform_share": 0.465,
+            "market_share": 0.3059,
+            "lift": 1.52
+          },
+          {
+            "canonical_label_id": "label_dff65e09c2",
+            "label_ko": "여성 주인공",
+            "category": "character",
+            "platform_share": 0.315,
+            "market_share": 0.2118,
+            "lift": 1.49
+          },
+          {
+            "canonical_label_id": "label_a2e3851553",
+            "label_ko": "남성 주인공",
+            "category": "character",
+            "platform_share": 0.37,
+            "market_share": 0.2647,
+            "lift": 1.4
+          }
+        ],
+        "available_metrics": [
+          "characters",
+          "episodes",
+          "monthly_points",
+          "weekly_points"
+        ],
+        "synopsis_present_share": 1.0,
+        "summary_sentence": "Syosetu 순위권 작품에서는 R15, 잔혹 묘사 있음, 이세계 전생, 하이 판타지 계열 태그가 상대적으로 눈에 띕니다."
+      }
+    ]
+  },
+  {
+    "market": "Thailand",
+    "market_ko": "태국",
+    "platform_profiles": [
+      {
+        "platform": "Dek-D",
+        "signal_types": [
+          "popular"
+        ],
+        "record_count": 20,
+        "top_labels": [
+          {
+            "canonical_label_id": "label_17dd13b09a",
+            "label_ko": "과거/현재/미래",
+            "category": "other",
+            "count": 12,
+            "share": 0.6,
+            "raw_examples": [
+              "อดีต ปัจจุบัน อนาคต"
+            ]
+          },
+          {
+            "canonical_label_id": "label_c711b2d9b8",
+            "label_ko": "팬픽션",
+            "category": "other",
+            "count": 4,
+            "share": 0.2,
+            "raw_examples": [
+              "แฟนฟิคนิยาย การ์ตูน เกม"
+            ]
+          },
+          {
+            "canonical_label_id": "label_0ab9ae7c3a",
+            "label_ko": "จีนย้อนยุค",
+            "category": "other",
+            "count": 3,
+            "share": 0.15,
+            "raw_examples": [
+              "จีนย้อนยุค"
+            ]
+          },
+          {
+            "canonical_label_id": "boys_love",
+            "label_ko": "BL/보이즈러브",
+            "category": "content_flag",
+            "count": 1,
+            "share": 0.05,
+            "raw_examples": [
+              "วาย"
+            ]
+          }
+        ],
+        "distinctive_labels": [
+          {
+            "canonical_label_id": "label_0ab9ae7c3a",
+            "label_ko": "จีนย้อนยุค",
+            "category": "other",
+            "platform_share": 0.15,
+            "market_share": 0.0136,
+            "lift": 11.03
+          },
+          {
+            "canonical_label_id": "label_17dd13b09a",
+            "label_ko": "과거/현재/미래",
+            "category": "other",
+            "platform_share": 0.6,
+            "market_share": 0.0545,
+            "lift": 11.01
+          },
+          {
+            "canonical_label_id": "label_c711b2d9b8",
+            "label_ko": "팬픽션",
+            "category": "other",
+            "platform_share": 0.2,
+            "market_share": 0.0182,
+            "lift": 10.99
+          }
+        ],
+        "available_metrics": [],
+        "synopsis_present_share": 0.95,
+        "summary_sentence": "Dek-D 순위권 작품에서는 과거/현재/미래, 팬픽션, จีนย้อนยุค, BL/보이즈러브 계열 태그가 상대적으로 눈에 띕니다."
+      },
+      {
+        "platform": "Joylada",
+        "signal_types": [
+          "homepage_ranking"
+        ],
+        "record_count": 100,
+        "top_labels": [],
+        "distinctive_labels": [],
+        "available_metrics": [
+          "category_rank",
+          "ranking_box",
+          "reads_or_views"
+        ],
+        "synopsis_present_share": 0.0,
+        "summary_sentence": "Joylada 순위권 작품에서는 반복해서 보인 작품 태그 없음 계열 태그가 상대적으로 눈에 띕니다."
+      },
+      {
+        "platform": "ReadAWrite",
+        "signal_types": [
+          "popular"
+        ],
+        "record_count": 100,
+        "top_labels": [
+          {
+            "canonical_label_id": "label_e5b27f1e67",
+            "label_ko": "로맨스 소설",
+            "category": "genre",
+            "count": 100,
+            "share": 1.0,
+            "raw_examples": [
+              "Love Novel",
+              "นิยายรัก",
+              "นิยายโรแมนติก",
+              "นิยายโรมานซ์"
+            ]
+          },
+          {
+            "canonical_label_id": "label_244eed49cb",
+            "label_ko": "로맨틱",
+            "category": "other",
+            "count": 52,
+            "share": 0.52,
+            "raw_examples": [
+              "โรแมนติก"
+            ]
+          },
+          {
+            "canonical_label_id": "label_18f508a9ef",
+            "label_ko": "청춘 로맨스",
+            "category": "genre",
+            "count": 38,
+            "share": 0.38,
+            "raw_examples": [
+              "รักวัยรุ่น",
+              "นิยายรักวัยว้าวุ่น"
+            ]
+          },
+          {
+            "canonical_label_id": "label_22aa6019b9",
+            "label_ko": "대학",
+            "category": "setting",
+            "count": 36,
+            "share": 0.36,
+            "raw_examples": [
+              "มหาวิทยาลัย",
+              "มหาลัย"
+            ]
+          },
+          {
+            "canonical_label_id": "label_a21c253f01",
+            "label_ko": "드라마",
+            "category": "genre",
+            "count": 31,
+            "share": 0.31,
+            "raw_examples": [
+              "ดรามา",
+              "ดราม่า"
+            ]
+          },
+          {
+            "canonical_label_id": "label_6a24fd08b0",
+            "label_ko": "귀여움",
+            "category": "other",
+            "count": 28,
+            "share": 0.28,
+            "raw_examples": [
+              "น่ารัก"
+            ]
+          },
+          {
+            "canonical_label_id": "label_c075d85c00",
+            "label_ko": "공대",
+            "category": "other",
+            "count": 28,
+            "share": 0.28,
+            "raw_examples": [
+              "วิศวะ"
+            ]
+          },
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "로맨스",
+            "category": "genre",
+            "count": 27,
+            "share": 0.27,
+            "raw_examples": [
+              "โรมานซ์"
+            ]
+          },
+          {
+            "canonical_label_id": "adult_18_plus",
+            "label_ko": "18+",
+            "category": "content_flag",
+            "count": 25,
+            "share": 0.25,
+            "raw_examples": [
+              "18+"
+            ]
+          },
+          {
+            "canonical_label_id": "label_c060ad491c",
+            "label_ko": "짝사랑",
+            "category": "other",
+            "count": 24,
+            "share": 0.24,
+            "raw_examples": [
+              "แอบรัก"
+            ]
+          },
+          {
+            "canonical_label_id": "label_b57b39f988",
+            "label_ko": "필굿",
+            "category": "tone",
+            "count": 23,
+            "share": 0.23,
+            "raw_examples": [
+              "Feel good"
+            ]
+          },
+          {
+            "canonical_label_id": "label_3b8613e392",
+            "label_ko": "사랑",
+            "category": "other",
+            "count": 22,
+            "share": 0.22,
+            "raw_examples": [
+              "ความรัก"
+            ]
+          }
+        ],
+        "distinctive_labels": [
+          {
+            "canonical_label_id": "label_e5b27f1e67",
+            "label_ko": "로맨스 소설",
+            "category": "genre",
+            "platform_share": 1.0,
+            "market_share": 0.4545,
+            "lift": 2.2
+          },
+          {
+            "canonical_label_id": "label_244eed49cb",
+            "label_ko": "로맨틱",
+            "category": "other",
+            "platform_share": 0.52,
+            "market_share": 0.2364,
+            "lift": 2.2
+          },
+          {
+            "canonical_label_id": "label_18f508a9ef",
+            "label_ko": "청춘 로맨스",
+            "category": "genre",
+            "platform_share": 0.38,
+            "market_share": 0.1727,
+            "lift": 2.2
+          },
+          {
+            "canonical_label_id": "label_22aa6019b9",
+            "label_ko": "대학",
+            "category": "setting",
+            "platform_share": 0.36,
+            "market_share": 0.1636,
+            "lift": 2.2
+          },
+          {
+            "canonical_label_id": "label_a21c253f01",
+            "label_ko": "드라마",
+            "category": "genre",
+            "platform_share": 0.31,
+            "market_share": 0.1409,
+            "lift": 2.2
+          },
+          {
+            "canonical_label_id": "label_c075d85c00",
+            "label_ko": "공대",
+            "category": "other",
+            "platform_share": 0.28,
+            "market_share": 0.1273,
+            "lift": 2.2
+          },
+          {
+            "canonical_label_id": "label_6a24fd08b0",
+            "label_ko": "귀여움",
+            "category": "other",
+            "platform_share": 0.28,
+            "market_share": 0.1273,
+            "lift": 2.2
+          },
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "로맨스",
+            "category": "genre",
+            "platform_share": 0.27,
+            "market_share": 0.1227,
+            "lift": 2.2
+          }
+        ],
+        "available_metrics": [
+          "chapters",
+          "comments",
+          "rating_count",
+          "views"
+        ],
+        "synopsis_present_share": 0.98,
+        "summary_sentence": "ReadAWrite 순위권 작품에서는 로맨스 소설, 로맨틱, 청춘 로맨스, 대학 계열 태그가 상대적으로 눈에 띕니다."
+      }
+    ]
+  },
+  {
+    "market": "US",
+    "market_ko": "영어권/US",
+    "platform_profiles": [
+      {
+        "platform": "Royal Road",
+        "signal_types": [
+          "weekly_popular"
+        ],
+        "record_count": 100,
+        "top_labels": [
+          {
+            "canonical_label_id": "label_5d782cef50",
+            "label_ko": "판타지",
+            "category": "genre",
+            "count": 88,
+            "share": 0.88,
+            "raw_examples": [
+              "Fantasy"
+            ]
+          },
+          {
+            "canonical_label_id": "label_c939003aa1",
+            "label_ko": "모험",
+            "category": "other",
+            "count": 87,
+            "share": 0.87,
+            "raw_examples": [
+              "Adventure"
+            ]
+          },
+          {
+            "canonical_label_id": "label_39b9ab87fa",
+            "label_ko": "액션",
+            "category": "genre",
+            "count": 77,
+            "share": 0.77,
+            "raw_examples": [
+              "Action"
+            ]
+          },
+          {
+            "canonical_label_id": "label_c324d67463",
+            "label_ko": "성장형 판타지",
+            "category": "genre",
+            "count": 73,
+            "share": 0.73,
+            "raw_examples": [
+              "Progression"
+            ]
+          },
+          {
+            "canonical_label_id": "magic",
+            "label_ko": "마법",
+            "category": "other",
+            "count": 63,
+            "share": 0.63,
+            "raw_examples": [
+              "Magic"
+            ]
+          },
+          {
+            "canonical_label_id": "label_a551ab0691",
+            "label_ko": "LitRPG",
+            "category": "genre",
+            "count": 62,
+            "share": 0.62,
+            "raw_examples": [
+              "LitRPG"
+            ]
+          },
+          {
+            "canonical_label_id": "label_a2e3851553",
+            "label_ko": "남성 주인공",
+            "category": "character",
+            "count": 62,
+            "share": 0.62,
+            "raw_examples": [
+              "Male Lead"
+            ]
+          },
+          {
+            "canonical_label_id": "label_cd153cf32e",
+            "label_ko": "강한 주인공",
+            "category": "character",
+            "count": 47,
+            "share": 0.47,
+            "raw_examples": [
+              "Strong Lead"
+            ]
+          },
+          {
+            "canonical_label_id": "label_057cf04487",
+            "label_ko": "하이 판타지",
+            "category": "genre",
+            "count": 43,
+            "share": 0.43,
+            "raw_examples": [
+              "High Fantasy"
+            ]
+          },
+          {
+            "canonical_label_id": "label_969bbd6da2",
+            "label_ko": "포털 판타지/이세계",
+            "category": "genre",
+            "count": 40,
+            "share": 0.4,
+            "raw_examples": [
+              "Portal Fantasy / Isekai"
+            ]
+          },
+          {
+            "canonical_label_id": "reincarnation",
+            "label_ko": "전생",
+            "category": "plot_device",
+            "count": 33,
+            "share": 0.33,
+            "raw_examples": [
+              "Reincarnation"
+            ]
+          },
+          {
+            "canonical_label_id": "label_c288b36aa0",
+            "label_ko": "일상",
+            "category": "other",
+            "count": 31,
+            "share": 0.31,
+            "raw_examples": [
+              "Slice of Life"
+            ]
+          }
+        ],
+        "distinctive_labels": [
+          {
+            "canonical_label_id": "label_c324d67463",
+            "label_ko": "성장형 판타지",
+            "category": "genre",
+            "platform_share": 0.73,
+            "market_share": 0.1622,
+            "lift": 4.5
+          },
+          {
+            "canonical_label_id": "label_a2e3851553",
+            "label_ko": "남성 주인공",
+            "category": "character",
+            "platform_share": 0.62,
+            "market_share": 0.1378,
+            "lift": 4.5
+          },
+          {
+            "canonical_label_id": "label_cd153cf32e",
+            "label_ko": "강한 주인공",
+            "category": "character",
+            "platform_share": 0.47,
+            "market_share": 0.1044,
+            "lift": 4.5
+          },
+          {
+            "canonical_label_id": "label_057cf04487",
+            "label_ko": "하이 판타지",
+            "category": "genre",
+            "platform_share": 0.43,
+            "market_share": 0.0956,
+            "lift": 4.5
+          },
+          {
+            "canonical_label_id": "label_969bbd6da2",
+            "label_ko": "포털 판타지/이세계",
+            "category": "genre",
+            "platform_share": 0.4,
+            "market_share": 0.0889,
+            "lift": 4.5
+          },
+          {
+            "canonical_label_id": "magic",
+            "label_ko": "마법",
+            "category": "other",
+            "platform_share": 0.63,
+            "market_share": 0.2289,
+            "lift": 2.75
+          },
+          {
+            "canonical_label_id": "reincarnation",
+            "label_ko": "전생",
+            "category": "plot_device",
+            "platform_share": 0.33,
+            "market_share": 0.1333,
+            "lift": 2.48
+          },
+          {
+            "canonical_label_id": "label_a551ab0691",
+            "label_ko": "LitRPG",
+            "category": "genre",
+            "platform_share": 0.62,
+            "market_share": 0.3067,
+            "lift": 2.02
+          }
+        ],
+        "available_metrics": [
+          "chapters",
+          "followers",
+          "pages",
+          "rating",
+          "views"
+        ],
+        "synopsis_present_share": 0.98,
+        "summary_sentence": "Royal Road 순위권 작품에서는 판타지, 모험, 액션, 성장형 판타지 계열 태그가 상대적으로 눈에 띕니다."
+      },
+      {
+        "platform": "Scribble Hub",
+        "signal_types": [
+          "rising",
+          "weekly_popular"
+        ],
+        "record_count": 150,
+        "top_labels": [
+          {
+            "canonical_label_id": "label_5d782cef50",
+            "label_ko": "판타지",
+            "category": "genre",
+            "count": 118,
+            "share": 0.7867,
+            "raw_examples": [
+              "Fantasy"
+            ]
+          },
+          {
+            "canonical_label_id": "label_2d89825625",
+            "label_ko": "하렘",
+            "category": "content_flag",
+            "count": 98,
+            "share": 0.6533,
+            "raw_examples": [
+              "Harem"
+            ]
+          },
+          {
+            "canonical_label_id": "label_39b9ab87fa",
+            "label_ko": "액션",
+            "category": "genre",
+            "count": 96,
+            "share": 0.64,
+            "raw_examples": [
+              "Action"
+            ]
+          },
+          {
+            "canonical_label_id": "label_c939003aa1",
+            "label_ko": "모험",
+            "category": "other",
+            "count": 88,
+            "share": 0.5867,
+            "raw_examples": [
+              "Adventure"
+            ]
+          },
+          {
+            "canonical_label_id": "isekai",
+            "label_ko": "이세계",
+            "category": "plot_device",
+            "count": 84,
+            "share": 0.56,
+            "raw_examples": [
+              "Isekai"
+            ]
+          },
+          {
+            "canonical_label_id": "label_a551ab0691",
+            "label_ko": "LitRPG",
+            "category": "genre",
+            "count": 76,
+            "share": 0.5067,
+            "raw_examples": [
+              "LitRPG"
+            ]
+          },
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "로맨스",
+            "category": "genre",
+            "count": 76,
+            "share": 0.5067,
+            "raw_examples": [
+              "Romance"
+            ]
+          },
+          {
+            "canonical_label_id": "adult",
+            "label_ko": "성인",
+            "category": "content_flag",
+            "count": 74,
+            "share": 0.4933,
+            "raw_examples": [
+              "Adult"
+            ]
+          },
+          {
+            "canonical_label_id": "label_6bfbcf0a51",
+            "label_ko": "에치/선정 요소",
+            "category": "content_flag",
+            "count": 72,
+            "share": 0.48,
+            "raw_examples": [
+              "Ecchi"
+            ]
+          },
+          {
+            "canonical_label_id": "adult_smut",
+            "label_ko": "성인/선정 요소",
+            "category": "content_flag",
+            "count": 70,
+            "share": 0.4667,
+            "raw_examples": [
+              "Smut"
+            ]
+          },
+          {
+            "canonical_label_id": "label_c288b36aa0",
+            "label_ko": "일상",
+            "category": "other",
+            "count": 58,
+            "share": 0.3867,
+            "raw_examples": [
+              "Slice of Life"
+            ]
+          },
+          {
+            "canonical_label_id": "label_4955de329e",
+            "label_ko": "성인/성숙한 독자",
+            "category": "content_flag",
+            "count": 52,
+            "share": 0.3467,
+            "raw_examples": [
+              "Mature"
+            ]
+          }
+        ],
+        "distinctive_labels": [
+          {
+            "canonical_label_id": "label_2d89825625",
+            "label_ko": "하렘",
+            "category": "content_flag",
+            "platform_share": 0.6533,
+            "market_share": 0.2178,
+            "lift": 3.0
+          },
+          {
+            "canonical_label_id": "adult",
+            "label_ko": "성인",
+            "category": "content_flag",
+            "platform_share": 0.4933,
+            "market_share": 0.1644,
+            "lift": 3.0
+          },
+          {
+            "canonical_label_id": "label_6bfbcf0a51",
+            "label_ko": "에치/선정 요소",
+            "category": "content_flag",
+            "platform_share": 0.48,
+            "market_share": 0.16,
+            "lift": 3.0
+          },
+          {
+            "canonical_label_id": "adult_smut",
+            "label_ko": "성인/선정 요소",
+            "category": "content_flag",
+            "platform_share": 0.4667,
+            "market_share": 0.1556,
+            "lift": 3.0
+          },
+          {
+            "canonical_label_id": "label_4955de329e",
+            "label_ko": "성인/성숙한 독자",
+            "category": "content_flag",
+            "platform_share": 0.3467,
+            "market_share": 0.1156,
+            "lift": 3.0
+          },
+          {
+            "canonical_label_id": "isekai",
+            "label_ko": "이세계",
+            "category": "plot_device",
+            "platform_share": 0.56,
+            "market_share": 0.2178,
+            "lift": 2.57
+          },
+          {
+            "canonical_label_id": "label_c288b36aa0",
+            "label_ko": "일상",
+            "category": "other",
+            "platform_share": 0.3867,
+            "market_share": 0.1978,
+            "lift": 1.96
+          },
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "로맨스",
+            "category": "genre",
+            "platform_share": 0.5067,
+            "market_share": 0.2956,
+            "lift": 1.71
+          }
+        ],
+        "available_metrics": [
+          "chapters",
+          "favorites",
+          "readers",
+          "views"
+        ],
+        "synopsis_present_share": 0.0,
+        "summary_sentence": "Scribble Hub 순위권 작품에서는 판타지, 하렘, 액션, 모험 계열 태그가 상대적으로 눈에 띕니다."
+      },
+      {
+        "platform": "Tapas",
+        "signal_types": [
+          "popular_novels"
+        ],
+        "record_count": 100,
+        "top_labels": [
+          {
+            "canonical_label_id": "romance_fantasy",
+            "label_ko": "로맨스 판타지",
+            "category": "genre",
+            "count": 48,
+            "share": 0.48,
+            "raw_examples": [
+              "Romance Fantasy"
+            ]
+          },
+          {
+            "canonical_label_id": "label_2513cd74a0",
+            "label_ko": "액션 판타지",
+            "category": "genre",
+            "count": 26,
+            "share": 0.26,
+            "raw_examples": [
+              "Action Fantasy"
+            ]
+          },
+          {
+            "canonical_label_id": "boys_love",
+            "label_ko": "BL/보이즈러브",
+            "category": "content_flag",
+            "count": 18,
+            "share": 0.18,
+            "raw_examples": [
+              "BL"
+            ]
+          },
+          {
+            "canonical_label_id": "label_9df2a74b26",
+            "label_ko": "LGBTQ+",
+            "category": "other",
+            "count": 5,
+            "share": 0.05,
+            "raw_examples": [
+              "LGBTQ+"
+            ]
+          },
+          {
+            "canonical_label_id": "label_a21c253f01",
+            "label_ko": "드라마",
+            "category": "genre",
+            "count": 3,
+            "share": 0.03,
+            "raw_examples": [
+              "Drama"
+            ]
+          },
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "로맨스",
+            "category": "genre",
+            "count": 2,
+            "share": 0.02,
+            "raw_examples": [
+              "Romance"
+            ]
+          },
+          {
+            "canonical_label_id": "label_5d782cef50",
+            "label_ko": "판타지",
+            "category": "genre",
+            "count": 1,
+            "share": 0.01,
+            "raw_examples": [
+              "Fantasy"
+            ]
+          }
+        ],
+        "distinctive_labels": [
+          {
+            "canonical_label_id": "romance_fantasy",
+            "label_ko": "로맨스 판타지",
+            "category": "genre",
+            "platform_share": 0.48,
+            "market_share": 0.1067,
+            "lift": 4.5
+          },
+          {
+            "canonical_label_id": "label_2513cd74a0",
+            "label_ko": "액션 판타지",
+            "category": "genre",
+            "platform_share": 0.26,
+            "market_share": 0.0578,
+            "lift": 4.5
+          },
+          {
+            "canonical_label_id": "boys_love",
+            "label_ko": "BL/보이즈러브",
+            "category": "content_flag",
+            "platform_share": 0.18,
+            "market_share": 0.04,
+            "lift": 4.5
+          },
+          {
+            "canonical_label_id": "label_9df2a74b26",
+            "label_ko": "LGBTQ+",
+            "category": "other",
+            "platform_share": 0.05,
+            "market_share": 0.0111,
+            "lift": 4.5
+          }
+        ],
+        "available_metrics": [
+          "likes",
+          "platform_rank",
+          "subscribers",
+          "views"
+        ],
+        "synopsis_present_share": 1.0,
+        "summary_sentence": "Tapas 순위권 작품에서는 로맨스 판타지, 액션 판타지, BL/보이즈러브, LGBTQ+ 계열 태그가 상대적으로 눈에 띕니다."
+      },
+      {
+        "platform": "Wattpad",
+        "signal_types": [
+          "hot_fantasy"
+        ],
+        "record_count": 100,
+        "top_labels": [
+          {
+            "canonical_label_id": "label_5d782cef50",
+            "label_ko": "판타지",
+            "category": "genre",
+            "count": 100,
+            "share": 1.0,
+            "raw_examples": [
+              "fantasy"
+            ]
+          },
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "로맨스",
+            "category": "genre",
+            "count": 49,
+            "share": 0.49,
+            "raw_examples": [
+              "romance"
+            ]
+          },
+          {
+            "canonical_label_id": "magic",
+            "label_ko": "마법",
+            "category": "other",
+            "count": 40,
+            "share": 0.4,
+            "raw_examples": [
+              "magic"
+            ]
+          },
+          {
+            "canonical_label_id": "reincarnation",
+            "label_ko": "전생",
+            "category": "plot_device",
+            "count": 27,
+            "share": 0.27,
+            "raw_examples": [
+              "reincarnation"
+            ]
+          },
+          {
+            "canonical_label_id": "label_c939003aa1",
+            "label_ko": "모험",
+            "category": "other",
+            "count": 27,
+            "share": 0.27,
+            "raw_examples": [
+              "adventure"
+            ]
+          },
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "사랑/로맨스",
+            "category": "genre",
+            "count": 19,
+            "share": 0.19,
+            "raw_examples": [
+              "love"
+            ]
+          },
+          {
+            "canonical_label_id": "label_39b9ab87fa",
+            "label_ko": "액션",
+            "category": "genre",
+            "count": 19,
+            "share": 0.19,
+            "raw_examples": [
+              "action"
+            ]
+          },
+          {
+            "canonical_label_id": "villainess",
+            "label_ko": "악역영애",
+            "category": "character",
+            "count": 16,
+            "share": 0.16,
+            "raw_examples": [
+              "villainess"
+            ]
+          },
+          {
+            "canonical_label_id": "label_dff65e09c2",
+            "label_ko": "여성 주인공",
+            "category": "character",
+            "count": 14,
+            "share": 0.14,
+            "raw_examples": [
+              "femaleprotagonist"
+            ]
+          },
+          {
+            "canonical_label_id": "isekai",
+            "label_ko": "이세계",
+            "category": "plot_device",
+            "count": 14,
+            "share": 0.14,
+            "raw_examples": [
+              "isekai"
+            ]
+          },
+          {
+            "canonical_label_id": "label_6b1f2377c6",
+            "label_ko": "슬로우번",
+            "category": "other",
+            "count": 13,
+            "share": 0.13,
+            "raw_examples": [
+              "slowburn"
+            ]
+          },
+          {
+            "canonical_label_id": "label_2a43643086",
+            "label_ko": "다크 판타지",
+            "category": "genre",
+            "count": 12,
+            "share": 0.12,
+            "raw_examples": [
+              "darkfantasy"
+            ]
+          }
+        ],
+        "distinctive_labels": [
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "사랑/로맨스",
+            "category": "genre",
+            "platform_share": 0.19,
+            "market_share": 0.0422,
+            "lift": 4.5
+          },
+          {
+            "canonical_label_id": "label_6b1f2377c6",
+            "label_ko": "슬로우번",
+            "category": "other",
+            "platform_share": 0.13,
+            "market_share": 0.0289,
+            "lift": 4.5
+          },
+          {
+            "canonical_label_id": "villainess",
+            "label_ko": "악역영애",
+            "category": "character",
+            "platform_share": 0.16,
+            "market_share": 0.0356,
+            "lift": 4.49
+          },
+          {
+            "canonical_label_id": "label_2a43643086",
+            "label_ko": "다크 판타지",
+            "category": "genre",
+            "platform_share": 0.12,
+            "market_share": 0.0267,
+            "lift": 4.49
+          },
+          {
+            "canonical_label_id": "reincarnation",
+            "label_ko": "전생",
+            "category": "plot_device",
+            "platform_share": 0.27,
+            "market_share": 0.1333,
+            "lift": 2.03
+          },
+          {
+            "canonical_label_id": "magic",
+            "label_ko": "마법",
+            "category": "other",
+            "platform_share": 0.4,
+            "market_share": 0.2289,
+            "lift": 1.75
+          },
+          {
+            "canonical_label_id": "label_dff65e09c2",
+            "label_ko": "여성 주인공",
+            "category": "character",
+            "platform_share": 0.14,
+            "market_share": 0.08,
+            "lift": 1.75
+          },
+          {
+            "canonical_label_id": "romance",
+            "label_ko": "로맨스",
+            "category": "genre",
+            "platform_share": 0.49,
+            "market_share": 0.2956,
+            "lift": 1.66
+          }
+        ],
+        "available_metrics": [
+          "category",
+          "parts",
+          "reads",
+          "votes"
+        ],
+        "synopsis_present_share": 1.0,
+        "summary_sentence": "Wattpad 순위권 작품에서는 판타지, 로맨스, 마법, 전생 계열 태그가 상대적으로 눈에 띕니다."
+      }
+    ]
+  }
+]

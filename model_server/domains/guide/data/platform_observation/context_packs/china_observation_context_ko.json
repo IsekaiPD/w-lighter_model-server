@@ -1,0 +1,2417 @@
+{
+  "market": "China",
+  "market_ko": "중국",
+  "generated_at": "2026-06-07T16:25:45.966290+00:00",
+  "analysis_scope": "platform_observation_context_only",
+  "record_count": 136,
+  "platforms": [
+    "JJWXC",
+    "Zongheng"
+  ],
+  "signal_types": [
+    "monthly_rank",
+    "monthly_ticket"
+  ],
+  "use_limits": [
+    "랭킹/인기 페이지 공개 샘플에서 관찰된 라벨·공개 지표 집계입니다.",
+    "추천, 성과 예측, 시장 적합도 판단, 창작 방향 제안에 사용하지 않습니다.",
+    "표현은 '관찰됨', '샘플 내 빈도', '검토 참고 항목'으로 제한합니다.",
+    "플랫폼 간 public metric은 의미가 달라 직접 비교하지 않습니다.",
+    "개별 작품명과 시놉시스는 대표 사례/근거 인용 없이 context pack에 넣지 않습니다."
+  ],
+  "observed_top_labels": [
+    {
+      "label_original": "爱情",
+      "label_ko": "사랑/로맨스",
+      "count": 62,
+      "share": 0.4559
+    },
+    {
+      "label_original": "言情",
+      "label_ko": "로맨스",
+      "count": 56,
+      "share": 0.4118
+    },
+    {
+      "label_original": "女主视角",
+      "label_ko": "여성 주인공 시점",
+      "count": 49,
+      "share": 0.3603
+    },
+    {
+      "label_original": "近代现代",
+      "label_ko": "근현대",
+      "count": 46,
+      "share": 0.3382
+    },
+    {
+      "label_original": "甜文",
+      "label_ko": "달달한 이야기",
+      "count": 40,
+      "share": 0.2941
+    },
+    {
+      "label_original": "爽文",
+      "label_ko": "사이다/쾌감형",
+      "count": 39,
+      "share": 0.2868
+    },
+    {
+      "label_original": "纯爱",
+      "label_ko": "BL/순애",
+      "count": 37,
+      "share": 0.2721
+    },
+    {
+      "label_original": "主受视角",
+      "label_ko": "수 시점/BL",
+      "count": 36,
+      "share": 0.2647
+    },
+    {
+      "label_original": "架空历史",
+      "label_ko": "가상 역사",
+      "count": 34,
+      "share": 0.25
+    },
+    {
+      "label_original": "情有独钟",
+      "label_ko": "일편단심",
+      "count": 29,
+      "share": 0.2132
+    },
+    {
+      "label_original": "轻松",
+      "label_ko": "가벼운 톤",
+      "count": 21,
+      "share": 0.1544
+    },
+    {
+      "label_original": "热血",
+      "label_ko": "열혈",
+      "count": 20,
+      "share": 0.1471
+    },
+    {
+      "label_original": "天之骄子",
+      "label_ko": "엘리트/천재형 인물",
+      "count": 18,
+      "share": 0.1324
+    },
+    {
+      "label_original": "穿越时空",
+      "label_ko": "시공간 이동",
+      "count": 17,
+      "share": 0.125
+    },
+    {
+      "label_original": "强强",
+      "label_ko": "강자 대 강자",
+      "count": 15,
+      "share": 0.1103
+    },
+    {
+      "label_original": "天作之合",
+      "label_ko": "천생연분",
+      "count": 14,
+      "share": 0.1029
+    },
+    {
+      "label_original": "豪门世家",
+      "label_ko": "재벌/명문가",
+      "count": 13,
+      "share": 0.0956
+    },
+    {
+      "label_original": "剧情",
+      "label_ko": "드라마/서사",
+      "count": 12,
+      "share": 0.0882
+    },
+    {
+      "label_original": "系统",
+      "label_ko": "시스템",
+      "count": 12,
+      "share": 0.0882
+    },
+    {
+      "label_original": "正剧",
+      "label_ko": "정극",
+      "count": 12,
+      "share": 0.0882
+    },
+    {
+      "label_original": "幻想未来",
+      "label_ko": "미래 판타지",
+      "count": 11,
+      "share": 0.0809
+    },
+    {
+      "label_original": "业界精英",
+      "label_ko": "업계 엘리트",
+      "count": 11,
+      "share": 0.0809
+    },
+    {
+      "label_original": "穿书",
+      "label_ko": "책빙의",
+      "count": 11,
+      "share": 0.0809
+    },
+    {
+      "label_original": "仙侠",
+      "label_ko": "선협",
+      "count": 11,
+      "share": 0.0809
+    },
+    {
+      "label_original": "东方玄幻",
+      "label_ko": "동양 판타지",
+      "count": 11,
+      "share": 0.0809
+    },
+    {
+      "label_original": "玄幻奇幻",
+      "label_ko": "현환/판타지",
+      "count": 11,
+      "share": 0.0809
+    },
+    {
+      "label_original": "日常",
+      "label_ko": "일상",
+      "count": 10,
+      "share": 0.0735
+    },
+    {
+      "label_original": "都市",
+      "label_ko": "도시",
+      "count": 10,
+      "share": 0.0735
+    },
+    {
+      "label_original": "成长",
+      "label_ko": "성장",
+      "count": 10,
+      "share": 0.0735
+    },
+    {
+      "label_original": "衍生",
+      "label_ko": "파생/팬덤",
+      "count": 10,
+      "share": 0.0735
+    }
+  ],
+  "observed_top_label_groups": [
+    {
+      "label_ko": "사랑/로맨스",
+      "count": 62,
+      "share": 0.4559,
+      "source_labels": [
+        "爱情"
+      ]
+    },
+    {
+      "label_ko": "로맨스",
+      "count": 56,
+      "share": 0.4118,
+      "source_labels": [
+        "言情"
+      ]
+    },
+    {
+      "label_ko": "여성 주인공 시점",
+      "count": 49,
+      "share": 0.3603,
+      "source_labels": [
+        "女主视角"
+      ]
+    },
+    {
+      "label_ko": "근현대",
+      "count": 46,
+      "share": 0.3382,
+      "source_labels": [
+        "近代现代"
+      ]
+    },
+    {
+      "label_ko": "달달한 이야기",
+      "count": 40,
+      "share": 0.2941,
+      "source_labels": [
+        "甜文"
+      ]
+    },
+    {
+      "label_ko": "사이다/쾌감형",
+      "count": 39,
+      "share": 0.2868,
+      "source_labels": [
+        "爽文"
+      ]
+    },
+    {
+      "label_ko": "BL/순애",
+      "count": 37,
+      "share": 0.2721,
+      "source_labels": [
+        "纯爱"
+      ]
+    },
+    {
+      "label_ko": "수 시점/BL",
+      "count": 36,
+      "share": 0.2647,
+      "source_labels": [
+        "主受视角"
+      ]
+    },
+    {
+      "label_ko": "가상 역사",
+      "count": 34,
+      "share": 0.25,
+      "source_labels": [
+        "架空历史"
+      ]
+    },
+    {
+      "label_ko": "일편단심",
+      "count": 29,
+      "share": 0.2132,
+      "source_labels": [
+        "情有独钟"
+      ]
+    },
+    {
+      "label_ko": "가벼운 톤",
+      "count": 21,
+      "share": 0.1544,
+      "source_labels": [
+        "轻松"
+      ]
+    },
+    {
+      "label_ko": "열혈",
+      "count": 20,
+      "share": 0.1471,
+      "source_labels": [
+        "热血"
+      ]
+    },
+    {
+      "label_ko": "엘리트/천재형 인물",
+      "count": 18,
+      "share": 0.1324,
+      "source_labels": [
+        "天之骄子"
+      ]
+    },
+    {
+      "label_ko": "시공간 이동",
+      "count": 17,
+      "share": 0.125,
+      "source_labels": [
+        "穿越时空"
+      ]
+    },
+    {
+      "label_ko": "강자 대 강자",
+      "count": 15,
+      "share": 0.1103,
+      "source_labels": [
+        "强强"
+      ]
+    },
+    {
+      "label_ko": "천생연분",
+      "count": 14,
+      "share": 0.1029,
+      "source_labels": [
+        "天作之合"
+      ]
+    },
+    {
+      "label_ko": "재벌/명문가",
+      "count": 13,
+      "share": 0.0956,
+      "source_labels": [
+        "豪门世家"
+      ]
+    },
+    {
+      "label_ko": "드라마/서사",
+      "count": 12,
+      "share": 0.0882,
+      "source_labels": [
+        "剧情"
+      ]
+    },
+    {
+      "label_ko": "시스템",
+      "count": 12,
+      "share": 0.0882,
+      "source_labels": [
+        "系统"
+      ]
+    },
+    {
+      "label_ko": "정극",
+      "count": 12,
+      "share": 0.0882,
+      "source_labels": [
+        "正剧"
+      ]
+    },
+    {
+      "label_ko": "미래 판타지",
+      "count": 11,
+      "share": 0.0809,
+      "source_labels": [
+        "幻想未来"
+      ]
+    },
+    {
+      "label_ko": "업계 엘리트",
+      "count": 11,
+      "share": 0.0809,
+      "source_labels": [
+        "业界精英"
+      ]
+    },
+    {
+      "label_ko": "책빙의",
+      "count": 11,
+      "share": 0.0809,
+      "source_labels": [
+        "穿书"
+      ]
+    },
+    {
+      "label_ko": "선협",
+      "count": 11,
+      "share": 0.0809,
+      "source_labels": [
+        "仙侠"
+      ]
+    },
+    {
+      "label_ko": "동양 판타지",
+      "count": 11,
+      "share": 0.0809,
+      "source_labels": [
+        "东方玄幻"
+      ]
+    },
+    {
+      "label_ko": "현환/판타지",
+      "count": 11,
+      "share": 0.0809,
+      "source_labels": [
+        "玄幻奇幻"
+      ]
+    },
+    {
+      "label_ko": "일상",
+      "count": 10,
+      "share": 0.0735,
+      "source_labels": [
+        "日常"
+      ]
+    },
+    {
+      "label_ko": "도시",
+      "count": 10,
+      "share": 0.0735,
+      "source_labels": [
+        "都市"
+      ]
+    },
+    {
+      "label_ko": "성장",
+      "count": 10,
+      "share": 0.0735,
+      "source_labels": [
+        "成长"
+      ]
+    },
+    {
+      "label_ko": "파생/팬덤",
+      "count": 10,
+      "share": 0.0735,
+      "source_labels": [
+        "衍生"
+      ]
+    }
+  ],
+  "platform_balanced_label_groups": [
+    {
+      "label_ko": "사랑/로맨스",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.31,
+      "max_platform_share": 0.62,
+      "source_labels": [
+        "爱情"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 62,
+          "record_count": 100,
+          "share": 0.62
+        }
+      ]
+    },
+    {
+      "label_ko": "사이다/쾌감형",
+      "platforms_observed": 2,
+      "platform_count": 2,
+      "avg_platform_share": 0.3017,
+      "max_platform_share": 0.3333,
+      "source_labels": [
+        "爽文"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Zongheng",
+          "count": 12,
+          "record_count": 36,
+          "share": 0.3333333333333333
+        },
+        {
+          "platform": "JJWXC",
+          "count": 27,
+          "record_count": 100,
+          "share": 0.27
+        }
+      ]
+    },
+    {
+      "label_ko": "로맨스",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.28,
+      "max_platform_share": 0.56,
+      "source_labels": [
+        "言情"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 56,
+          "record_count": 100,
+          "share": 0.56
+        }
+      ]
+    },
+    {
+      "label_ko": "열혈",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.2778,
+      "max_platform_share": 0.5556,
+      "source_labels": [
+        "热血"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Zongheng",
+          "count": 20,
+          "record_count": 36,
+          "share": 0.5555555555555556
+        }
+      ]
+    },
+    {
+      "label_ko": "여성 주인공 시점",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.245,
+      "max_platform_share": 0.49,
+      "source_labels": [
+        "女主视角"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 49,
+          "record_count": 100,
+          "share": 0.49
+        }
+      ]
+    },
+    {
+      "label_ko": "근현대",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.23,
+      "max_platform_share": 0.46,
+      "source_labels": [
+        "近代现代"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 46,
+          "record_count": 100,
+          "share": 0.46
+        }
+      ]
+    },
+    {
+      "label_ko": "달달한 이야기",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.2,
+      "max_platform_share": 0.4,
+      "source_labels": [
+        "甜文"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 40,
+          "record_count": 100,
+          "share": 0.4
+        }
+      ]
+    },
+    {
+      "label_ko": "BL/순애",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.185,
+      "max_platform_share": 0.37,
+      "source_labels": [
+        "纯爱"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 37,
+          "record_count": 100,
+          "share": 0.37
+        }
+      ]
+    },
+    {
+      "label_ko": "수 시점/BL",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.18,
+      "max_platform_share": 0.36,
+      "source_labels": [
+        "主受视角"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 36,
+          "record_count": 100,
+          "share": 0.36
+        }
+      ]
+    },
+    {
+      "label_ko": "가상 역사",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.17,
+      "max_platform_share": 0.34,
+      "source_labels": [
+        "架空历史"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 34,
+          "record_count": 100,
+          "share": 0.34
+        }
+      ]
+    },
+    {
+      "label_ko": "현환/판타지",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.1528,
+      "max_platform_share": 0.3056,
+      "source_labels": [
+        "玄幻奇幻"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Zongheng",
+          "count": 11,
+          "record_count": 36,
+          "share": 0.3055555555555556
+        }
+      ]
+    },
+    {
+      "label_ko": "일편단심",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.145,
+      "max_platform_share": 0.29,
+      "source_labels": [
+        "情有独钟"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 29,
+          "record_count": 100,
+          "share": 0.29
+        }
+      ]
+    },
+    {
+      "label_ko": "동양 판타지",
+      "platforms_observed": 2,
+      "platform_count": 2,
+      "avg_platform_share": 0.1439,
+      "max_platform_share": 0.2778,
+      "source_labels": [
+        "东方玄幻"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Zongheng",
+          "count": 10,
+          "record_count": 36,
+          "share": 0.2777777777777778
+        },
+        {
+          "platform": "JJWXC",
+          "count": 1,
+          "record_count": 100,
+          "share": 0.01
+        }
+      ]
+    },
+    {
+      "label_ko": "가벼운 톤",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.105,
+      "max_platform_share": 0.21,
+      "source_labels": [
+        "轻松"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 21,
+          "record_count": 100,
+          "share": 0.21
+        }
+      ]
+    },
+    {
+      "label_ko": "엘리트/천재형 인물",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.09,
+      "max_platform_share": 0.18,
+      "source_labels": [
+        "天之骄子"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 18,
+          "record_count": 100,
+          "share": 0.18
+        }
+      ]
+    },
+    {
+      "label_ko": "시공간 이동",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.085,
+      "max_platform_share": 0.17,
+      "source_labels": [
+        "穿越时空"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 17,
+          "record_count": 100,
+          "share": 0.17
+        }
+      ]
+    },
+    {
+      "label_ko": "강자 대 강자",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.075,
+      "max_platform_share": 0.15,
+      "source_labels": [
+        "强强"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 15,
+          "record_count": 100,
+          "share": 0.15
+        }
+      ]
+    },
+    {
+      "label_ko": "천생연분",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.07,
+      "max_platform_share": 0.14,
+      "source_labels": [
+        "天作之合"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 14,
+          "record_count": 100,
+          "share": 0.14
+        }
+      ]
+    },
+    {
+      "label_ko": "검도/검술",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.0694,
+      "max_platform_share": 0.1389,
+      "source_labels": [
+        "剑道"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Zongheng",
+          "count": 5,
+          "record_count": 36,
+          "share": 0.1388888888888889
+        }
+      ]
+    },
+    {
+      "label_ko": "재벌/명문가",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.065,
+      "max_platform_share": 0.13,
+      "source_labels": [
+        "豪门世家"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 13,
+          "record_count": 100,
+          "share": 0.13
+        }
+      ]
+    },
+    {
+      "label_ko": "드라마/서사",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.06,
+      "max_platform_share": 0.12,
+      "source_labels": [
+        "剧情"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 12,
+          "record_count": 100,
+          "share": 0.12
+        }
+      ]
+    },
+    {
+      "label_ko": "시스템",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.06,
+      "max_platform_share": 0.12,
+      "source_labels": [
+        "系统"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 12,
+          "record_count": 100,
+          "share": 0.12
+        }
+      ]
+    },
+    {
+      "label_ko": "정극",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.06,
+      "max_platform_share": 0.12,
+      "source_labels": [
+        "正剧"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 12,
+          "record_count": 100,
+          "share": 0.12
+        }
+      ]
+    },
+    {
+      "label_ko": "무협/선협",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.0556,
+      "max_platform_share": 0.1111,
+      "source_labels": [
+        "武侠仙侠"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Zongheng",
+          "count": 4,
+          "record_count": 36,
+          "share": 0.1111111111111111
+        }
+      ]
+    },
+    {
+      "label_ko": "미래 판타지",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.055,
+      "max_platform_share": 0.11,
+      "source_labels": [
+        "幻想未来"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 11,
+          "record_count": 100,
+          "share": 0.11
+        }
+      ]
+    },
+    {
+      "label_ko": "선협",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.055,
+      "max_platform_share": 0.11,
+      "source_labels": [
+        "仙侠"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 11,
+          "record_count": 100,
+          "share": 0.11
+        }
+      ]
+    },
+    {
+      "label_ko": "업계 엘리트",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.055,
+      "max_platform_share": 0.11,
+      "source_labels": [
+        "业界精英"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 11,
+          "record_count": 100,
+          "share": 0.11
+        }
+      ]
+    },
+    {
+      "label_ko": "책빙의",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.055,
+      "max_platform_share": 0.11,
+      "source_labels": [
+        "穿书"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 11,
+          "record_count": 100,
+          "share": 0.11
+        }
+      ]
+    },
+    {
+      "label_ko": "도시",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.05,
+      "max_platform_share": 0.1,
+      "source_labels": [
+        "都市"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 10,
+          "record_count": 100,
+          "share": 0.1
+        }
+      ]
+    },
+    {
+      "label_ko": "선협/수진",
+      "platforms_observed": 1,
+      "platform_count": 2,
+      "avg_platform_share": 0.05,
+      "max_platform_share": 0.1,
+      "source_labels": [
+        "仙侠修真"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "JJWXC",
+          "count": 10,
+          "record_count": 100,
+          "share": 0.1
+        }
+      ]
+    }
+  ],
+  "platform_summaries": [
+    {
+      "platform": "JJWXC",
+      "market": "China",
+      "record_count": 100,
+      "signal_types": [
+        "monthly_rank"
+      ],
+      "top_labels": [
+        {
+          "label_original": "爱情",
+          "label_ko": "사랑/로맨스",
+          "count": 62,
+          "share": 0.62
+        },
+        {
+          "label_original": "言情",
+          "label_ko": "로맨스",
+          "count": 56,
+          "share": 0.56
+        },
+        {
+          "label_original": "女主视角",
+          "label_ko": "여성 주인공 시점",
+          "count": 49,
+          "share": 0.49
+        },
+        {
+          "label_original": "近代现代",
+          "label_ko": "근현대",
+          "count": 46,
+          "share": 0.46
+        },
+        {
+          "label_original": "甜文",
+          "label_ko": "달달한 이야기",
+          "count": 40,
+          "share": 0.4
+        },
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애",
+          "count": 37,
+          "share": 0.37
+        },
+        {
+          "label_original": "主受视角",
+          "label_ko": "수 시점/BL",
+          "count": 36,
+          "share": 0.36
+        },
+        {
+          "label_original": "架空历史",
+          "label_ko": "가상 역사",
+          "count": 34,
+          "share": 0.34
+        },
+        {
+          "label_original": "情有独钟",
+          "label_ko": "일편단심",
+          "count": 29,
+          "share": 0.29
+        },
+        {
+          "label_original": "爽文",
+          "label_ko": "사이다/쾌감형",
+          "count": 27,
+          "share": 0.27
+        },
+        {
+          "label_original": "轻松",
+          "label_ko": "가벼운 톤",
+          "count": 21,
+          "share": 0.21
+        },
+        {
+          "label_original": "天之骄子",
+          "label_ko": "엘리트/천재형 인물",
+          "count": 18,
+          "share": 0.18
+        }
+      ],
+      "top_label_groups": [
+        {
+          "label_ko": "사랑/로맨스",
+          "count": 62,
+          "share": 0.62,
+          "source_labels": [
+            "爱情"
+          ]
+        },
+        {
+          "label_ko": "로맨스",
+          "count": 56,
+          "share": 0.56,
+          "source_labels": [
+            "言情"
+          ]
+        },
+        {
+          "label_ko": "여성 주인공 시점",
+          "count": 49,
+          "share": 0.49,
+          "source_labels": [
+            "女主视角"
+          ]
+        },
+        {
+          "label_ko": "근현대",
+          "count": 46,
+          "share": 0.46,
+          "source_labels": [
+            "近代现代"
+          ]
+        },
+        {
+          "label_ko": "달달한 이야기",
+          "count": 40,
+          "share": 0.4,
+          "source_labels": [
+            "甜文"
+          ]
+        },
+        {
+          "label_ko": "BL/순애",
+          "count": 37,
+          "share": 0.37,
+          "source_labels": [
+            "纯爱"
+          ]
+        },
+        {
+          "label_ko": "수 시점/BL",
+          "count": 36,
+          "share": 0.36,
+          "source_labels": [
+            "主受视角"
+          ]
+        },
+        {
+          "label_ko": "가상 역사",
+          "count": 34,
+          "share": 0.34,
+          "source_labels": [
+            "架空历史"
+          ]
+        },
+        {
+          "label_ko": "일편단심",
+          "count": 29,
+          "share": 0.29,
+          "source_labels": [
+            "情有独钟"
+          ]
+        },
+        {
+          "label_ko": "사이다/쾌감형",
+          "count": 27,
+          "share": 0.27,
+          "source_labels": [
+            "爽文"
+          ]
+        },
+        {
+          "label_ko": "가벼운 톤",
+          "count": 21,
+          "share": 0.21,
+          "source_labels": [
+            "轻松"
+          ]
+        },
+        {
+          "label_ko": "엘리트/천재형 인물",
+          "count": 18,
+          "share": 0.18,
+          "source_labels": [
+            "天之骄子"
+          ]
+        }
+      ],
+      "available_metrics": [
+        "comments",
+        "favorites",
+        "words"
+      ],
+      "synopsis_present_share": 1.0
+    },
+    {
+      "platform": "Zongheng",
+      "market": "China",
+      "record_count": 36,
+      "signal_types": [
+        "monthly_ticket"
+      ],
+      "top_labels": [
+        {
+          "label_original": "热血",
+          "label_ko": "열혈",
+          "count": 20,
+          "share": 0.5556
+        },
+        {
+          "label_original": "爽文",
+          "label_ko": "사이다/쾌감형",
+          "count": 12,
+          "share": 0.3333
+        },
+        {
+          "label_original": "玄幻奇幻",
+          "label_ko": "현환/판타지",
+          "count": 11,
+          "share": 0.3056
+        },
+        {
+          "label_original": "东方玄幻",
+          "label_ko": "동양 판타지",
+          "count": 10,
+          "share": 0.2778
+        },
+        {
+          "label_original": "剑道",
+          "label_ko": "검도/검술",
+          "count": 5,
+          "share": 0.1389
+        },
+        {
+          "label_original": "武侠仙侠",
+          "label_ko": "무협/선협",
+          "count": 4,
+          "share": 0.1111
+        },
+        {
+          "label_original": "少年",
+          "label_ko": "소년",
+          "count": 3,
+          "share": 0.0833
+        },
+        {
+          "label_original": "传统玄幻",
+          "label_ko": "전통 판타지",
+          "count": 2,
+          "share": 0.0556
+        },
+        {
+          "label_original": "家族崛起",
+          "label_ko": "家族崛起",
+          "count": 2,
+          "share": 0.0556
+        },
+        {
+          "label_original": "现代言情",
+          "label_ko": "现代言情",
+          "count": 1,
+          "share": 0.0278
+        },
+        {
+          "label_original": "古代言情",
+          "label_ko": "古代言情",
+          "count": 1,
+          "share": 0.0278
+        }
+      ],
+      "top_label_groups": [
+        {
+          "label_ko": "열혈",
+          "count": 20,
+          "share": 0.5556,
+          "source_labels": [
+            "热血"
+          ]
+        },
+        {
+          "label_ko": "사이다/쾌감형",
+          "count": 12,
+          "share": 0.3333,
+          "source_labels": [
+            "爽文"
+          ]
+        },
+        {
+          "label_ko": "현환/판타지",
+          "count": 11,
+          "share": 0.3056,
+          "source_labels": [
+            "玄幻奇幻"
+          ]
+        },
+        {
+          "label_ko": "동양 판타지",
+          "count": 10,
+          "share": 0.2778,
+          "source_labels": [
+            "东方玄幻"
+          ]
+        },
+        {
+          "label_ko": "검도/검술",
+          "count": 5,
+          "share": 0.1389,
+          "source_labels": [
+            "剑道"
+          ]
+        },
+        {
+          "label_ko": "무협/선협",
+          "count": 4,
+          "share": 0.1111,
+          "source_labels": [
+            "武侠仙侠"
+          ]
+        },
+        {
+          "label_ko": "소년",
+          "count": 3,
+          "share": 0.0833,
+          "source_labels": [
+            "少年"
+          ]
+        },
+        {
+          "label_ko": "家族崛起",
+          "count": 2,
+          "share": 0.0556,
+          "source_labels": [
+            "家族崛起"
+          ]
+        },
+        {
+          "label_ko": "전통 판타지",
+          "count": 2,
+          "share": 0.0556,
+          "source_labels": [
+            "传统玄幻"
+          ]
+        },
+        {
+          "label_ko": "现代言情",
+          "count": 1,
+          "share": 0.0278,
+          "source_labels": [
+            "现代言情"
+          ]
+        },
+        {
+          "label_ko": "古代言情",
+          "count": 1,
+          "share": 0.0278,
+          "source_labels": [
+            "古代言情"
+          ]
+        }
+      ],
+      "available_metrics": [
+        "total_clicks_wan",
+        "total_recommend_wan",
+        "weekly_recommend",
+        "words_wan"
+      ],
+      "synopsis_present_share": 0.0
+    }
+  ],
+  "signal_type_summaries": [
+    {
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "record_count": 100,
+      "top_label_groups": [
+        {
+          "label_ko": "사랑/로맨스",
+          "count": 62,
+          "share": 0.62,
+          "source_labels": [
+            "爱情"
+          ]
+        },
+        {
+          "label_ko": "로맨스",
+          "count": 56,
+          "share": 0.56,
+          "source_labels": [
+            "言情"
+          ]
+        },
+        {
+          "label_ko": "여성 주인공 시점",
+          "count": 49,
+          "share": 0.49,
+          "source_labels": [
+            "女主视角"
+          ]
+        },
+        {
+          "label_ko": "근현대",
+          "count": 46,
+          "share": 0.46,
+          "source_labels": [
+            "近代现代"
+          ]
+        },
+        {
+          "label_ko": "달달한 이야기",
+          "count": 40,
+          "share": 0.4,
+          "source_labels": [
+            "甜文"
+          ]
+        },
+        {
+          "label_ko": "BL/순애",
+          "count": 37,
+          "share": 0.37,
+          "source_labels": [
+            "纯爱"
+          ]
+        },
+        {
+          "label_ko": "수 시점/BL",
+          "count": 36,
+          "share": 0.36,
+          "source_labels": [
+            "主受视角"
+          ]
+        },
+        {
+          "label_ko": "가상 역사",
+          "count": 34,
+          "share": 0.34,
+          "source_labels": [
+            "架空历史"
+          ]
+        }
+      ],
+      "synopsis_present_share": 1.0
+    },
+    {
+      "platform": "Zongheng",
+      "signal_type": "monthly_ticket",
+      "record_count": 36,
+      "top_label_groups": [
+        {
+          "label_ko": "열혈",
+          "count": 20,
+          "share": 0.5556,
+          "source_labels": [
+            "热血"
+          ]
+        },
+        {
+          "label_ko": "사이다/쾌감형",
+          "count": 12,
+          "share": 0.3333,
+          "source_labels": [
+            "爽文"
+          ]
+        },
+        {
+          "label_ko": "현환/판타지",
+          "count": 11,
+          "share": 0.3056,
+          "source_labels": [
+            "玄幻奇幻"
+          ]
+        },
+        {
+          "label_ko": "동양 판타지",
+          "count": 10,
+          "share": 0.2778,
+          "source_labels": [
+            "东方玄幻"
+          ]
+        },
+        {
+          "label_ko": "검도/검술",
+          "count": 5,
+          "share": 0.1389,
+          "source_labels": [
+            "剑道"
+          ]
+        },
+        {
+          "label_ko": "무협/선협",
+          "count": 4,
+          "share": 0.1111,
+          "source_labels": [
+            "武侠仙侠"
+          ]
+        },
+        {
+          "label_ko": "소년",
+          "count": 3,
+          "share": 0.0833,
+          "source_labels": [
+            "少年"
+          ]
+        },
+        {
+          "label_ko": "家族崛起",
+          "count": 2,
+          "share": 0.0556,
+          "source_labels": [
+            "家族崛起"
+          ]
+        }
+      ],
+      "synopsis_present_share": 0.0
+    }
+  ],
+  "frequent_label_pairs": [
+    {
+      "market": "China",
+      "label_a_original": "女主视角",
+      "label_a_ko": "여성 주인공 시점",
+      "label_b_original": "言情",
+      "label_b_ko": "로맨스",
+      "co_count": 48,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "爱情",
+      "label_a_ko": "사랑/로맨스",
+      "label_b_original": "言情",
+      "label_b_ko": "로맨스",
+      "co_count": 38,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "爱情",
+      "label_a_ko": "사랑/로맨스",
+      "label_b_original": "甜文",
+      "label_b_ko": "달달한 이야기",
+      "co_count": 37,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "爱情",
+      "label_a_ko": "사랑/로맨스",
+      "label_b_original": "近代现代",
+      "label_b_ko": "근현대",
+      "co_count": 36,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "主受视角",
+      "label_a_ko": "수 시점/BL",
+      "label_b_original": "纯爱",
+      "label_b_ko": "BL/순애",
+      "co_count": 35,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "女主视角",
+      "label_a_ko": "여성 주인공 시점",
+      "label_b_original": "爱情",
+      "label_b_ko": "사랑/로맨스",
+      "co_count": 35,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "女主视角",
+      "label_a_ko": "여성 주인공 시점",
+      "label_b_original": "甜文",
+      "label_b_ko": "달달한 이야기",
+      "co_count": 24,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "甜文",
+      "label_a_ko": "달달한 이야기",
+      "label_b_original": "言情",
+      "label_b_ko": "로맨스",
+      "co_count": 24,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "情有独钟",
+      "label_a_ko": "일편단심",
+      "label_b_original": "爱情",
+      "label_b_ko": "사랑/로맨스",
+      "co_count": 24,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "甜文",
+      "label_a_ko": "달달한 이야기",
+      "label_b_original": "近代现代",
+      "label_b_ko": "근현대",
+      "co_count": 24,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "主受视角",
+      "label_a_ko": "수 시점/BL",
+      "label_b_original": "爱情",
+      "label_b_ko": "사랑/로맨스",
+      "co_count": 23,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "爱情",
+      "label_a_ko": "사랑/로맨스",
+      "label_b_original": "纯爱",
+      "label_b_ko": "BL/순애",
+      "co_count": 23,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "言情",
+      "label_a_ko": "로맨스",
+      "label_b_original": "近代现代",
+      "label_b_ko": "근현대",
+      "co_count": 23,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "女主视角",
+      "label_a_ko": "여성 주인공 시점",
+      "label_b_original": "近代现代",
+      "label_b_ko": "근현대",
+      "co_count": 20,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "架空历史",
+      "label_a_ko": "가상 역사",
+      "label_b_original": "言情",
+      "label_b_ko": "로맨스",
+      "co_count": 20,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "纯爱",
+      "label_a_ko": "BL/순애",
+      "label_b_original": "近代现代",
+      "label_b_ko": "근현대",
+      "co_count": 20,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "架空历史",
+      "label_a_ko": "가상 역사",
+      "label_b_original": "爱情",
+      "label_b_ko": "사랑/로맨스",
+      "co_count": 18,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "女主视角",
+      "label_a_ko": "여성 주인공 시점",
+      "label_b_original": "架空历史",
+      "label_b_ko": "가상 역사",
+      "co_count": 18,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "主受视角",
+      "label_a_ko": "수 시점/BL",
+      "label_b_original": "近代现代",
+      "label_b_ko": "근현대",
+      "co_count": 18,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "情有独钟",
+      "label_a_ko": "일편단심",
+      "label_b_original": "甜文",
+      "label_b_ko": "달달한 이야기",
+      "co_count": 17,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "天之骄子",
+      "label_a_ko": "엘리트/천재형 인물",
+      "label_b_original": "爱情",
+      "label_b_ko": "사랑/로맨스",
+      "co_count": 16,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "天之骄子",
+      "label_a_ko": "엘리트/천재형 인물",
+      "label_b_original": "近代现代",
+      "label_b_ko": "근현대",
+      "co_count": 16,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "情有独钟",
+      "label_a_ko": "일편단심",
+      "label_b_original": "言情",
+      "label_b_ko": "로맨스",
+      "co_count": 16,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "情有独钟",
+      "label_a_ko": "일편단심",
+      "label_b_original": "近代现代",
+      "label_b_ko": "근현대",
+      "co_count": 16,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "甜文",
+      "label_a_ko": "달달한 이야기",
+      "label_b_original": "纯爱",
+      "label_b_ko": "BL/순애",
+      "co_count": 16,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "女主视角",
+      "label_a_ko": "여성 주인공 시점",
+      "label_b_original": "情有独钟",
+      "label_b_ko": "일편단심",
+      "co_count": 15,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "主受视角",
+      "label_a_ko": "수 시점/BL",
+      "label_b_original": "甜文",
+      "label_b_ko": "달달한 이야기",
+      "co_count": 15,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "爱情",
+      "label_a_ko": "사랑/로맨스",
+      "label_b_original": "爽文",
+      "label_b_ko": "사이다/쾌감형",
+      "co_count": 14,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "爱情",
+      "label_a_ko": "사랑/로맨스",
+      "label_b_original": "轻松",
+      "label_b_ko": "가벼운 톤",
+      "co_count": 14,
+      "records_with_label_pairs": 119
+    },
+    {
+      "market": "China",
+      "label_a_original": "主受视角",
+      "label_a_ko": "수 시점/BL",
+      "label_b_original": "架空历史",
+      "label_b_ko": "가상 역사",
+      "co_count": 13,
+      "records_with_label_pairs": 119
+    }
+  ],
+  "metric_coverage": [
+    {
+      "platform": "JJWXC",
+      "record_count": 100,
+      "metric": "comments",
+      "available_count": 100,
+      "min": 3.0,
+      "median": 47815.5,
+      "max": 2884455.0
+    },
+    {
+      "platform": "JJWXC",
+      "record_count": 100,
+      "metric": "favorites",
+      "available_count": 100,
+      "min": 7.0,
+      "median": 42058.5,
+      "max": 681705.0
+    },
+    {
+      "platform": "JJWXC",
+      "record_count": 100,
+      "metric": "words",
+      "available_count": 100,
+      "min": 52779.0,
+      "median": 394801.5,
+      "max": 19675917.0
+    },
+    {
+      "platform": "Zongheng",
+      "record_count": 36,
+      "metric": "total_clicks_wan",
+      "available_count": 21,
+      "min": 1.4,
+      "median": 590.5,
+      "max": 36376.8
+    },
+    {
+      "platform": "Zongheng",
+      "record_count": 36,
+      "metric": "total_recommend_wan",
+      "available_count": 13,
+      "min": 1.6,
+      "median": 31.8,
+      "max": 1894.1
+    },
+    {
+      "platform": "Zongheng",
+      "record_count": 36,
+      "metric": "weekly_recommend",
+      "available_count": 35,
+      "min": 0.0,
+      "median": 144.0,
+      "max": 8712.0
+    },
+    {
+      "platform": "Zongheng",
+      "record_count": 36,
+      "metric": "words_wan",
+      "available_count": 34,
+      "min": 7.3,
+      "median": 55.400000000000006,
+      "max": 1582.6
+    }
+  ],
+  "synopsis_coverage": [
+    {
+      "platform": "JJWXC",
+      "record_count": 100,
+      "synopsis_present_count": 100,
+      "synopsis_present_share": 1.0,
+      "usage_note": "시놉 기반 내용 신호 보조 가능"
+    },
+    {
+      "platform": "Zongheng",
+      "record_count": 36,
+      "synopsis_present_count": 0,
+      "synopsis_present_share": 0.0,
+      "usage_note": "시놉 기반 분석 제한"
+    }
+  ],
+  "sensitive_label_candidates": [
+    {
+      "record_id": "China::JJWXC::monthly_rank::1::1",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 1,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::6::6",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 6,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::9::9",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 9,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::11::11",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 11,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::12::12",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 12,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::14::14",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 14,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::20::20",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 20,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::21::21",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 21,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::22::22",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 22,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::32::32",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 32,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::35::35",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 35,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::36::36",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 36,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::41::41",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 41,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::42::42",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 42,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::43::43",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 43,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::45::45",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 45,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::47::47",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 47,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::50::50",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 50,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::51::51",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 51,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::52::52",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 52,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::53::53",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 53,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::55::55",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 55,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::57::57",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 57,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::59::59",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 59,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::60::60",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 60,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::61::61",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 61,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::65::65",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 65,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::66::66",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 66,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::70::70",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 70,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::73::73",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 73,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::81::81",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 81,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::82::82",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 82,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::84::84",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 84,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::85::85",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 85,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::86::86",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 86,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::91::91",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 91,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "China::JJWXC::monthly_rank::97::97",
+      "market": "China",
+      "platform": "JJWXC",
+      "signal_type": "monthly_rank",
+      "rank": 97,
+      "matched_labels": [
+        {
+          "label_original": "纯爱",
+          "label_ko": "BL/순애"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    }
+  ]
+}

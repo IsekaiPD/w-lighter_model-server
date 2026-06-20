@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from domains.guide.config import ROOT
-DEFAULT_INPUT = ROOT / "data" / "localization_guide" / "platform_observation" / "platform_trends_current.json"
-DEFAULT_REPORT = ROOT / "data" / "localization_guide" / "platform_observation" / "platform_trend_localization_guide.md"
-DEFAULT_PROMPT = ROOT / "data" / "localization_guide" / "platform_observation" / "platform_trend_guide_prompt.json"
+DEFAULT_INPUT = ROOT / "data" / "platform_observation" / "platform_trends_current.json"
+DEFAULT_REPORT = ROOT / "data" / "platform_observation" / "platform_trend_localization_guide.md"
+DEFAULT_PROMPT = ROOT / "data" / "platform_observation" / "platform_trend_guide_prompt.json"
 
 STOPWORDS = {
     "with", "from", "that", "this", "their", "there", "into", "only", "have", "after", "before",
