@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from domains.guide.config import ROOT
+from ..config import ROOT
 REGULATION_DIR = ROOT / "data" / "regulation"
 RAW_PLATFORM_RULES_DIR = ROOT / "data" / "platform_rules"
 

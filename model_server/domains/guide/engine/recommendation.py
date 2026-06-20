@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from domains.guide.retrieval.platform_trends import (
+from ..retrieval.platform_trends import (
     DEFAULT_INPUT,
     build_collection_profiles,
     build_country_profiles,
