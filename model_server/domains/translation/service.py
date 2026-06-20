@@ -202,7 +202,27 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
     if include_internal:
         response["internal"] = internal
 
-    # TODO: payload.saveTranslationResult 면 db_repo.save_translation_result(...) (현재 no-op).
+    # saveTranslationResult=true면 결과 영속화(rdb 백엔드 + episodeId 필요; 아니면 graceful no-op).
+    # 영속화 실패가 번역 응답을 막지 않도록 best-effort.
+    if payload.get("saveTranslationResult") or payload.get("save_translation_result"):
+        episode_id = _payload_value(payload, "episodeId", "episode_id")
+        try:
+            saved = db_repo.save_translation_result(
+                {
+                    "episodeId": episode_id,
+                    "targetCountry": country,
+                    "translatedText": final_translation,
+                    "annotationCan": response["readerEndnotes"],
+                    "inspectionReport": {
+                        "qaIssues": response["qaIssues"],
+                        "authorReviewCards": response["authorReviewCards"],
+                    },
+                }
+            )
+            response["persisted"] = saved
+        except Exception as exc:  # noqa: BLE001
+            response["persisted"] = {"saved": False, "reason": f"{type(exc).__name__}: {exc}"}
+
     return response
 
 

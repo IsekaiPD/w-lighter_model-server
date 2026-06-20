@@ -22,6 +22,14 @@ async def lifespan(app: FastAPI):
     logger.info("starting %s (mock=%s, qdrant_url=%s)", settings.app_name, settings.wlighter_mock_mode, settings.qdrant_url or "(embedded path TODO)")
     app.state.warm = {"translation": False}
 
+    # DB 테이블 보장(rdb일 때만; memory면 no-op). 로컬 SQLite 부트스트랩.
+    try:
+        from db.session import init_db
+
+        init_db()
+    except Exception as exc:  # noqa: BLE001 — DB 미준비여도 앱은 뜬다
+        logger.warning("init_db skipped/failed: %r", exc)
+
     if settings.warmup_on_startup:
         try:
             from domains.translation import service as translation_service

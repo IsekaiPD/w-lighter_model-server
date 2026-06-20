@@ -34,9 +34,14 @@ class Settings(BaseSettings):
     # 비어 있으면 엔진이 임베디드 path= 폴백(현재). TODO: 엔진 make_qdrant_client를 url= 전환.
     qdrant_url: str = ""            # QDRANT_URL e.g. http://qdrant:6333
 
-    # --- 저장소 백엔드 (현재 스텁) ---
-    glossary_store_backend: str = "memory"   # memory | mysql
-    content_store_backend: str = "memory"
+    # --- 저장소 백엔드 ---
+    # memory: 프로세스 메모리(휘발). rdb: SQLAlchemy(database_url; 비면 로컬 SQLite 파일).
+    # 기본은 memory 유지(부팅 빠름·테스트 결정적). 로컬 영속화 테스트/배포는 rdb로 전환.
+    glossary_store_backend: str = "memory"   # memory | rdb | mysql
+    content_store_backend: str = "memory"    # memory | rdb
+    # SQLAlchemy 연결 URL. 비면 rdb일 때 로컬 SQLite 파일(model_server/wlighter_local.db)로 폴백.
+    # MySQL 전환은 이 한 줄만: mysql+pymysql://user:pw@host:3306/dbname?charset=utf8mb4
+    database_url: str = ""                    # DATABASE_URL
     mysql_host: str = ""
     mysql_port: int = 3306
     mysql_database: str = ""
