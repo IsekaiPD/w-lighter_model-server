@@ -60,18 +60,20 @@ def _load_driver() -> tuple[str, Any]:
 class MySQLGlossaryRepository(GlossaryRepository):
     """MySQL 8.x implementation of the single-table glossary repository.
 
+    컬럼명은 ERD(`project_docs/ERD_planning.txt`) GLOSSARY를 정본으로 따른다.
     Expected schema (created out-of-band, not migrated here)::
 
         CREATE TABLE glossary (
-          id         BIGINT AUTO_INCREMENT PRIMARY KEY,
-          work_id    BIGINT NOT NULL,            -- works.work_id
-          country    VARCHAR(2) NOT NULL,        -- JP / US / CN / TH
-          source     VARCHAR(255) NOT NULL,
-          target     VARCHAR(255) NOT NULL,
-          category   VARCHAR(16) NOT NULL,       -- person / place / organization
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          UNIQUE KEY uq_glossary (work_id, country, source, category)
+          glossary_id     BIGINT AUTO_INCREMENT PRIMARY KEY,
+          work_id         BIGINT NOT NULL,            -- works.work_id
+          target_country  CHAR(2) NOT NULL,           -- JP / US / CN / TH
+          original_word   VARCHAR(30) NOT NULL,
+          translated_word VARCHAR(30) NOT NULL,
+          glossary_type   VARCHAR(15) NOT NULL,       -- person / place / organization
+          memo            VARCHAR(500) NULL,
+          created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          UNIQUE KEY uq_glossary (work_id, target_country, original_word, glossary_type)
         );
     """
 
@@ -151,70 +153,75 @@ class MySQLGlossaryRepository(GlossaryRepository):
     def _normalize_payload(
         *,
         work_id: str,
-        country: str,
-        source: str,
-        target: str,
-        category: str,
+        target_country: str,
+        original_word: str,
+        translated_word: str,
+        glossary_type: str,
+        memo: str | None = None,
     ) -> dict[str, Any]:
         normalized = {
             "work_id": normalize_mysql_work_id(work_id),
-            "country": normalize_target_country(country) or "",
-            "source": _clean(source),
-            "target": _clean(target),
-            "category": normalize_category(category),
+            "target_country": normalize_target_country(target_country) or "",
+            "original_word": _clean(original_word)[:30],     # ERD VARCHAR(30)
+            "translated_word": _clean(translated_word)[:30],  # ERD VARCHAR(30)
+            "glossary_type": normalize_category(glossary_type),
+            "memo": (_clean(memo)[:500] or None),             # ERD memo VARCHAR(500)
         }
-        if not normalized["country"] or not normalized["source"] or not normalized["target"]:
-            raise ValueError("work_id, country, source, and target are required")
-        if is_contextual_reference(normalized["source"]):
-            raise ValueError("source is a contextual reference and should not be persisted as a glossary entry")
+        if not normalized["target_country"] or not normalized["original_word"] or not normalized["translated_word"]:
+            raise ValueError("work_id, target_country, original_word, and translated_word are required")
+        if is_contextual_reference(normalized["original_word"]):
+            raise ValueError("original_word is a contextual reference and should not be persisted as a glossary entry")
         return normalized
 
     def upsert_entry(
         self,
         *,
         work_id: str,
-        country: str,
-        source: str,
-        target: str,
-        category: str = DEFAULT_CATEGORY,
+        target_country: str,
+        original_word: str,
+        translated_word: str,
+        glossary_type: str = DEFAULT_CATEGORY,
+        memo: str | None = None,
     ) -> GlossaryEntryRecord:
         payload = self._normalize_payload(
             work_id=work_id,
-            country=country,
-            source=source,
-            target=target,
-            category=category,
+            target_country=target_country,
+            original_word=original_word,
+            translated_word=translated_word,
+            glossary_type=glossary_type,
+            memo=memo,
         )
         with self._connect() as conn:
             try:
                 with self._cursor(conn) as cur:
                     cur.execute(
                         """
-                        SELECT id FROM glossary
-                        WHERE work_id=%s AND country=%s AND source=%s AND category=%s
+                        SELECT glossary_id FROM glossary
+                        WHERE work_id=%s AND target_country=%s AND original_word=%s AND glossary_type=%s
                         LIMIT 1
                         """,
-                        (payload["work_id"], payload["country"], payload["source"], payload["category"]),
+                        (payload["work_id"], payload["target_country"], payload["original_word"], payload["glossary_type"]),
                     )
                     existing = cur.fetchone()
                     if existing:
-                        entry_id = int(existing["id"])
+                        entry_id = int(existing["glossary_id"])
                         cur.execute(
-                            "UPDATE glossary SET target=%s WHERE id=%s",
-                            (payload["target"], entry_id),
+                            "UPDATE glossary SET translated_word=%s, memo=%s WHERE glossary_id=%s",
+                            (payload["translated_word"], payload["memo"], entry_id),
                         )
                     else:
                         cur.execute(
                             """
-                            INSERT INTO glossary (work_id, country, source, target, category)
-                            VALUES (%s,%s,%s,%s,%s)
+                            INSERT INTO glossary (work_id, target_country, original_word, translated_word, glossary_type, memo)
+                            VALUES (%s,%s,%s,%s,%s,%s)
                             """,
                             (
                                 payload["work_id"],
-                                payload["country"],
-                                payload["source"],
-                                payload["target"],
-                                payload["category"],
+                                payload["target_country"],
+                                payload["original_word"],
+                                payload["translated_word"],
+                                payload["glossary_type"],
+                                payload["memo"],
                             ),
                         )
                         entry_id = int(cur.lastrowid)
@@ -227,15 +234,15 @@ class MySQLGlossaryRepository(GlossaryRepository):
             raise RuntimeError(f"glossary entry {entry_id} was not found after upsert")
         return row
 
-    def list_glossary(self, work_id: str, country: str, *, limit: int = 50) -> list[GlossaryEntryRecord]:
+    def list_glossary(self, work_id: str, target_country: str, *, limit: int = 50) -> list[GlossaryEntryRecord]:
         normalized_work_id = normalize_mysql_work_id(work_id)
-        normalized_country = normalize_target_country(country) or ""
+        normalized_country = normalize_target_country(target_country) or ""
         with self._connect() as conn, self._cursor(conn) as cur:
             cur.execute(
                 """
                 SELECT * FROM glossary
-                WHERE work_id=%s AND country=%s
-                ORDER BY source, category
+                WHERE work_id=%s AND target_country=%s
+                ORDER BY original_word, glossary_type
                 LIMIT %s
                 """,
                 (normalized_work_id, normalized_country, max(0, int(limit))),
@@ -245,7 +252,7 @@ class MySQLGlossaryRepository(GlossaryRepository):
 
     def get_entry(self, entry_id: int) -> GlossaryEntryRecord | None:
         with self._connect() as conn, self._cursor(conn) as cur:
-            cur.execute("SELECT * FROM glossary WHERE id=%s", (int(entry_id),))
+            cur.execute("SELECT * FROM glossary WHERE glossary_id=%s", (int(entry_id),))
             row = cur.fetchone()
         return self._row_to_entry(row) if row else None
 
@@ -253,7 +260,7 @@ class MySQLGlossaryRepository(GlossaryRepository):
         with self._connect() as conn:
             try:
                 with self._cursor(conn) as cur:
-                    cur.execute("DELETE FROM glossary WHERE id=%s", (int(entry_id),))
+                    cur.execute("DELETE FROM glossary WHERE glossary_id=%s", (int(entry_id),))
                     deleted = cur.rowcount > 0
                 conn.commit()
             except Exception:
@@ -261,20 +268,22 @@ class MySQLGlossaryRepository(GlossaryRepository):
                 raise
         return deleted
 
-    def hydrate_work_memory(self, work_id: str, country: str, *, limit: int = 50) -> WorkMemory | None:
-        records = self.list_glossary(work_id, country, limit=limit)
-        return hydrate_work_memory_from_records(work_id, country, records, limit=limit)
+    def hydrate_work_memory(self, work_id: str, target_country: str, *, limit: int = 50) -> WorkMemory | None:
+        records = self.list_glossary(work_id, target_country, limit=limit)
+        return hydrate_work_memory_from_records(work_id, target_country, records, limit=limit)
 
     @staticmethod
     def _row_to_entry(row: dict[str, Any]) -> GlossaryEntryRecord:
-        category = str(row.get("category") or DEFAULT_CATEGORY)
+        glossary_type = str(row.get("glossary_type") or DEFAULT_CATEGORY)
+        memo = row.get("memo")
         return GlossaryEntryRecord(
-            id=int(row["id"]),
+            glossary_id=int(row["glossary_id"]),
             work_id=str(row["work_id"]),
-            country=str(row["country"]),
-            source=str(row["source"]),
-            target=str(row["target"]),
-            category=category if category in GLOSSARY_CATEGORIES else DEFAULT_CATEGORY,
+            target_country=str(row["target_country"]),
+            original_word=str(row["original_word"]),
+            translated_word=str(row["translated_word"]),
+            glossary_type=glossary_type if glossary_type in GLOSSARY_CATEGORIES else DEFAULT_CATEGORY,
+            memo=str(memo) if memo is not None else None,
             created_at=str(row.get("created_at") or ""),
             updated_at=str(row.get("updated_at") or ""),
         )
