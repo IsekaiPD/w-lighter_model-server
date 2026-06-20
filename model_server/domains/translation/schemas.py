@@ -19,7 +19,6 @@ class TranslateRequest(BaseModel):
     targetCountry: str | None = Field(None, description="예: US, JP, CN, TH")
     sourceLocale: str | None = "ko"
     genre: str | None = None
-    qualityMode: str | None = None
     workId: str | None = None
     episodeId: str | None = None
     workMemory: dict[str, Any] | None = None
