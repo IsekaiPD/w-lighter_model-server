@@ -16,7 +16,6 @@ from db import repository as db_repo
 from . import (
     ChatbotAgent,
     ChatMessage,
-    DEFAULT_QUALITY_MODE,
     PipelineConfig,
     TranslationMode,
     TranslationPipeline,
@@ -33,7 +32,7 @@ _pipeline_cache: dict[tuple[str, bool], TranslationPipeline] = {}
 # 파이프라인 캐시 / warm-up
 # ------------------------------------------------------------------ #
 def get_translation_pipeline(
-    locale: str, *, quality_mode: str = DEFAULT_QUALITY_MODE, model_override: str | None = None
+    locale: str, *, model_override: str | None = None
 ) -> TranslationPipeline:
     mock = is_mock_mode()
     key = (locale, mock)
@@ -44,7 +43,6 @@ def get_translation_pipeline(
                 locale=locale,
                 mode=TranslationMode.V3_LITERARY_PACKAGE,
                 mock=mock,
-                quality_mode=quality_mode,
                 model_override=model_override,
             )
         )
@@ -134,7 +132,6 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
     if not is_korean_source(source_text):
         return _blocked_response(country=country, locale=locale, block_reason="non_korean_source")
 
-    quality_mode = payload.get("qualityMode") or DEFAULT_QUALITY_MODE
     model_override = payload.get("translationModel") or payload.get("model")
     genre = payload.get("genre") or payload.get("workGenre") or "Modern Korean web novel"
     max_iterations = int(payload.get("maxIterations") or 2)
@@ -151,7 +148,7 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
             work_memory = hydrated
             work_memory_source = "rdb_hydrated"
 
-    pipeline = get_translation_pipeline(locale, quality_mode=quality_mode, model_override=model_override)
+    pipeline = get_translation_pipeline(locale, model_override=model_override)
     result = asdict(
         pipeline.run_v3_literary_package(
             source_text,

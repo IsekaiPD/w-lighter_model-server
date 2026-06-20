@@ -6,8 +6,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
-
-DEFAULT_MODEL = "gpt-4.1-mini"
+from domains.guide.config import TEXT_MODEL
 
 
 GUIDE_JSON_SCHEMA: dict[str, Any] = {
@@ -100,9 +99,7 @@ def _client_and_model(payload: dict[str, Any]):
     model = str(
         payload.get("guideModel")
         or payload.get("guide_model")
-        or os.getenv("WLIGHTER_GUIDE_MODEL")
-        or os.getenv("OPENAI_GUIDE_MODEL")
-        or DEFAULT_MODEL
+        or TEXT_MODEL
     ).strip()
     return OpenAI(api_key=api_key), model
 

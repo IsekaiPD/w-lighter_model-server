@@ -14,8 +14,6 @@ class TranslationMode(str, Enum):
     V3_LITERARY_PACKAGE = "v3_literary_package"
 
 
-DEFAULT_QUALITY_MODE = "standard"
-ALLOWED_QUALITY_MODES = ("fast", "standard", "quality", "baseline")
 ALLOWED_TRANSLATION_MODELS = (
     "gpt-5.4-nano",
     "gpt-5.4-mini",
@@ -23,59 +21,10 @@ ALLOWED_TRANSLATION_MODELS = (
     "gpt-5-mini",
     "gpt-4.1-mini",
 )
-MODEL_PROFILES: dict[str, dict[str, str]] = {
-    "fast": {
-        "translation_model": "gpt-5.4-nano",
-        "review_model": "gpt-5.4-nano",
-    },
-    "standard": {
-        "translation_model": "gpt-5.4-mini",
-        "review_model": "gpt-5.4-mini",
-    },
-    "quality": {
-        "translation_model": "gpt-5.4-mini",
-        "review_model": "gpt-5.4-mini",
-    },
-    "baseline": {
-        "translation_model": "gpt-4.1-mini",
-        "review_model": "gpt-4.1-mini",
-    },
-}
-MODEL_PROFILE_ENV_VARS: dict[str, dict[str, str]] = {
-    "fast": {
-        "translation_model": "WLIGHTER_FAST_TRANSLATION_MODEL",
-        "review_model": "WLIGHTER_FAST_REVIEW_MODEL",
-    },
-    "standard": {
-        "translation_model": "WLIGHTER_STANDARD_TRANSLATION_MODEL",
-        "review_model": "WLIGHTER_STANDARD_REVIEW_MODEL",
-    },
-    "quality": {
-        "translation_model": "WLIGHTER_QUALITY_TRANSLATION_MODEL",
-        "review_model": "WLIGHTER_QUALITY_REVIEW_MODEL",
-    },
-}
 
-
-def _resolve_profile_env_model(profile_name: str, field_name: str) -> str | None:
-    env_name = MODEL_PROFILE_ENV_VARS.get(profile_name, {}).get(field_name)
-    if not env_name:
-        return None
-    value = os.getenv(env_name, "").strip()
-    if not value:
-        return None
-    return validate_translation_model(value, field_name=env_name)
-
-
-def normalize_quality_mode(value: str | None) -> str:
-    normalized = str(value or DEFAULT_QUALITY_MODE).strip().lower()
-    if normalized not in MODEL_PROFILES:
-        raise ValueError(
-            f"Unsupported qualityMode: {value}. Allowed values: {', '.join(ALLOWED_QUALITY_MODES)}"
-        )
-    return normalized
-
-
+# 텍스트(채팅) 모델 단일 노브 — guide/character/relationship과 같은 env(WLIGHTER_TEXT_MODEL) 공유.
+# 과거 품질모드별(fast/standard/quality/baseline) 모델 차등은 폐지하고 한 모델로 통일.
+DEFAULT_TEXT_MODEL = os.getenv("WLIGHTER_TEXT_MODEL", "gpt-5.4-mini")
 def validate_translation_model(model: str, *, field_name: str = "model") -> str:
     normalized = str(model or "").strip()
     if normalized not in ALLOWED_TRANSLATION_MODELS:
@@ -96,8 +45,6 @@ class PipelineConfig:
     cultural_terms_path: Path | None = None
     inspection_prompt_path: Path | None = None
     embedding_model: str = "nlpai-lab/KURE-v1"
-    quality_mode: str = DEFAULT_QUALITY_MODE
-    model_profile_name: str | None = None
     translation_model: str | None = None
     review_model: str | None = None
     allowed_models: tuple[str, ...] = ALLOWED_TRANSLATION_MODELS
@@ -115,30 +62,19 @@ class PipelineConfig:
 
     def __post_init__(self) -> None:
         self.allowed_models = tuple(str(model).strip() for model in (self.allowed_models or ALLOWED_TRANSLATION_MODELS))
-        self.quality_mode = normalize_quality_mode(self.quality_mode)
-        self.model_profile_name = str(self.model_profile_name or self.quality_mode).strip().lower()
-        if self.model_profile_name not in MODEL_PROFILES:
-            raise ValueError(
-                f"Unsupported model profile: {self.model_profile_name}. "
-                f"Allowed profiles: {', '.join(sorted(MODEL_PROFILES))}"
-            )
-
-        profile = MODEL_PROFILES[self.model_profile_name]
         override = self.model_override
         if override is not None:
             override = validate_translation_model(override, field_name="model override")
             self.model_override = override
 
-        profile_translation_model = _resolve_profile_env_model(self.model_profile_name, "translation_model")
-        profile_review_model = _resolve_profile_env_model(self.model_profile_name, "review_model")
-
+        # 모델은 단일 노브(WLIGHTER_TEXT_MODEL, 기본 gpt-5.4-mini)로 통일. translation/review 동일.
         if self.translation_model is None:
-            self.translation_model = override or profile_translation_model or profile["translation_model"]
+            self.translation_model = override or DEFAULT_TEXT_MODEL
         else:
             self.translation_model = validate_translation_model(self.translation_model, field_name="translation_model")
 
         if self.review_model is None:
-            self.review_model = override or profile_review_model or profile["review_model"]
+            self.review_model = override or DEFAULT_TEXT_MODEL
         else:
             self.review_model = validate_translation_model(self.review_model, field_name="review_model")
 
@@ -159,8 +95,6 @@ class PipelineConfig:
     ) -> dict[str, object]:
         metadata: dict[str, object] = {
             "mode": self.resolved_mode().value,
-            "quality_mode": self.quality_mode,
-            "model_profile": self.model_profile_name,
             "translation_model": self.translation_model,
             "review_model": self.review_model,
             "model": self.translation_model,
