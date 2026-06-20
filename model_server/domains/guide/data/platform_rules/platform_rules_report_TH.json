@@ -1,0 +1,876 @@
+[
+  {
+    "rule_id": "TH_DEKD_0003",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "미성년자 보호",
+      "폭력/잔혹 묘사",
+      "혐오/차별"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "일부 선정적 장면은 허용되나, 성행위·자위·성적 학대의 상세 묘사는 금지되며 벗음·키스·포옹·애무 정도만 허용된다.",
+    "guide_message_ko": "성행위·자위·성적 학대의 상세 묘사는 삭제하거나 서술을 건너뛰고, 노출·키스·포옹·애무 수준으로 표현을 조정하며 작품에 청소년 주의 문구를 표기하세요.",
+    "keywords_ko": [
+      "성적 콘텐츠",
+      "미성년자 주의",
+      "성관계 금지",
+      "성적 학대 금지",
+      "노출·애무 허용"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0004",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "폭력/잔혹 묘사",
+      "혐오/차별",
+      "불법/범죄 행위",
+      "정치/국가/역사 민감",
+      "종교/민족 민감"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "폭력·유해·비도덕적 소재는 묘사할 수 있으나 구체적 실행방법이나 모방 유도, 특정 집단에 대한 혐오·차별 조장은 금지된다.",
+    "guide_message_ko": "원고에 약물 사용·살인 수법 등 세부 실행방법이 기술되어 모방 가능성이 있는지, 특정 인물·집단을 겨냥한 혐오·차별 표현이 있는지 확인하고 해당 부분은 삭제하거나 수정하거나 분류를 조정하세요.",
+    "keywords_ko": [
+      "모방 유도 금지",
+      "세부 실행방법 금지",
+      "약물 묘사 제한",
+      "살인 수법 묘사 금지",
+      "혐오·차별 금지"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0005",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시",
+      "성적 콘텐츠",
+      "미성년자 보호",
+      "혐오/차별"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "NC 등급은 18세 이상만 열람 가능하며, 욕설은 전반적으로 허용되나 성행위 묘사에서의 노골적 욕설과 성적 이미지(사진·그림·동영상) 첨부는 금지됩니다.",
+    "guide_message_ko": "작가는 작품의 연령 제한을 18세 이상으로 설정하고 표지·시놉시스·회차·등장인물 설정에서 성적 이미지가 포함되어 있다면 삭제하거나 수정하세요. 성행위 묘사는 허용되지만 노골적 욕설 사용은 피하고 사진·그림·동영상 형태의 성적 자료는 업로드하지 마세요.",
+    "keywords_ko": [
+      "성인 등급",
+      "연령 확인",
+      "성적 묘사 허용",
+      "노골적 욕설 금지",
+      "성적 이미지 금지"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0006",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시",
+      "미성년자 보호",
+      "폭력/잔혹 묘사",
+      "혐오/차별",
+      "불법/범죄 행위"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "성적 장면이 전체 분량의 50%를 초과하는 작품은 게재할 수 없고, 폭력성은 경고 표기와 과도한·모방 가능한 묘사 금지 등의 제약을 받습니다.",
+    "guide_message_ko": "성적 묘사 비율을 50% 이하로 조정하고, 폭력적·살해 묘사는 모방 가능성이 없도록 축약·수정하거나 삭제하며 메인 페이지에 폭력 경고를 설정하고 불법적 이미지나 외부 접근 링크는 제거하세요.",
+    "keywords_ko": [
+      "성적 묘사 제한",
+      "폭력 경고",
+      "과도한 묘사 금지",
+      "불법 이미지 금지",
+      "외부 링크 차단",
+      "PG 프로모션"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0007",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시",
+      "성적 콘텐츠",
+      "혐오/차별",
+      "저작권/상표권/IP"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "근친상간이나 사람과 동물 간의 성행위 등 부도덕한 성적 내용은 금지되며, 저작권 자료는 권리자 허가 범위 내에서만 사용해야 합니다.",
+    "guide_message_ko": "작품에 근친상간 또는 사람과 동물 간 성행위를 포함하지 말고, 해당 내용이 있다면 즉시 삭제하거나 수정하세요. 캐릭터, 이미지, 음악, 영상 등 저작권 자료는 권리자의 허가를 확인하고 허용 범위를 벗어나면 교체하거나 삭제하세요.",
+    "keywords_ko": [
+      "부도덕한 콘텐츠",
+      "근친상간",
+      "동물 성행위",
+      "저작권",
+      "권리자 허가"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0009",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "정치/국가/역사 민감"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "개인이나 기관에 피해나 불쾌감을 주는 사적 내용·부적절한 언급 또는 분쟁을 조장하고 외부 유해 내용을 유도하는 게시를 금지합니다.",
+    "guide_message_ko": "타인이나 기관을 부당하게 언급하거나 사적 정보를 공개하지 마세요; 외부 링크나 접근 방법으로 유해한 내용을 유도하는 부분은 삭제하거나 수정하고, 의심되면 즉시 확인 후 재분류하세요.",
+    "keywords_ko": [
+      "사생활 침해",
+      "명예훼손",
+      "갈등 조장",
+      "외부 링크 유도"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0011",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "미성년자 보호",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "한 링크에 하나의 작품만 등록할 수 있으며 시퀄과 리부트만 예외로 허용하고 위반 시 검토·제재 대상이 된다.",
+    "guide_message_ko": "작품이 하나의 링크에만 해당하는지 확인하고, 시퀄·리부트가 아닌 별도 작품은 개별 링크로 재분류하거나 내용을 분리해 수정하세요; 위반 지적 시 14일 이내에 수정해야 하며 미수정 시 톱 랭킹에서 제외됩니다.",
+    "keywords_ko": [
+      "연재 규정",
+      "시퀄",
+      "리부트",
+      "스핀오프",
+      "중복 등록",
+      "랭킹 제외"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0019",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시",
+      "성적 콘텐츠",
+      "폭력/잔혹 묘사",
+      "혐오/차별",
+      "저작권/상표권/IP",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "제목·소개·표지·회차·본문에서 노골적인 욕설, 과도한 폭력·성적 표현을 금지하며 번역작은 저작권 허가를 명확히 표시해야 하고 위반 시 노출 제한 등의 조치가 취해질 수 있습니다.",
+    "guide_message_ko": "제목·소개·회차·표지·본문에서 노골적 욕설이나 과도한 폭력·성적 표현을 삭제하거나 완화하고, 번역작은 작품 메인 페이지에 저작권 허가 증빙을 명확히 게시하세요. 위반으로 노출이 제한되면 수정 후 노출 해제를 요청하면 약 3일 내에 검토됩니다.",
+    "keywords_ko": [
+      "욕설·성표현 금지",
+      "폭력 묘사 제한",
+      "번역 저작권 증빙",
+      "표지 선정성 금지",
+      "노출 제한 조치"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0025",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "미성년자 보호"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "원문은 주로 문의·지원 채널과 앱·결제 안내를 제공하며 구체적 작문 규정은 문의를 통해 확인하라고 안내합니다.",
+    "guide_message_ko": "작성 관련 규정이나 처리 기준이 불명확하면 제공된 SNS, 라인 공식 계정 또는 작가 게시판에 문의하고 앱 사용법과 결제(코인) 안내를 확인해 필요한 설정이나 결제 상태를 점검하세요.",
+    "keywords_ko": [
+      "문의",
+      "작가게시판",
+      "앱 사용법",
+      "결제/코인",
+      "고객지원"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0003",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시",
+      "성적 콘텐츠",
+      "미성년자 보호",
+      "혐오/차별"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "노골적이고 음란한 성적 묘사나 신체 노출이 포함된 작품은 등록할 수 없으며 운영팀의 판단에 따라 제재될 수 있습니다.",
+    "guide_message_ko": "작품의 표지·본문·소개에 노골적 성적 묘사나 신체 노출이 포함되지 않았는지 확인하고, 민감한 내용은 연령확인 기반 접근제한으로 분류해 설정하세요. 운영팀이 실제 내용을 근거로 등급·설정 변경 권한을 행사할 수 있음을 유의하세요.",
+    "keywords_ko": [
+      "음란성 금지",
+      "노골적 성적 묘사",
+      "신체 노출 금지",
+      "연령확인",
+      "접근제한"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0006",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "불법/범죄 행위",
+      "정치/국가/역사 민감"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "법률·공공질서·국가안보 또는 공중도덕에 반하는 작품은 허용되지 않으며, 운영진 판단으로 즉시 게시 중단될 수 있습니다.",
+    "guide_message_ko": "작품의 설정·시놉시스·회차 내용을 검토하여 불법 행위 묘사, 선동·미화, 공공질서나 공중도덕 침해 요소가 있으면 즉시 수정하거나 삭제해 주세요.",
+    "keywords_ko": [
+      "불법행위 묘사",
+      "선동·미화 금지",
+      "공공질서·국가안보",
+      "공중도덕",
+      "운영진 판단"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0007",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "정치/국가/역사 민감"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "개인 또는 기관을 부적절하게 언급하거나 분쟁·분열을 조장해 인물·기관에 피해를 주는 게시물을 금지합니다.",
+    "guide_message_ko": "작품의 인물·기관 언급을 확인해 비방·선동적 표현은 삭제하거나 문맥을 완화하고, 논쟁을 유발할 표현은 수정하거나 게시를 중단하세요.",
+    "keywords_ko": [
+      "명예훼손",
+      "비방",
+      "선동",
+      "분열조장",
+      "공격적 표현"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0011",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "혐오/차별"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "음란하거나 노골적인 성적 이미지 및 성행위를 암시하는 표현의 게시를 금지하며 판단은 운영진 재량으로 이뤄집니다.",
+    "guide_message_ko": "커버 이미지, 회차 본문, 줄거리, 등장인물 설정에 음란한 사진이나 노골적 성적 표현이 포함되지 않았는지 확인하고 문제가 있으면 즉시 삭제하거나 수정해 제출하세요. 의문이 있으면 운영팀 안내를 따르세요.",
+    "keywords_ko": [
+      "음란 이미지",
+      "노골적 성적 표현",
+      "성행위 묘사",
+      "표지·본문 검토"
+    ]
+  },
+  {
+    "rule_id": "TH_READAWRITE_0007",
+    "country": "TH",
+    "platform_display_name": "ReadAWrite",
+    "source_url": "https://www.readawrite.com/?action=publisher_faq",
+    "risk_type_labels_ko": [
+      "성적 콘텐츠",
+      "혐오/차별"
+    ],
+    "severity": "high",
+    "rule_summary_ko": "러브신은 허용되나 성행위나 성기 노출을 노골적으로 묘사하거나 음란한 표현을 사용하는 것은 금지되며 위반 시 게시가 중단될 수 있습니다.",
+    "guide_message_ko": "에피소드·표지·시놉시스와 이미지를 확인해 성행위 묘사, 성기 노출, 노골적 욕설 등이 포함되어 있으면 삭제하거나 완화해 수정하세요. 규정 위반 시 사전 통보 없이 게시가 중단될 수 있습니다.",
+    "keywords_ko": [
+      "러브신",
+      "노골적 성묘사",
+      "성기 노출",
+      "이미지 제한",
+      "게시 중단"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0008",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "불법/범죄 행위"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "태국 법을 명백히 위반하거나 위법 행위를 권장·조장하거나 이를 미화하는 내용은 게재할 수 없습니다.",
+    "guide_message_ko": "게시 전 원고에 태국법 위반을 조장하거나 범죄를 미화하는 표현이 없는지 확인하고, 해당 표현이 발견되면 즉시 삭제하거나 법적 책임을 피할 수 있도록 문구를 수정하세요.",
+    "keywords_ko": [
+      "불법행위",
+      "범죄 조장",
+      "법 위반",
+      "미화 금지",
+      "내용 검토"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0012",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [],
+    "severity": "medium",
+    "rule_summary_ko": "팀이 무작위로 작품을 검토하며 부적절하다고 판단되는 경우 플랫폼 규정에 따라 차단 조치가 이루어집니다.",
+    "guide_message_ko": "독자 신고와 플랫폼의 무작위 검토로 부적절 판정 시 차단될 수 있으니, 작품 내용과 분류를 확인하고 문제가 있으면 수정하거나 삭제해 주세요.",
+    "keywords_ko": [
+      "무작위 검토",
+      "신고",
+      "부적절한 내용",
+      "차단",
+      "플랫폼 제재"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0013",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [],
+    "severity": "medium",
+    "rule_summary_ko": "부적절한 내용이 포함된 작품의 해당 회차는 임시로 열람 차단되며, 수정 후 차단이 해제되면 다시 이용할 수 있습니다.",
+    "guide_message_ko": "문제가 된 회차나 시놉시스를 확인해 부적절한 부분을 수정하거나 삭제한 뒤, 변경사항 반영으로 차단 해제가 가능하도록 조치하세요.",
+    "keywords_ko": [
+      "부적절한 내용",
+      "일시적 차단",
+      "회차 수정",
+      "차단 해제"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0014",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [],
+    "severity": "medium",
+    "rule_summary_ko": "부적절한 내용이 3편 이상 동시 존재하거나 목차 또는 줄거리에 부적절한 내용이 있더라도 다른 에피소드는 차단되지 않고 정상 이용된다.",
+    "guide_message_ko": "문제가 되는 에피소드와 목차·줄거리의 내용을 확인해 수정하거나 삭제하고, 동일한 부적절한 내용이 동시에 3편 이상 게시되지 않도록 분류와 검토를 진행하세요.",
+    "keywords_ko": [
+      "부적절한 내용",
+      "3편 이상",
+      "목차 또는 줄거리",
+      "다른 에피소드 영향 없음"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0015",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [],
+    "severity": "medium",
+    "rule_summary_ko": "작품이나 회차가 차단되면 비공개 메시지함에서 사유를 확인하고 내용을 수정한 뒤 차단 해제 요청으로 팀의 검토를 받으세요.",
+    "guide_message_ko": "비공개 메시지함에서 차단 사유를 확인하고 문제 부분을 수정하거나 삭제한 뒤 '차단 해제 요청'을 눌러 팀의 검토를 요청하세요. 검토에는 약 3일이 소요됩니다.",
+    "keywords_ko": [
+      "차단 사유 확인",
+      "비공개 메시지",
+      "내용 수정",
+      "차단 해제 요청",
+      "검토 기간"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0016",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [],
+    "severity": "medium",
+    "rule_summary_ko": "정지가 부당하다고 판단되면 이의신청으로 재심사를 요청할 수 있으며, 부당 판정 시 즉시 해제되며 정당 판정 시 사유를 안내하고 3일 후에 재신청할 수 있습니다.",
+    "guide_message_ko": "정지가 부당하다고 생각되면 이의신청 버튼으로 관리자에게 재심사를 요청하세요. 부당 판정이면 즉시 해제되고, 정당 판정이면 사유를 안내받은 후 다음 이의신청은 3일 후에 가능합니다.",
+    "keywords_ko": [
+      "이의신청",
+      "재심사",
+      "부당해제",
+      "사유안내",
+      "재신청대기"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0017",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "권리자 신고로 확인된 부도덕하거나 저작권을 침해하는 내용과 고의적 반복 위반(차단 해제 후 동일 내용 재게재, 다른 곳에 옮겨 링크 게시 등)은 작품 전체를 영구 차단하여 수정이나 재사용이 불가능하다.",
+    "guide_message_ko": "권리자 신고로 확인된 저작권 침해나 부도덕한 내용이 있는지 검토하고, 문제가 있으면 즉시 해당 내용을 삭제하거나 수정하세요. 차단 해제 후 동일 내용을 재게시하거나 다른 곳에 옮겨 링크를 연결하면 작품이 영구 차단됩니다.",
+    "keywords_ko": [
+      "저작권 침해",
+      "부도덕한 내용",
+      "반복 위반",
+      "영구 차단",
+      "재게시 금지"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0020",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [],
+    "severity": "medium",
+    "rule_summary_ko": "중요 내용을 피할 수 없을 경우 독자용 경고문을 표시해야 하며, 검토를 통과한 리뷰만 시스템에 노출됩니다.",
+    "guide_message_ko": "중요 내용 공개가 불가피하면 회차 본문이나 시놉시스에 명확한 경고문을 삽입하세요. 리뷰는 규정에 맞게 작성되어야 검토를 통과해 시스템에 노출됩니다.",
+    "keywords_ko": [
+      "중요 내용 경고",
+      "경고문 삽입",
+      "리뷰 검토",
+      "검토 승인"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0001",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시",
+      "혐오/차별",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "작품의 내용·제목·소개·표지를 적절성 기준에 따라 '일반'과 '특정 그룹' 두 수준으로 분류해 공개 여부를 관리한다.",
+    "guide_message_ko": "게시 전에 작품의 내용, 제목, 소개, 표지를 검토하여 '일반' 또는 '특정 그룹' 중 적절한 수준으로 분류하세요. 민감한 표현이 있으면 수정하거나 독자 주의표시를 설정해 공개 여부를 관리하세요.",
+    "keywords_ko": [
+      "등급분류",
+      "연령표시",
+      "민감표현",
+      "제목관리",
+      "표지검토"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0002",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "저작권이나 기타 지적재산권을 침해하는 작품, 예컨대 타인의 저작물이나 구성·플롯을 복제한 작품은 게시할 수 없습니다.",
+    "guide_message_ko": "작품이 타인의 저작물을 그대로 복사하거나 구성과 플롯을 모방하지 않는지 확인하고, 침해 요소가 있으면 문제 부분을 수정하거나 삭제하거나 권리자로부터 사용 허가를 받으세요.",
+    "keywords_ko": [
+      "저작권 침해",
+      "지적재산권",
+      "표절",
+      "콘텐츠 복제"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0004",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "제목·회차명·줄거리 한 줄 소개·검색어에서 모든 유형의 욕설과 성적 암시 표현 및 비속한 1인칭·2인칭 대명사 사용을 금지한다.",
+    "guide_message_ko": "제목, 회차명, 줄거리 한 줄 소개 및 검색어를 확인하여 욕설·성적 암시 표현이나 비속한 대명사가 포함되어 있으면 삭제하거나 표현을 순화하여 수정하세요.",
+    "keywords_ko": [
+      "욕설 금지",
+      "성적 암시 금지",
+      "제목·회차 규정",
+      "비속 대명사 금지"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0005",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "혐오/차별"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "작품 내 욕설과 거친 대명사는 맥락과 빈도를 고려해 일부 허용하되 성기·성 관련 욕설은 직접 사용 금지한다.",
+    "guide_message_ko": "대사와 서술에서 거친 1인칭·2인칭 대명사 사용은 맥락상 필요할 때만 허용합니다. 욕설은 문자 대체와 빈도 제한으로 완화하고 성기·성 관련 욕설은 반드시 수정하거나 삭제하세요.",
+    "keywords_ko": [
+      "욕설 사용",
+      "거친 대명사",
+      "맥락 허용",
+      "빈도 제한",
+      "성적 욕설 금지"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0008",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "스팸/어뷰징/조작"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "통계나 노출 시스템을 실제와 다르게 만들기 위한 반복 게시·조회수 부풀리기 등 조작 행위는 금지되며 적발 시 작품 공개가 중단됩니다.",
+    "guide_message_ko": "중복 게시나 조회수 인위적 증가 등 통계 조작 의심 행위는 즉시 중단하고 관련 게시물을 삭제하거나 수정하세요. 적발 시 작품 공개가 중단될 수 있습니다.",
+    "keywords_ko": [
+      "조회수 조작",
+      "중복 게시",
+      "통계 조작",
+      "어뷰징"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0010",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP",
+      "제목/소개/표지/회차 형식"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "저작권이나 지식재산권을 침해하는 삽화나 사진 등 이미지는 게시할 수 없으며 타인 소유 이미지를 사용할 때는 적법한 사용권을 확보해야 합니다.",
+    "guide_message_ko": "이미지 사용 시 직접 소유하거나 저작권자로부터 명시적 허가를 받고, 권한이 불분명하면 즉시 삭제하거나 대체 이미지를 올리세요. 분쟁 시 모든 법적 책임과 비용은 게시자에게 있습니다.",
+    "keywords_ko": [
+      "저작권",
+      "사용권한",
+      "삽화",
+      "표지 이미지",
+      "법적 책임"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0012",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [],
+    "severity": "medium",
+    "rule_summary_ko": "중독성 물질을 포함한 이미지 게시를 원칙적으로 금지하며, 서사상 불가피한 경우(예: 알코올 음료, 담배)만 예외 허용한다.",
+    "guide_message_ko": "에피소드와 시놉시스에 이미지를 게시하지 마세요. 불가피하게 이미지를 사용해야 할 경우 서사적 필요성을 확인하고 알코올·담배 등 제한적 사례에만 최소한으로 게재하거나 삭제·교체하세요.",
+    "keywords_ko": [
+      "이미지 금지",
+      "중독성 물질",
+      "알코올·담배 예외",
+      "서사상 필요성"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0013",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "폭력/잔혹 묘사"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "폭력적이거나 모욕적이며 사회적 영향을 줄 수 있는 이미지 게시를 금지한다.",
+    "guide_message_ko": "표지·회차·시놉시스에 사용된 이미지를 확인하고 무기, 전투·싸움, 혈흔·상처, 충격적 장면, 폭력 묘사나 사고 장면이 포함되어 있으면 즉시 삭제하거나 수정하십시오.",
+    "keywords_ko": [
+      "폭력 묘사",
+      "혈흔/상처",
+      "무기 이미지",
+      "사고 장면",
+      "충격적 콘텐츠"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0014",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [
+      "불법/범죄 행위",
+      "저작권/상표권/IP"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "저작권·지식재산권 침해가 확인되면 사전 통지 없이 게시를 중단하거나 영구 삭제하고 손해배상을 청구할 수 있다.",
+    "guide_message_ko": "저작권·지식재산권 침해가 의심되는 경우 즉시 작품을 확인해 침해 요소를 삭제하거나 수정하고, 의심 사례는 팀에 바로 신고하세요. 위반 시 사전 통지 없이 게시가 중단되거나 영구 삭제될 수 있습니다.",
+    "keywords_ko": [
+      "저작권 침해",
+      "게시 중단",
+      "영구 삭제",
+      "누적 제재 3회",
+      "손해배상"
+    ]
+  },
+  {
+    "rule_id": "TH_READAWRITE_0001",
+    "country": "TH",
+    "platform_display_name": "ReadAWrite",
+    "source_url": "https://www.readawrite.com/?action=term_of_use",
+    "risk_type_labels_ko": [
+      "괴롭힘/위협",
+      "저작권/상표권/IP",
+      "개인정보/사생활"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "이용자는 회사의 이용규정과 저작권·계정·개인정보 보호 관련 규정을 준수해야 하며, 위반 시 제재나 법적 조치가 이루어질 수 있다.",
+    "guide_message_ko": "계정 정보와 비밀번호는 비밀로 관리하고, 타인의 저작물 무단복제·위조·개인정보 유출·무단접근을 하지 마세요. 게시물에 욕설·위협·체인메일·악성코드 등이 포함되지 않도록 확인하고 문제 발견 시 즉시 수정 또는 삭제하세요.",
+    "keywords_ko": [
+      "저작권",
+      "계정보안",
+      "개인정보",
+      "무단접근",
+      "부적절한 언어"
+    ]
+  },
+  {
+    "rule_id": "TH_READAWRITE_0003",
+    "country": "TH",
+    "platform_display_name": "ReadAWrite",
+    "source_url": "https://www.readawrite.com/?action=term_of_use",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "사이트와 앱의 텍스트·이미지·음성 등 콘텐츠는 저작권 및 지식재산권으로 보호되며 개인 용도로만 사용·다운로드할 수 있고 상업적 이용은 금지됩니다.",
+    "guide_message_ko": "표지·회차 본문·시놉시스·메타데이터에 사용하는 텍스트·이미지·파일의 저작권을 확인하고, 상업적 이용이 필요할 경우 사용 권한을 확보하거나 해당 자료를 삭제·교체하세요.",
+    "keywords_ko": [
+      "저작권",
+      "지식재산권",
+      "개인 이용",
+      "상업적 이용 금지",
+      "다운로드"
+    ]
+  },
+  {
+    "rule_id": "TH_READAWRITE_0005",
+    "country": "TH",
+    "platform_display_name": "ReadAWrite",
+    "source_url": "https://www.readawrite.com/?action=publisher_faq",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시",
+      "불법/범죄 행위"
+    ],
+    "severity": "medium",
+    "rule_summary_ko": "작품은 태국 법을 준수해야 하며, 의도한 독자층에 맞는 연령 등급을 명확히 표시해야 합니다.",
+    "guide_message_ko": "게시 전에 태국 법규 위반 요소가 없는지 확인하고, 작품 설정에서 적절한 연령 등급을 선택하거나 수정하세요. 등급 표기는 작품 메타데이터와 에피소드에 일관되게 적용하세요.",
+    "keywords_ko": [
+      "연령 등급",
+      "법규 준수",
+      "성인 표시",
+      "등급 표기",
+      "콘텐츠 심사"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0001",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "콘텐츠의 적합성을 위해 공개 가능한 작품을 PG 및 NC의 두 등급으로 분류한다.",
+    "guide_message_ko": "작품 등록·수정 시 연령에 맞는 등급 PG 또는 NC를 반드시 확인하고 설정하며, 내용 변경 시 즉시 등급을 재검토해 필요하면 수정하거나 재분류하세요.",
+    "keywords_ko": [
+      "연령등급",
+      "등급설정",
+      "PG",
+      "NC",
+      "콘텐츠분류"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0002",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "PG 등급은 모든 연령층에 적합함을 뜻한다.",
+    "guide_message_ko": "에피소드 본문, 메타데이터, 시놉시스를 검토해 내용이 모든 연령에 적합한지 확인하고, 문제가 없으면 등급을 PG로 설정하세요.",
+    "keywords_ko": [
+      "PG",
+      "일반 관람가",
+      "연령 적합성"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0010",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "작품에 적합한 연령 등급을 사전에 선택해 공개하고, NC 수준이 포함될 경우 처음부터 NC로 표시하며 운영진은 NC 발견 시 사전 통지 없이 등급을 변경할 수 있다.",
+    "guide_message_ko": "작품 설정에서 적절한 연령 등급을 처음에 지정하고, 이후 NC 내용이 포함될 예정이면 처음부터 NC로 표시해 독자에게 알리세요. 등급은 필요한 경우 수정할 수 있으며, 운영진이 NC를 발견하면 사전 통지 없이 등급을 변경할 수 있으니 주의하세요.",
+    "keywords_ko": [
+      "연령 등급",
+      "NC",
+      "사전 고지",
+      "등급 수정",
+      "운영진 변경"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0018",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [],
+    "severity": "low",
+    "rule_summary_ko": "일일 조회수 최다 작품을 기준으로 순위를 매기며, 동일 작품이 장르별 차트와 통합 차트에 동시에 오를 수 있습니다.",
+    "guide_message_ko": "일일 조회수를 기준으로 순위가 집계되므로 작품의 일일 조회 현황을 확인하고 장르 설정이 정확한지 점검하세요.",
+    "keywords_ko": [
+      "일일 조회수",
+      "순위 집계",
+      "장르 차트",
+      "통합 차트"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0021",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [],
+    "severity": "low",
+    "rule_summary_ko": "추천사는 300자 이상 1,000자 이하로 작성해야 한다.",
+    "guide_message_ko": "추천사의 분량이 300자 이상 1,000자 이하인지 확인하고, 벗어나면 문장을 편집하거나 불필요한 부분을 삭제해 기준에 맞추세요.",
+    "keywords_ko": [
+      "추천사",
+      "길이제한",
+      "300자",
+      "1,000자",
+      "작품소개"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0022",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [],
+    "severity": "low",
+    "rule_summary_ko": "작품의 내용과 줄거리, 독자가 계속 지켜봐야 할 이유, 주요 매력과 읽은 뒤의 감상을 간결하게 설명해야 한다.",
+    "guide_message_ko": "에피소드 또는 시놉시스에 작품 소개, 핵심 줄거리, 독자에게 이어볼 이유, 주요 강점이나 전하고자 하는 메시지와 읽은 뒤의 감상을 간결하게 작성하고 필요 시 문장과 분량을 확인·수정하세요.",
+    "keywords_ko": [
+      "작품소개",
+      "줄거리",
+      "구독유도",
+      "강점·교훈",
+      "감상"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0023",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "연령 등급/성인 표시"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "본 경품 행사는 주최 측에서 운영하며 Apple과 Google은 행사에 관여하거나 후원사가 아님을 고지합니다.",
+    "guide_message_ko": "경품 관련 문의는 반드시 주최 측에 직접 문의하세요. Apple과 Google이 해당 행사와 관련되거나 후원하지 않음을 참고하세요.",
+    "keywords_ko": [
+      "경품 행사",
+      "면책 고지",
+      "후원사 아님",
+      "문의 안내"
+    ]
+  },
+  {
+    "rule_id": "TH_DEKD_0024",
+    "country": "TH",
+    "platform_display_name": "Dek-D",
+    "source_url": "https://novel.dek-d.com/help/rules/",
+    "risk_type_labels_ko": [
+      "개인정보/사생활"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "작가용 서비스 이용 규정과 개인정보 보호 및 이용약관, 작품 등급 지정에 관한 지침을 안내한다.",
+    "guide_message_ko": "이용약관과 개인정보처리방침을 확인하고 작품의 적절한 등급을 선택한 뒤 메타데이터를 정확히 설정하세요.",
+    "keywords_ko": [
+      "이용약관",
+      "개인정보보호",
+      "작품등급",
+      "메타데이터"
+    ]
+  },
+  {
+    "rule_id": "TH_JOYLADA_0009",
+    "country": "TH",
+    "platform_display_name": "Joylada",
+    "source_url": "https://www.joylada.com/writer/condition",
+    "risk_type_labels_ko": [],
+    "severity": "low",
+    "rule_summary_ko": "Joy Chat과 Joy Story 각 회차 분량은 최대 5,000조이로 제한되며 초과분은 집계되지 않습니다.",
+    "guide_message_ko": "각 회차 본문과 시놉시스의 분량을 확인해 5,000조이를 초과하지 않도록 분할하거나 편집하세요. 초과분은 집계되지 않으니 필요 시 내용을 재구성하거나 회차를 나누어 등록하세요.",
+    "keywords_ko": [
+      "회차 분량 제한",
+      "5,000조이",
+      "Joy Chat",
+      "Joy Story",
+      "초과분 미집계"
+    ]
+  },
+  {
+    "rule_id": "TH_READAWRITE_0002",
+    "country": "TH",
+    "platform_display_name": "ReadAWrite",
+    "source_url": "https://www.readawrite.com/?action=term_of_use",
+    "risk_type_labels_ko": [
+      "상업화/수익화"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "결제 시 입력한 정보는 SSL로 암호화되고 카드 정보는 결제대행사가 승인하며 회사는 추가 확인이나 주문 거부 권한을 가진다.",
+    "guide_message_ko": "카드 결제 선택 시 입력 내용이 SSL로 보호되고 카드 정보는 결제대행사에서 승인되므로, 결제 단계의 입력 내용을 반드시 확인하고 회사의 추가 확인 또는 주문 거부 가능성을 유의하세요.",
+    "keywords_ko": [
+      "SSL 암호화",
+      "결제대행사",
+      "카드 정보 비저장",
+      "추가 확인",
+      "주문 거부"
+    ]
+  },
+  {
+    "rule_id": "TH_READAWRITE_0004",
+    "country": "TH",
+    "platform_display_name": "ReadAWrite",
+    "source_url": "https://www.readawrite.com/?action=term_of_use",
+    "risk_type_labels_ko": [],
+    "severity": "low",
+    "rule_summary_ko": "사이트의 외부 링크는 제3자 사이트의 내용과 신뢰성을 보증하지 않으며 회사는 이에 대한 책임을 지지 않습니다.",
+    "guide_message_ko": "외부 링크를 게시할 때는 링크 대상의 내용을 사전에 확인하고, 독자가 제3자 사이트의 정보가 회사의 보증이나 제휴로 오해하지 않도록 설명을 추가하세요.",
+    "keywords_ko": [
+      "외부 링크",
+      "제3자 사이트",
+      "면책",
+      "책임 한계",
+      "콘텐츠 신뢰성"
+    ]
+  },
+  {
+    "rule_id": "TH_READAWRITE_0006",
+    "country": "TH",
+    "platform_display_name": "ReadAWrite",
+    "source_url": "https://www.readawrite.com/?action=publisher_faq",
+    "risk_type_labels_ko": [
+      "저작권/상표권/IP"
+    ],
+    "severity": "low",
+    "rule_summary_ko": "작품의 저작권은 창작한 작가에게 귀속된다.",
+    "guide_message_ko": "작품을 업로드할 때 본인이 저작권자임을 확인하세요.",
+    "keywords_ko": [
+      "저작권",
+      "권리 귀속",
+      "창작자 소유",
+      "저작자 권리"
+    ]
+  }
+]

@@ -8,8 +8,9 @@ from pathlib import Path
 from typing import Any
 
 from domains.guide.config import ROOT
-PROCESSED_DIR = ROOT / "data" / "localization_guide" / "platform_observation" / "processed"
-CONTEXT_DIR = PROCESSED_DIR / "context_packs"
+OBSERVATION_DIR = ROOT / "data" / "platform_observation"
+TAG_ANALYTICS_DIR = OBSERVATION_DIR / "tag_analytics"
+CONTEXT_DIR = OBSERVATION_DIR / "context_packs"
 
 MARKET_PACKS = {
     "china": "china_observation_context_ko.json",
@@ -96,7 +97,7 @@ def load_market_context_pack(target_market: str) -> dict[str, Any]:
 
 
 def _load_processed_json(filename: str) -> Any:
-    path = PROCESSED_DIR / filename
+    path = TAG_ANALYTICS_DIR / filename
     if not path.exists():
         return None
     return json.loads(path.read_text(encoding="utf-8"))

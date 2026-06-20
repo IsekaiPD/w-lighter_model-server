@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any
 
 from domains.guide.config import ROOT
-REGULATION_DIR = ROOT / "data" / "localization_guide" / "regulation"
-RAW_PLATFORM_RULES_DIR = ROOT / "data" / "localization_guide" / "raw" / "platform_rules"
+REGULATION_DIR = ROOT / "data" / "regulation"
+RAW_PLATFORM_RULES_DIR = ROOT / "data" / "platform_rules"
 
 COUNTRY_CODE_ALIASES = {
     "jp": "JP",

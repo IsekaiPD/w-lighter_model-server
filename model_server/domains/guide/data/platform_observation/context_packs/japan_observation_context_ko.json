@@ -1,0 +1,3276 @@
+{
+  "market": "Japan",
+  "market_ko": "일본",
+  "generated_at": "2026-06-07T16:25:46.073780+00:00",
+  "analysis_scope": "platform_observation_context_only",
+  "record_count": 340,
+  "platforms": [
+    "Alphapolis",
+    "Kakuyomu",
+    "Syosetu"
+  ],
+  "signal_types": [
+    "hot_24h",
+    "monthly_ranking",
+    "weekly_ranking"
+  ],
+  "use_limits": [
+    "랭킹/인기 페이지 공개 샘플에서 관찰된 라벨·공개 지표 집계입니다.",
+    "추천, 성과 예측, 시장 적합도 판단, 창작 방향 제안에 사용하지 않습니다.",
+    "표현은 '관찰됨', '샘플 내 빈도', '검토 참고 항목'으로 제한합니다.",
+    "플랫폼 간 public metric은 의미가 달라 직접 비교하지 않습니다.",
+    "개별 작품명과 시놉시스는 대표 사례/근거 인용 없이 context pack에 넣지 않습니다."
+  ],
+  "observed_top_labels": [
+    {
+      "label_original": "R15",
+      "label_ko": "R15",
+      "count": 104,
+      "share": 0.3059
+    },
+    {
+      "label_original": "異世界転生",
+      "label_ko": "이세계 전생",
+      "count": 97,
+      "share": 0.2853
+    },
+    {
+      "label_original": "男主人公",
+      "label_ko": "남성 주인공",
+      "count": 90,
+      "share": 0.2647
+    },
+    {
+      "label_original": "残酷な描写あり",
+      "label_ko": "잔혹 묘사 있음",
+      "count": 87,
+      "share": 0.2559
+    },
+    {
+      "label_original": "ハッピーエンド",
+      "label_ko": "해피엔딩",
+      "count": 82,
+      "share": 0.2412
+    },
+    {
+      "label_original": "ざまぁ",
+      "label_ko": "사이다/복수",
+      "count": 78,
+      "share": 0.2294
+    },
+    {
+      "label_original": "ハイファンタジー〔ファンタジー〕",
+      "label_ko": "하이 판타지",
+      "count": 74,
+      "share": 0.2176
+    },
+    {
+      "label_original": "女主人公",
+      "label_ko": "여성 주인공",
+      "count": 72,
+      "share": 0.2118
+    },
+    {
+      "label_original": "魔法",
+      "label_ko": "마법",
+      "count": 67,
+      "share": 0.1971
+    },
+    {
+      "label_original": "異世界〔恋愛〕",
+      "label_ko": "이세계 로맨스",
+      "count": 63,
+      "share": 0.1853
+    },
+    {
+      "label_original": "恋愛",
+      "label_ko": "연애/로맨스",
+      "count": 62,
+      "share": 0.1824
+    },
+    {
+      "label_original": "異世界ファンタジー",
+      "label_ko": "이세계 판타지",
+      "count": 54,
+      "share": 0.1588
+    },
+    {
+      "label_original": "チート",
+      "label_ko": "치트",
+      "count": 48,
+      "share": 0.1412
+    },
+    {
+      "label_original": "ほのぼの",
+      "label_ko": "훈훈함/잔잔함",
+      "count": 47,
+      "share": 0.1382
+    },
+    {
+      "label_original": "西洋",
+      "label_ko": "서양풍",
+      "count": 43,
+      "share": 0.1265
+    },
+    {
+      "label_original": "日常",
+      "label_ko": "일상",
+      "count": 38,
+      "share": 0.1118
+    },
+    {
+      "label_original": "異世界転移",
+      "label_ko": "이세계 전이",
+      "count": 37,
+      "share": 0.1088
+    },
+    {
+      "label_original": "ラブコメ",
+      "label_ko": "러브 코미디",
+      "count": 36,
+      "share": 0.1059
+    },
+    {
+      "label_original": "シリアス",
+      "label_ko": "시리어스",
+      "count": 36,
+      "share": 0.1059
+    },
+    {
+      "label_original": "異世界",
+      "label_ko": "이세계",
+      "count": 35,
+      "share": 0.1029
+    },
+    {
+      "label_original": "成り上がり",
+      "label_ko": "신분상승/성공담",
+      "count": 35,
+      "share": 0.1029
+    },
+    {
+      "label_original": "ダンジョン",
+      "label_ko": "던전",
+      "count": 34,
+      "share": 0.1
+    },
+    {
+      "label_original": "婚約破棄",
+      "label_ko": "혼약 파기",
+      "count": 32,
+      "share": 0.0941
+    },
+    {
+      "label_original": "主人公最強",
+      "label_ko": "최강 주인공",
+      "count": 31,
+      "share": 0.0912
+    },
+    {
+      "label_original": "ローファンタジー〔ファンタジー〕",
+      "label_ko": "로우 판타지",
+      "count": 31,
+      "share": 0.0912
+    },
+    {
+      "label_original": "学園",
+      "label_ko": "학원",
+      "count": 27,
+      "share": 0.0794
+    },
+    {
+      "label_original": "ギャグ",
+      "label_ko": "개그",
+      "count": 27,
+      "share": 0.0794
+    },
+    {
+      "label_original": "冒険",
+      "label_ko": "모험",
+      "count": 26,
+      "share": 0.0765
+    },
+    {
+      "label_original": "溺愛",
+      "label_ko": "집착적 사랑/溺愛",
+      "count": 25,
+      "share": 0.0735
+    },
+    {
+      "label_original": "内政",
+      "label_ko": "내정",
+      "count": 25,
+      "share": 0.0735
+    }
+  ],
+  "observed_top_label_groups": [
+    {
+      "label_ko": "R15",
+      "count": 104,
+      "share": 0.3059,
+      "source_labels": [
+        "R15"
+      ]
+    },
+    {
+      "label_ko": "이세계 전생",
+      "count": 97,
+      "share": 0.2853,
+      "source_labels": [
+        "異世界転生"
+      ]
+    },
+    {
+      "label_ko": "남성 주인공",
+      "count": 90,
+      "share": 0.2647,
+      "source_labels": [
+        "男主人公"
+      ]
+    },
+    {
+      "label_ko": "잔혹 묘사 있음",
+      "count": 87,
+      "share": 0.2559,
+      "source_labels": [
+        "残酷な描写あり"
+      ]
+    },
+    {
+      "label_ko": "사이다/복수",
+      "count": 83,
+      "share": 0.2441,
+      "source_labels": [
+        "ざまぁ",
+        "ざまあ"
+      ]
+    },
+    {
+      "label_ko": "해피엔딩",
+      "count": 82,
+      "share": 0.2412,
+      "source_labels": [
+        "ハッピーエンド"
+      ]
+    },
+    {
+      "label_ko": "하이 판타지",
+      "count": 74,
+      "share": 0.2176,
+      "source_labels": [
+        "ハイファンタジー〔ファンタジー〕"
+      ]
+    },
+    {
+      "label_ko": "여성 주인공",
+      "count": 72,
+      "share": 0.2118,
+      "source_labels": [
+        "女主人公"
+      ]
+    },
+    {
+      "label_ko": "마법",
+      "count": 67,
+      "share": 0.1971,
+      "source_labels": [
+        "魔法"
+      ]
+    },
+    {
+      "label_ko": "이세계 로맨스",
+      "count": 63,
+      "share": 0.1853,
+      "source_labels": [
+        "異世界〔恋愛〕"
+      ]
+    },
+    {
+      "label_ko": "연애/로맨스",
+      "count": 62,
+      "share": 0.1824,
+      "source_labels": [
+        "恋愛"
+      ]
+    },
+    {
+      "label_ko": "이세계 판타지",
+      "count": 54,
+      "share": 0.1588,
+      "source_labels": [
+        "異世界ファンタジー"
+      ]
+    },
+    {
+      "label_ko": "치트",
+      "count": 48,
+      "share": 0.1412,
+      "source_labels": [
+        "チート"
+      ]
+    },
+    {
+      "label_ko": "훈훈함/잔잔함",
+      "count": 47,
+      "share": 0.1382,
+      "source_labels": [
+        "ほのぼの"
+      ]
+    },
+    {
+      "label_ko": "서양풍",
+      "count": 43,
+      "share": 0.1265,
+      "source_labels": [
+        "西洋"
+      ]
+    },
+    {
+      "label_ko": "일상",
+      "count": 38,
+      "share": 0.1118,
+      "source_labels": [
+        "日常"
+      ]
+    },
+    {
+      "label_ko": "이세계 전이",
+      "count": 37,
+      "share": 0.1088,
+      "source_labels": [
+        "異世界転移"
+      ]
+    },
+    {
+      "label_ko": "러브 코미디",
+      "count": 36,
+      "share": 0.1059,
+      "source_labels": [
+        "ラブコメ"
+      ]
+    },
+    {
+      "label_ko": "시리어스",
+      "count": 36,
+      "share": 0.1059,
+      "source_labels": [
+        "シリアス"
+      ]
+    },
+    {
+      "label_ko": "이세계",
+      "count": 35,
+      "share": 0.1029,
+      "source_labels": [
+        "異世界"
+      ]
+    },
+    {
+      "label_ko": "신분상승/성공담",
+      "count": 35,
+      "share": 0.1029,
+      "source_labels": [
+        "成り上がり"
+      ]
+    },
+    {
+      "label_ko": "던전",
+      "count": 34,
+      "share": 0.1,
+      "source_labels": [
+        "ダンジョン"
+      ]
+    },
+    {
+      "label_ko": "혼약 파기",
+      "count": 32,
+      "share": 0.0941,
+      "source_labels": [
+        "婚約破棄"
+      ]
+    },
+    {
+      "label_ko": "최강 주인공",
+      "count": 31,
+      "share": 0.0912,
+      "source_labels": [
+        "主人公最強"
+      ]
+    },
+    {
+      "label_ko": "로우 판타지",
+      "count": 31,
+      "share": 0.0912,
+      "source_labels": [
+        "ローファンタジー〔ファンタジー〕"
+      ]
+    },
+    {
+      "label_ko": "학원",
+      "count": 27,
+      "share": 0.0794,
+      "source_labels": [
+        "学園"
+      ]
+    },
+    {
+      "label_ko": "개그",
+      "count": 27,
+      "share": 0.0794,
+      "source_labels": [
+        "ギャグ"
+      ]
+    },
+    {
+      "label_ko": "모험",
+      "count": 26,
+      "share": 0.0765,
+      "source_labels": [
+        "冒険"
+      ]
+    },
+    {
+      "label_ko": "집착적 사랑/溺愛",
+      "count": 25,
+      "share": 0.0735,
+      "source_labels": [
+        "溺愛"
+      ]
+    },
+    {
+      "label_ko": "내정",
+      "count": 25,
+      "share": 0.0735,
+      "source_labels": [
+        "内政"
+      ]
+    }
+  ],
+  "platform_balanced_label_groups": [
+    {
+      "label_ko": "연애/로맨스",
+      "platforms_observed": 3,
+      "platform_count": 3,
+      "avg_platform_share": 0.35,
+      "max_platform_share": 0.875,
+      "source_labels": [
+        "恋愛"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Alphapolis",
+          "count": 35,
+          "record_count": 40,
+          "share": 0.875
+        },
+        {
+          "platform": "Syosetu",
+          "count": 19,
+          "record_count": 200,
+          "share": 0.095
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 8,
+          "record_count": 100,
+          "share": 0.08
+        }
+      ]
+    },
+    {
+      "label_ko": "사이다/복수",
+      "platforms_observed": 3,
+      "platform_count": 3,
+      "avg_platform_share": 0.29,
+      "max_platform_share": 0.4,
+      "source_labels": [
+        "ざまぁ",
+        "ざまあ"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Alphapolis",
+          "count": 16,
+          "record_count": 40,
+          "share": 0.4
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 27,
+          "record_count": 100,
+          "share": 0.27
+        },
+        {
+          "platform": "Syosetu",
+          "count": 40,
+          "record_count": 200,
+          "share": 0.2
+        }
+      ]
+    },
+    {
+      "label_ko": "해피엔딩",
+      "platforms_observed": 3,
+      "platform_count": 3,
+      "avg_platform_share": 0.2817,
+      "max_platform_share": 0.5,
+      "source_labels": [
+        "ハッピーエンド"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Alphapolis",
+          "count": 20,
+          "record_count": 40,
+          "share": 0.5
+        },
+        {
+          "platform": "Syosetu",
+          "count": 55,
+          "record_count": 200,
+          "share": 0.275
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 7,
+          "record_count": 100,
+          "share": 0.07
+        }
+      ]
+    },
+    {
+      "label_ko": "R15",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.2467,
+      "max_platform_share": 0.465,
+      "source_labels": [
+        "R15"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 93,
+          "record_count": 200,
+          "share": 0.465
+        },
+        {
+          "platform": "Alphapolis",
+          "count": 11,
+          "record_count": 40,
+          "share": 0.275
+        }
+      ]
+    },
+    {
+      "label_ko": "이세계 전생",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.1917,
+      "max_platform_share": 0.395,
+      "source_labels": [
+        "異世界転生"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 79,
+          "record_count": 200,
+          "share": 0.395
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 18,
+          "record_count": 100,
+          "share": 0.18
+        }
+      ]
+    },
+    {
+      "label_ko": "이세계 판타지",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.18,
+      "max_platform_share": 0.54,
+      "source_labels": [
+        "異世界ファンタジー"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Kakuyomu",
+          "count": 54,
+          "record_count": 100,
+          "share": 0.54
+        }
+      ]
+    },
+    {
+      "label_ko": "남성 주인공",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.1767,
+      "max_platform_share": 0.37,
+      "source_labels": [
+        "男主人公"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 74,
+          "record_count": 200,
+          "share": 0.37
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 16,
+          "record_count": 100,
+          "share": 0.16
+        }
+      ]
+    },
+    {
+      "label_ko": "이세계",
+      "platforms_observed": 3,
+      "platform_count": 3,
+      "avg_platform_share": 0.175,
+      "max_platform_share": 0.4,
+      "source_labels": [
+        "異世界"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Alphapolis",
+          "count": 16,
+          "record_count": 40,
+          "share": 0.4
+        },
+        {
+          "platform": "Syosetu",
+          "count": 13,
+          "record_count": 200,
+          "share": 0.065
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 6,
+          "record_count": 100,
+          "share": 0.06
+        }
+      ]
+    },
+    {
+      "label_ko": "여성 주인공",
+      "platforms_observed": 3,
+      "platform_count": 3,
+      "avg_platform_share": 0.16,
+      "max_platform_share": 0.315,
+      "source_labels": [
+        "女主人公"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 63,
+          "record_count": 200,
+          "share": 0.315
+        },
+        {
+          "platform": "Alphapolis",
+          "count": 5,
+          "record_count": 40,
+          "share": 0.125
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 4,
+          "record_count": 100,
+          "share": 0.04
+        }
+      ]
+    },
+    {
+      "label_ko": "마법",
+      "platforms_observed": 3,
+      "platform_count": 3,
+      "avg_platform_share": 0.145,
+      "max_platform_share": 0.265,
+      "source_labels": [
+        "魔法"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 53,
+          "record_count": 200,
+          "share": 0.265
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 12,
+          "record_count": 100,
+          "share": 0.12
+        },
+        {
+          "platform": "Alphapolis",
+          "count": 2,
+          "record_count": 40,
+          "share": 0.05
+        }
+      ]
+    },
+    {
+      "label_ko": "잔혹 묘사 있음",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.145,
+      "max_platform_share": 0.435,
+      "source_labels": [
+        "残酷な描写あり"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 87,
+          "record_count": 200,
+          "share": 0.435
+        }
+      ]
+    },
+    {
+      "label_ko": "혼약 파기",
+      "platforms_observed": 3,
+      "platform_count": 3,
+      "avg_platform_share": 0.13,
+      "max_platform_share": 0.275,
+      "source_labels": [
+        "婚約破棄"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Alphapolis",
+          "count": 11,
+          "record_count": 40,
+          "share": 0.275
+        },
+        {
+          "platform": "Syosetu",
+          "count": 19,
+          "record_count": 200,
+          "share": 0.095
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 2,
+          "record_count": 100,
+          "share": 0.02
+        }
+      ]
+    },
+    {
+      "label_ko": "하이 판타지",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.1233,
+      "max_platform_share": 0.37,
+      "source_labels": [
+        "ハイファンタジー〔ファンタジー〕"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 74,
+          "record_count": 200,
+          "share": 0.37
+        }
+      ]
+    },
+    {
+      "label_ko": "이세계 로맨스",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.105,
+      "max_platform_share": 0.315,
+      "source_labels": [
+        "異世界〔恋愛〕"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 63,
+          "record_count": 200,
+          "share": 0.315
+        }
+      ]
+    },
+    {
+      "label_ko": "러브 코미디",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.1,
+      "max_platform_share": 0.24,
+      "source_labels": [
+        "ラブコメ"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Kakuyomu",
+          "count": 24,
+          "record_count": 100,
+          "share": 0.24
+        },
+        {
+          "platform": "Syosetu",
+          "count": 12,
+          "record_count": 200,
+          "share": 0.06
+        }
+      ]
+    },
+    {
+      "label_ko": "치트",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.095,
+      "max_platform_share": 0.195,
+      "source_labels": [
+        "チート"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 39,
+          "record_count": 200,
+          "share": 0.195
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 9,
+          "record_count": 100,
+          "share": 0.09
+        }
+      ]
+    },
+    {
+      "label_ko": "신분상승/성공담",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.0883,
+      "max_platform_share": 0.18,
+      "source_labels": [
+        "成り上がり"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Kakuyomu",
+          "count": 18,
+          "record_count": 100,
+          "share": 0.18
+        },
+        {
+          "platform": "Syosetu",
+          "count": 17,
+          "record_count": 200,
+          "share": 0.085
+        }
+      ]
+    },
+    {
+      "label_ko": "집착적 사랑/溺愛",
+      "platforms_observed": 3,
+      "platform_count": 3,
+      "avg_platform_share": 0.0867,
+      "max_platform_share": 0.15,
+      "source_labels": [
+        "溺愛"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Alphapolis",
+          "count": 6,
+          "record_count": 40,
+          "share": 0.15
+        },
+        {
+          "platform": "Syosetu",
+          "count": 16,
+          "record_count": 200,
+          "share": 0.08
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 3,
+          "record_count": 100,
+          "share": 0.03
+        }
+      ]
+    },
+    {
+      "label_ko": "최강 주인공",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.085,
+      "max_platform_share": 0.2,
+      "source_labels": [
+        "主人公最強"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Kakuyomu",
+          "count": 20,
+          "record_count": 100,
+          "share": 0.2
+        },
+        {
+          "platform": "Syosetu",
+          "count": 11,
+          "record_count": 200,
+          "share": 0.055
+        }
+      ]
+    },
+    {
+      "label_ko": "훈훈함/잔잔함",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.085,
+      "max_platform_share": 0.215,
+      "source_labels": [
+        "ほのぼの"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 43,
+          "record_count": 200,
+          "share": 0.215
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 4,
+          "record_count": 100,
+          "share": 0.04
+        }
+      ]
+    },
+    {
+      "label_ko": "판타지",
+      "platforms_observed": 3,
+      "platform_count": 3,
+      "avg_platform_share": 0.0817,
+      "max_platform_share": 0.125,
+      "source_labels": [
+        "ファンタジー"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Alphapolis",
+          "count": 5,
+          "record_count": 40,
+          "share": 0.125
+        },
+        {
+          "platform": "Syosetu",
+          "count": 14,
+          "record_count": 200,
+          "share": 0.07
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 5,
+          "record_count": 100,
+          "share": 0.05
+        }
+      ]
+    },
+    {
+      "label_ko": "현대 판타지",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.08,
+      "max_platform_share": 0.24,
+      "source_labels": [
+        "現代ファンタジー"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Kakuyomu",
+          "count": 24,
+          "record_count": 100,
+          "share": 0.24
+        }
+      ]
+    },
+    {
+      "label_ko": "일상",
+      "platforms_observed": 3,
+      "platform_count": 3,
+      "avg_platform_share": 0.0783,
+      "max_platform_share": 0.175,
+      "source_labels": [
+        "日常"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 35,
+          "record_count": 200,
+          "share": 0.175
+        },
+        {
+          "platform": "Alphapolis",
+          "count": 2,
+          "record_count": 40,
+          "share": 0.05
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 1,
+          "record_count": 100,
+          "share": 0.01
+        }
+      ]
+    },
+    {
+      "label_ko": "던전",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.075,
+      "max_platform_share": 0.115,
+      "source_labels": [
+        "ダンジョン"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 23,
+          "record_count": 200,
+          "share": 0.115
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 11,
+          "record_count": 100,
+          "share": 0.11
+        }
+      ]
+    },
+    {
+      "label_ko": "서양풍",
+      "platforms_observed": 1,
+      "platform_count": 3,
+      "avg_platform_share": 0.0717,
+      "max_platform_share": 0.215,
+      "source_labels": [
+        "西洋"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 43,
+          "record_count": 200,
+          "share": 0.215
+        }
+      ]
+    },
+    {
+      "label_ko": "얀데레",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.07,
+      "max_platform_share": 0.2,
+      "source_labels": [
+        "ヤンデレ"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Kakuyomu",
+          "count": 20,
+          "record_count": 100,
+          "share": 0.2
+        },
+        {
+          "platform": "Syosetu",
+          "count": 2,
+          "record_count": 200,
+          "share": 0.01
+        }
+      ]
+    },
+    {
+      "label_ko": "이세계 전이",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.07,
+      "max_platform_share": 0.16,
+      "source_labels": [
+        "異世界転移"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 32,
+          "record_count": 200,
+          "share": 0.16
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 5,
+          "record_count": 100,
+          "share": 0.05
+        }
+      ]
+    },
+    {
+      "label_ko": "학원",
+      "platforms_observed": 3,
+      "platform_count": 3,
+      "avg_platform_share": 0.0667,
+      "max_platform_share": 0.09,
+      "source_labels": [
+        "学園"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Kakuyomu",
+          "count": 9,
+          "record_count": 100,
+          "share": 0.09
+        },
+        {
+          "platform": "Syosetu",
+          "count": 17,
+          "record_count": 200,
+          "share": 0.085
+        },
+        {
+          "platform": "Alphapolis",
+          "count": 1,
+          "record_count": 40,
+          "share": 0.025
+        }
+      ]
+    },
+    {
+      "label_ko": "시리어스",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.0633,
+      "max_platform_share": 0.17,
+      "source_labels": [
+        "シリアス"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Syosetu",
+          "count": 34,
+          "record_count": 200,
+          "share": 0.17
+        },
+        {
+          "platform": "Kakuyomu",
+          "count": 2,
+          "record_count": 100,
+          "share": 0.02
+        }
+      ]
+    },
+    {
+      "label_ko": "애절함",
+      "platforms_observed": 2,
+      "platform_count": 3,
+      "avg_platform_share": 0.06,
+      "max_platform_share": 0.175,
+      "source_labels": [
+        "切ない"
+      ],
+      "platform_breakdown": [
+        {
+          "platform": "Alphapolis",
+          "count": 7,
+          "record_count": 40,
+          "share": 0.175
+        },
+        {
+          "platform": "Syosetu",
+          "count": 1,
+          "record_count": 200,
+          "share": 0.005
+        }
+      ]
+    }
+  ],
+  "platform_summaries": [
+    {
+      "platform": "Alphapolis",
+      "market": "Japan",
+      "record_count": 40,
+      "signal_types": [
+        "hot_24h"
+      ],
+      "top_labels": [
+        {
+          "label_original": "恋愛",
+          "label_ko": "연애/로맨스",
+          "count": 35,
+          "share": 0.875
+        },
+        {
+          "label_original": "ハッピーエンド",
+          "label_ko": "해피엔딩",
+          "count": 20,
+          "share": 0.5
+        },
+        {
+          "label_original": "ざまぁ",
+          "label_ko": "사이다/복수",
+          "count": 16,
+          "share": 0.4
+        },
+        {
+          "label_original": "異世界",
+          "label_ko": "이세계",
+          "count": 16,
+          "share": 0.4
+        },
+        {
+          "label_original": "R15",
+          "label_ko": "R15",
+          "count": 11,
+          "share": 0.275
+        },
+        {
+          "label_original": "婚約破棄",
+          "label_ko": "혼약 파기",
+          "count": 11,
+          "share": 0.275
+        },
+        {
+          "label_original": "切ない",
+          "label_ko": "애절함",
+          "count": 7,
+          "share": 0.175
+        },
+        {
+          "label_original": "溺愛",
+          "label_ko": "집착적 사랑/溺愛",
+          "count": 6,
+          "share": 0.15
+        },
+        {
+          "label_original": "異世界恋愛",
+          "label_ko": "異世界恋愛",
+          "count": 5,
+          "share": 0.125
+        },
+        {
+          "label_original": "女主人公",
+          "label_ko": "여성 주인공",
+          "count": 5,
+          "share": 0.125
+        },
+        {
+          "label_original": "ファンタジー",
+          "label_ko": "판타지",
+          "count": 5,
+          "share": 0.125
+        },
+        {
+          "label_original": "離縁",
+          "label_ko": "離縁",
+          "count": 4,
+          "share": 0.1
+        }
+      ],
+      "top_label_groups": [
+        {
+          "label_ko": "연애/로맨스",
+          "count": 35,
+          "share": 0.875,
+          "source_labels": [
+            "恋愛"
+          ]
+        },
+        {
+          "label_ko": "해피엔딩",
+          "count": 20,
+          "share": 0.5,
+          "source_labels": [
+            "ハッピーエンド"
+          ]
+        },
+        {
+          "label_ko": "사이다/복수",
+          "count": 16,
+          "share": 0.4,
+          "source_labels": [
+            "ざまぁ"
+          ]
+        },
+        {
+          "label_ko": "이세계",
+          "count": 16,
+          "share": 0.4,
+          "source_labels": [
+            "異世界"
+          ]
+        },
+        {
+          "label_ko": "R15",
+          "count": 11,
+          "share": 0.275,
+          "source_labels": [
+            "R15"
+          ]
+        },
+        {
+          "label_ko": "혼약 파기",
+          "count": 11,
+          "share": 0.275,
+          "source_labels": [
+            "婚約破棄"
+          ]
+        },
+        {
+          "label_ko": "애절함",
+          "count": 7,
+          "share": 0.175,
+          "source_labels": [
+            "切ない"
+          ]
+        },
+        {
+          "label_ko": "집착적 사랑/溺愛",
+          "count": 6,
+          "share": 0.15,
+          "source_labels": [
+            "溺愛"
+          ]
+        },
+        {
+          "label_ko": "異世界恋愛",
+          "count": 5,
+          "share": 0.125,
+          "source_labels": [
+            "異世界恋愛"
+          ]
+        },
+        {
+          "label_ko": "여성 주인공",
+          "count": 5,
+          "share": 0.125,
+          "source_labels": [
+            "女主人公"
+          ]
+        },
+        {
+          "label_ko": "판타지",
+          "count": 5,
+          "share": 0.125,
+          "source_labels": [
+            "ファンタジー"
+          ]
+        },
+        {
+          "label_ko": "離縁",
+          "count": 4,
+          "share": 0.1,
+          "source_labels": [
+            "離縁"
+          ]
+        }
+      ],
+      "available_metrics": [
+        "characters",
+        "comments",
+        "platform_rank",
+        "points_24h"
+      ],
+      "synopsis_present_share": 1.0
+    },
+    {
+      "platform": "Kakuyomu",
+      "market": "Japan",
+      "record_count": 100,
+      "signal_types": [
+        "weekly_ranking"
+      ],
+      "top_labels": [
+        {
+          "label_original": "異世界ファンタジー",
+          "label_ko": "이세계 판타지",
+          "count": 54,
+          "share": 0.54
+        },
+        {
+          "label_original": "ざまぁ",
+          "label_ko": "사이다/복수",
+          "count": 25,
+          "share": 0.25
+        },
+        {
+          "label_original": "ラブコメ",
+          "label_ko": "러브 코미디",
+          "count": 24,
+          "share": 0.24
+        },
+        {
+          "label_original": "現代ファンタジー",
+          "label_ko": "현대 판타지",
+          "count": 24,
+          "share": 0.24
+        },
+        {
+          "label_original": "ヤンデレ",
+          "label_ko": "얀데레",
+          "count": 20,
+          "share": 0.2
+        },
+        {
+          "label_original": "主人公最強",
+          "label_ko": "최강 주인공",
+          "count": 20,
+          "share": 0.2
+        },
+        {
+          "label_original": "異世界転生",
+          "label_ko": "이세계 전생",
+          "count": 18,
+          "share": 0.18
+        },
+        {
+          "label_original": "成り上がり",
+          "label_ko": "신분상승/성공담",
+          "count": 18,
+          "share": 0.18
+        },
+        {
+          "label_original": "男主人公",
+          "label_ko": "남성 주인공",
+          "count": 16,
+          "share": 0.16
+        },
+        {
+          "label_original": "曇らせ",
+          "label_ko": "고통/피폐 전개",
+          "count": 14,
+          "share": 0.14
+        },
+        {
+          "label_original": "ハーレム",
+          "label_ko": "하렘",
+          "count": 12,
+          "share": 0.12
+        },
+        {
+          "label_original": "魔法",
+          "label_ko": "마법",
+          "count": 12,
+          "share": 0.12
+        }
+      ],
+      "top_label_groups": [
+        {
+          "label_ko": "이세계 판타지",
+          "count": 54,
+          "share": 0.54,
+          "source_labels": [
+            "異世界ファンタジー"
+          ]
+        },
+        {
+          "label_ko": "사이다/복수",
+          "count": 27,
+          "share": 0.27,
+          "source_labels": [
+            "ざまぁ",
+            "ざまあ"
+          ]
+        },
+        {
+          "label_ko": "러브 코미디",
+          "count": 24,
+          "share": 0.24,
+          "source_labels": [
+            "ラブコメ"
+          ]
+        },
+        {
+          "label_ko": "현대 판타지",
+          "count": 24,
+          "share": 0.24,
+          "source_labels": [
+            "現代ファンタジー"
+          ]
+        },
+        {
+          "label_ko": "얀데레",
+          "count": 20,
+          "share": 0.2,
+          "source_labels": [
+            "ヤンデレ"
+          ]
+        },
+        {
+          "label_ko": "최강 주인공",
+          "count": 20,
+          "share": 0.2,
+          "source_labels": [
+            "主人公最強"
+          ]
+        },
+        {
+          "label_ko": "이세계 전생",
+          "count": 18,
+          "share": 0.18,
+          "source_labels": [
+            "異世界転生"
+          ]
+        },
+        {
+          "label_ko": "신분상승/성공담",
+          "count": 18,
+          "share": 0.18,
+          "source_labels": [
+            "成り上がり"
+          ]
+        },
+        {
+          "label_ko": "남성 주인공",
+          "count": 16,
+          "share": 0.16,
+          "source_labels": [
+            "男主人公"
+          ]
+        },
+        {
+          "label_ko": "고통/피폐 전개",
+          "count": 14,
+          "share": 0.14,
+          "source_labels": [
+            "曇らせ"
+          ]
+        },
+        {
+          "label_ko": "하렘",
+          "count": 12,
+          "share": 0.12,
+          "source_labels": [
+            "ハーレム"
+          ]
+        },
+        {
+          "label_ko": "마법",
+          "count": 12,
+          "share": 0.12,
+          "source_labels": [
+            "魔法"
+          ]
+        }
+      ],
+      "available_metrics": [
+        "platform_rank",
+        "stars"
+      ],
+      "synopsis_present_share": 1.0
+    },
+    {
+      "platform": "Syosetu",
+      "market": "Japan",
+      "record_count": 200,
+      "signal_types": [
+        "monthly_ranking",
+        "weekly_ranking"
+      ],
+      "top_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15",
+          "count": 93,
+          "share": 0.465
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음",
+          "count": 87,
+          "share": 0.435
+        },
+        {
+          "label_original": "異世界転生",
+          "label_ko": "이세계 전생",
+          "count": 79,
+          "share": 0.395
+        },
+        {
+          "label_original": "ハイファンタジー〔ファンタジー〕",
+          "label_ko": "하이 판타지",
+          "count": 74,
+          "share": 0.37
+        },
+        {
+          "label_original": "男主人公",
+          "label_ko": "남성 주인공",
+          "count": 74,
+          "share": 0.37
+        },
+        {
+          "label_original": "異世界〔恋愛〕",
+          "label_ko": "이세계 로맨스",
+          "count": 63,
+          "share": 0.315
+        },
+        {
+          "label_original": "女主人公",
+          "label_ko": "여성 주인공",
+          "count": 63,
+          "share": 0.315
+        },
+        {
+          "label_original": "ハッピーエンド",
+          "label_ko": "해피엔딩",
+          "count": 55,
+          "share": 0.275
+        },
+        {
+          "label_original": "魔法",
+          "label_ko": "마법",
+          "count": 53,
+          "share": 0.265
+        },
+        {
+          "label_original": "ほのぼの",
+          "label_ko": "훈훈함/잔잔함",
+          "count": 43,
+          "share": 0.215
+        },
+        {
+          "label_original": "西洋",
+          "label_ko": "서양풍",
+          "count": 43,
+          "share": 0.215
+        },
+        {
+          "label_original": "チート",
+          "label_ko": "치트",
+          "count": 39,
+          "share": 0.195
+        }
+      ],
+      "top_label_groups": [
+        {
+          "label_ko": "R15",
+          "count": 93,
+          "share": 0.465,
+          "source_labels": [
+            "R15"
+          ]
+        },
+        {
+          "label_ko": "잔혹 묘사 있음",
+          "count": 87,
+          "share": 0.435,
+          "source_labels": [
+            "残酷な描写あり"
+          ]
+        },
+        {
+          "label_ko": "이세계 전생",
+          "count": 79,
+          "share": 0.395,
+          "source_labels": [
+            "異世界転生"
+          ]
+        },
+        {
+          "label_ko": "하이 판타지",
+          "count": 74,
+          "share": 0.37,
+          "source_labels": [
+            "ハイファンタジー〔ファンタジー〕"
+          ]
+        },
+        {
+          "label_ko": "남성 주인공",
+          "count": 74,
+          "share": 0.37,
+          "source_labels": [
+            "男主人公"
+          ]
+        },
+        {
+          "label_ko": "이세계 로맨스",
+          "count": 63,
+          "share": 0.315,
+          "source_labels": [
+            "異世界〔恋愛〕"
+          ]
+        },
+        {
+          "label_ko": "여성 주인공",
+          "count": 63,
+          "share": 0.315,
+          "source_labels": [
+            "女主人公"
+          ]
+        },
+        {
+          "label_ko": "해피엔딩",
+          "count": 55,
+          "share": 0.275,
+          "source_labels": [
+            "ハッピーエンド"
+          ]
+        },
+        {
+          "label_ko": "마법",
+          "count": 53,
+          "share": 0.265,
+          "source_labels": [
+            "魔法"
+          ]
+        },
+        {
+          "label_ko": "훈훈함/잔잔함",
+          "count": 43,
+          "share": 0.215,
+          "source_labels": [
+            "ほのぼの"
+          ]
+        },
+        {
+          "label_ko": "서양풍",
+          "count": 43,
+          "share": 0.215,
+          "source_labels": [
+            "西洋"
+          ]
+        },
+        {
+          "label_ko": "사이다/복수",
+          "count": 40,
+          "share": 0.2,
+          "source_labels": [
+            "ざまぁ",
+            "ざまあ"
+          ]
+        }
+      ],
+      "available_metrics": [
+        "characters",
+        "episodes",
+        "monthly_points",
+        "weekly_points"
+      ],
+      "synopsis_present_share": 1.0
+    }
+  ],
+  "signal_type_summaries": [
+    {
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "record_count": 40,
+      "top_label_groups": [
+        {
+          "label_ko": "연애/로맨스",
+          "count": 35,
+          "share": 0.875,
+          "source_labels": [
+            "恋愛"
+          ]
+        },
+        {
+          "label_ko": "해피엔딩",
+          "count": 20,
+          "share": 0.5,
+          "source_labels": [
+            "ハッピーエンド"
+          ]
+        },
+        {
+          "label_ko": "사이다/복수",
+          "count": 16,
+          "share": 0.4,
+          "source_labels": [
+            "ざまぁ"
+          ]
+        },
+        {
+          "label_ko": "이세계",
+          "count": 16,
+          "share": 0.4,
+          "source_labels": [
+            "異世界"
+          ]
+        },
+        {
+          "label_ko": "R15",
+          "count": 11,
+          "share": 0.275,
+          "source_labels": [
+            "R15"
+          ]
+        },
+        {
+          "label_ko": "혼약 파기",
+          "count": 11,
+          "share": 0.275,
+          "source_labels": [
+            "婚約破棄"
+          ]
+        },
+        {
+          "label_ko": "애절함",
+          "count": 7,
+          "share": 0.175,
+          "source_labels": [
+            "切ない"
+          ]
+        },
+        {
+          "label_ko": "집착적 사랑/溺愛",
+          "count": 6,
+          "share": 0.15,
+          "source_labels": [
+            "溺愛"
+          ]
+        }
+      ],
+      "synopsis_present_share": 1.0
+    },
+    {
+      "platform": "Kakuyomu",
+      "signal_type": "weekly_ranking",
+      "record_count": 100,
+      "top_label_groups": [
+        {
+          "label_ko": "이세계 판타지",
+          "count": 54,
+          "share": 0.54,
+          "source_labels": [
+            "異世界ファンタジー"
+          ]
+        },
+        {
+          "label_ko": "사이다/복수",
+          "count": 27,
+          "share": 0.27,
+          "source_labels": [
+            "ざまぁ",
+            "ざまあ"
+          ]
+        },
+        {
+          "label_ko": "러브 코미디",
+          "count": 24,
+          "share": 0.24,
+          "source_labels": [
+            "ラブコメ"
+          ]
+        },
+        {
+          "label_ko": "현대 판타지",
+          "count": 24,
+          "share": 0.24,
+          "source_labels": [
+            "現代ファンタジー"
+          ]
+        },
+        {
+          "label_ko": "얀데레",
+          "count": 20,
+          "share": 0.2,
+          "source_labels": [
+            "ヤンデレ"
+          ]
+        },
+        {
+          "label_ko": "최강 주인공",
+          "count": 20,
+          "share": 0.2,
+          "source_labels": [
+            "主人公最強"
+          ]
+        },
+        {
+          "label_ko": "이세계 전생",
+          "count": 18,
+          "share": 0.18,
+          "source_labels": [
+            "異世界転生"
+          ]
+        },
+        {
+          "label_ko": "신분상승/성공담",
+          "count": 18,
+          "share": 0.18,
+          "source_labels": [
+            "成り上がり"
+          ]
+        }
+      ],
+      "synopsis_present_share": 1.0
+    },
+    {
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "record_count": 100,
+      "top_label_groups": [
+        {
+          "label_ko": "R15",
+          "count": 48,
+          "share": 0.48,
+          "source_labels": [
+            "R15"
+          ]
+        },
+        {
+          "label_ko": "잔혹 묘사 있음",
+          "count": 45,
+          "share": 0.45,
+          "source_labels": [
+            "残酷な描写あり"
+          ]
+        },
+        {
+          "label_ko": "이세계 전생",
+          "count": 38,
+          "share": 0.38,
+          "source_labels": [
+            "異世界転生"
+          ]
+        },
+        {
+          "label_ko": "남성 주인공",
+          "count": 37,
+          "share": 0.37,
+          "source_labels": [
+            "男主人公"
+          ]
+        },
+        {
+          "label_ko": "하이 판타지",
+          "count": 36,
+          "share": 0.36,
+          "source_labels": [
+            "ハイファンタジー〔ファンタジー〕"
+          ]
+        },
+        {
+          "label_ko": "이세계 로맨스",
+          "count": 34,
+          "share": 0.34,
+          "source_labels": [
+            "異世界〔恋愛〕"
+          ]
+        },
+        {
+          "label_ko": "해피엔딩",
+          "count": 29,
+          "share": 0.29,
+          "source_labels": [
+            "ハッピーエンド"
+          ]
+        },
+        {
+          "label_ko": "여성 주인공",
+          "count": 29,
+          "share": 0.29,
+          "source_labels": [
+            "女主人公"
+          ]
+        }
+      ],
+      "synopsis_present_share": 1.0
+    },
+    {
+      "platform": "Syosetu",
+      "signal_type": "weekly_ranking",
+      "record_count": 100,
+      "top_label_groups": [
+        {
+          "label_ko": "R15",
+          "count": 45,
+          "share": 0.45,
+          "source_labels": [
+            "R15"
+          ]
+        },
+        {
+          "label_ko": "잔혹 묘사 있음",
+          "count": 42,
+          "share": 0.42,
+          "source_labels": [
+            "残酷な描写あり"
+          ]
+        },
+        {
+          "label_ko": "이세계 전생",
+          "count": 41,
+          "share": 0.41,
+          "source_labels": [
+            "異世界転生"
+          ]
+        },
+        {
+          "label_ko": "하이 판타지",
+          "count": 38,
+          "share": 0.38,
+          "source_labels": [
+            "ハイファンタジー〔ファンタジー〕"
+          ]
+        },
+        {
+          "label_ko": "남성 주인공",
+          "count": 37,
+          "share": 0.37,
+          "source_labels": [
+            "男主人公"
+          ]
+        },
+        {
+          "label_ko": "여성 주인공",
+          "count": 34,
+          "share": 0.34,
+          "source_labels": [
+            "女主人公"
+          ]
+        },
+        {
+          "label_ko": "마법",
+          "count": 29,
+          "share": 0.29,
+          "source_labels": [
+            "魔法"
+          ]
+        },
+        {
+          "label_ko": "이세계 로맨스",
+          "count": 29,
+          "share": 0.29,
+          "source_labels": [
+            "異世界〔恋愛〕"
+          ]
+        }
+      ],
+      "synopsis_present_share": 1.0
+    }
+  ],
+  "frequent_label_pairs": [
+    {
+      "market": "Japan",
+      "label_a_original": "R15",
+      "label_a_ko": "R15",
+      "label_b_original": "残酷な描写あり",
+      "label_b_ko": "잔혹 묘사 있음",
+      "co_count": 58,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "R15",
+      "label_a_ko": "R15",
+      "label_b_original": "ハイファンタジー〔ファンタジー〕",
+      "label_b_ko": "하이 판타지",
+      "co_count": 48,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "ハッピーエンド",
+      "label_a_ko": "해피엔딩",
+      "label_b_original": "女主人公",
+      "label_b_ko": "여성 주인공",
+      "co_count": 43,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "R15",
+      "label_a_ko": "R15",
+      "label_b_original": "異世界転生",
+      "label_b_ko": "이세계 전생",
+      "co_count": 42,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "残酷な描写あり",
+      "label_a_ko": "잔혹 묘사 있음",
+      "label_b_original": "男主人公",
+      "label_b_ko": "남성 주인공",
+      "co_count": 42,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "ハイファンタジー〔ファンタジー〕",
+      "label_a_ko": "하이 판타지",
+      "label_b_original": "異世界転生",
+      "label_b_ko": "이세계 전생",
+      "co_count": 40,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "女主人公",
+      "label_a_ko": "여성 주인공",
+      "label_b_original": "異世界〔恋愛〕",
+      "label_b_ko": "이세계 로맨스",
+      "co_count": 39,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "R15",
+      "label_a_ko": "R15",
+      "label_b_original": "男主人公",
+      "label_b_ko": "남성 주인공",
+      "co_count": 38,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "ハッピーエンド",
+      "label_a_ko": "해피엔딩",
+      "label_b_original": "異世界〔恋愛〕",
+      "label_b_ko": "이세계 로맨스",
+      "co_count": 36,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "女主人公",
+      "label_a_ko": "여성 주인공",
+      "label_b_original": "異世界転生",
+      "label_b_ko": "이세계 전생",
+      "co_count": 35,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "異世界転生",
+      "label_a_ko": "이세계 전생",
+      "label_b_original": "魔法",
+      "label_b_ko": "마법",
+      "co_count": 34,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "ざまぁ",
+      "label_a_ko": "사이다/복수",
+      "label_b_original": "ハッピーエンド",
+      "label_b_ko": "해피엔딩",
+      "co_count": 33,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "ハイファンタジー〔ファンタジー〕",
+      "label_a_ko": "하이 판타지",
+      "label_b_original": "残酷な描写あり",
+      "label_b_ko": "잔혹 묘사 있음",
+      "co_count": 33,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "ハイファンタジー〔ファンタジー〕",
+      "label_a_ko": "하이 판타지",
+      "label_b_original": "男主人公",
+      "label_b_ko": "남성 주인공",
+      "co_count": 32,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "残酷な描写あり",
+      "label_a_ko": "잔혹 묘사 있음",
+      "label_b_original": "異世界転生",
+      "label_b_ko": "이세계 전생",
+      "co_count": 32,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "ハッピーエンド",
+      "label_a_ko": "해피엔딩",
+      "label_b_original": "恋愛",
+      "label_b_ko": "연애/로맨스",
+      "co_count": 30,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "男主人公",
+      "label_a_ko": "남성 주인공",
+      "label_b_original": "異世界転生",
+      "label_b_ko": "이세계 전생",
+      "co_count": 28,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "ハッピーエンド",
+      "label_a_ko": "해피엔딩",
+      "label_b_original": "異世界転生",
+      "label_b_ko": "이세계 전생",
+      "co_count": 28,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "異世界〔恋愛〕",
+      "label_a_ko": "이세계 로맨스",
+      "label_b_original": "異世界転生",
+      "label_b_ko": "이세계 전생",
+      "co_count": 28,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "R15",
+      "label_a_ko": "R15",
+      "label_b_original": "女主人公",
+      "label_b_ko": "여성 주인공",
+      "co_count": 27,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "R15",
+      "label_a_ko": "R15",
+      "label_b_original": "魔法",
+      "label_b_ko": "마법",
+      "co_count": 26,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "チート",
+      "label_a_ko": "치트",
+      "label_b_original": "男主人公",
+      "label_b_ko": "남성 주인공",
+      "co_count": 26,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "男主人公",
+      "label_a_ko": "남성 주인공",
+      "label_b_original": "魔法",
+      "label_b_ko": "마법",
+      "co_count": 26,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "ハイファンタジー〔ファンタジー〕",
+      "label_a_ko": "하이 판타지",
+      "label_b_original": "魔法",
+      "label_b_ko": "마법",
+      "co_count": 26,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "ローファンタジー〔ファンタジー〕",
+      "label_a_ko": "로우 판타지",
+      "label_b_original": "男主人公",
+      "label_b_ko": "남성 주인공",
+      "co_count": 26,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "R15",
+      "label_a_ko": "R15",
+      "label_b_original": "異世界〔恋愛〕",
+      "label_b_ko": "이세계 로맨스",
+      "co_count": 26,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "女主人公",
+      "label_a_ko": "여성 주인공",
+      "label_b_original": "西洋",
+      "label_b_ko": "서양풍",
+      "co_count": 25,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "残酷な描写あり",
+      "label_a_ko": "잔혹 묘사 있음",
+      "label_b_original": "魔法",
+      "label_b_ko": "마법",
+      "co_count": 25,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "R15",
+      "label_a_ko": "R15",
+      "label_b_original": "ハッピーエンド",
+      "label_b_ko": "해피엔딩",
+      "co_count": 24,
+      "records_with_label_pairs": 337
+    },
+    {
+      "market": "Japan",
+      "label_a_original": "ざまぁ",
+      "label_a_ko": "사이다/복수",
+      "label_b_original": "異世界〔恋愛〕",
+      "label_b_ko": "이세계 로맨스",
+      "co_count": 24,
+      "records_with_label_pairs": 337
+    }
+  ],
+  "metric_coverage": [
+    {
+      "platform": "Alphapolis",
+      "record_count": 40,
+      "metric": "characters",
+      "available_count": 40,
+      "min": 6055.0,
+      "median": 50626.5,
+      "max": 864153.0
+    },
+    {
+      "platform": "Alphapolis",
+      "record_count": 40,
+      "metric": "comments",
+      "available_count": 18,
+      "min": 0.0,
+      "median": 15.0,
+      "max": 499.0
+    },
+    {
+      "platform": "Alphapolis",
+      "record_count": 40,
+      "metric": "platform_rank",
+      "available_count": 40,
+      "min": 1.0,
+      "median": 20.5,
+      "max": 40.0
+    },
+    {
+      "platform": "Alphapolis",
+      "record_count": 40,
+      "metric": "points_24h",
+      "available_count": 40,
+      "min": 35765.0,
+      "median": 51340.0,
+      "max": 192833.0
+    },
+    {
+      "platform": "Kakuyomu",
+      "record_count": 100,
+      "metric": "platform_rank",
+      "available_count": 100,
+      "min": 1.0,
+      "median": 50.5,
+      "max": 100.0
+    },
+    {
+      "platform": "Kakuyomu",
+      "record_count": 100,
+      "metric": "stars",
+      "available_count": 100,
+      "min": 95.0,
+      "median": 1663.5,
+      "max": 29908.0
+    },
+    {
+      "platform": "Syosetu",
+      "record_count": 200,
+      "metric": "characters",
+      "available_count": 200,
+      "min": 12534.0,
+      "median": 314990.0,
+      "max": 11877903.0
+    },
+    {
+      "platform": "Syosetu",
+      "record_count": 200,
+      "metric": "episodes",
+      "available_count": 194,
+      "min": 3.0,
+      "median": 93.5,
+      "max": 954.0
+    },
+    {
+      "platform": "Syosetu",
+      "record_count": 200,
+      "metric": "monthly_points",
+      "available_count": 100,
+      "min": 3012.0,
+      "median": 4580.0,
+      "max": 52168.0
+    },
+    {
+      "platform": "Syosetu",
+      "record_count": 200,
+      "metric": "weekly_points",
+      "available_count": 100,
+      "min": 730.0,
+      "median": 1202.0,
+      "max": 12286.0
+    }
+  ],
+  "synopsis_coverage": [
+    {
+      "platform": "Alphapolis",
+      "record_count": 40,
+      "synopsis_present_count": 40,
+      "synopsis_present_share": 1.0,
+      "usage_note": "시놉 기반 내용 신호 보조 가능"
+    },
+    {
+      "platform": "Kakuyomu",
+      "record_count": 100,
+      "synopsis_present_count": 100,
+      "synopsis_present_share": 1.0,
+      "usage_note": "시놉 기반 내용 신호 보조 가능"
+    },
+    {
+      "platform": "Syosetu",
+      "record_count": 200,
+      "synopsis_present_count": 200,
+      "synopsis_present_share": 1.0,
+      "usage_note": "시놉 기반 내용 신호 보조 가능"
+    }
+  ],
+  "sensitive_label_candidates": [
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::5::5",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 5,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::16::16",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 16,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::17::17",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 17,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::19::19",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 19,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::22::22",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 22,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::23::23",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 23,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::26::26",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 26,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::31::31",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 31,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::33::33",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 33,
+      "matched_labels": [
+        {
+          "label_original": "R18",
+          "label_ko": "R18"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::35::35",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 35,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::38::38",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 38,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::39::39",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 39,
+      "matched_labels": [
+        {
+          "label_original": "BL",
+          "label_ko": "BL/보이즈러브"
+        },
+        {
+          "label_original": "R18",
+          "label_ko": "R18"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Alphapolis::hot_24h::40::40",
+      "market": "Japan",
+      "platform": "Alphapolis",
+      "signal_type": "hot_24h",
+      "rank": 40,
+      "matched_labels": [
+        {
+          "label_original": "BL",
+          "label_ko": "BL/보이즈러브"
+        },
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::3::3",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 3,
+      "matched_labels": [
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::6::6",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 6,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::9::9",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 9,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::10::10",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 10,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::12::12",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 12,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::13::13",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 13,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::15::15",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 15,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::17::17",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 17,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::18::18",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 18,
+      "matched_labels": [
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::21::21",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 21,
+      "matched_labels": [
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::22::22",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 22,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::24::24",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 24,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::25::25",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 25,
+      "matched_labels": [
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::27::27",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 27,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::28::28",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 28,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::29::29",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 29,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::30::30",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 30,
+      "matched_labels": [
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::31::31",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 31,
+      "matched_labels": [
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::32::32",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 32,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::34::34",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 34,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::35::35",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 35,
+      "matched_labels": [
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::36::36",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 36,
+      "matched_labels": [
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::37::37",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 37,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::40::40",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 40,
+      "matched_labels": [
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::42::42",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 42,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::43::43",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 43,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::44::44",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 44,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::45::45",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 45,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::47::47",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 47,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::48::48",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 48,
+      "matched_labels": [
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::49::49",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 49,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::50::50",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 50,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::51::51",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 51,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::52::52",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 52,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        },
+        {
+          "label_original": "残酷な描写あり",
+          "label_ko": "잔혹 묘사 있음"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::53::53",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 53,
+      "matched_labels": [
+        {
+          "label_original": "純愛",
+          "label_ko": "純愛"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::55::55",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 55,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    },
+    {
+      "record_id": "Japan::Syosetu::monthly_ranking::56::56",
+      "market": "Japan",
+      "platform": "Syosetu",
+      "signal_type": "monthly_ranking",
+      "rank": 56,
+      "matched_labels": [
+        {
+          "label_original": "R15",
+          "label_ko": "R15"
+        }
+      ],
+      "evidence_source": "labels",
+      "usage_note": "규정/규제 데이터와 결합할 때 검토 후보로만 사용"
+    }
+  ]
+}
