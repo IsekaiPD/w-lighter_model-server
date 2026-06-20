@@ -16,6 +16,11 @@ data/embedding_cache/
 .omc/
 .claude/
 
+# 로컬 DB(영속화) + 일회성 스모크 스크립트 (커밋 X)
+*.db
+wlighter_local.db
+model_server/smoke_*.py
+
 # OS
 .DS_Store
 Thumbs.db
