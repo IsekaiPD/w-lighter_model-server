@@ -1,23 +1,18 @@
 import os
-import sys
 from pathlib import Path
 from textwrap import dedent
 
 from dotenv import load_dotenv
 from openai import OpenAI
 
-CURRENT_DIR = Path(__file__).resolve().parent
-if str(CURRENT_DIR) not in sys.path:
-    sys.path.insert(0, str(CURRENT_DIR))
-
-from cover_prompts import (
+from .cover_prompts import (
     COMMON_COVER_RULES,
     get_country_cover_prompt,
     get_country_label,
     normalize_country_code,
 )
 
-
+CURRENT_DIR = Path(__file__).resolve().parent
 load_dotenv(dotenv_path=CURRENT_DIR.parent / ".env")
 
 IMAGE_MODEL = os.getenv("WLIGHTER_IMAGE_MODEL", "gpt-image-2")
