@@ -1,0 +1,41 @@
+# w-lighter MODEL 서버 — 로컬/배포 오케스트레이션.
+# 실행: docker compose up --build   → http://localhost:8000/docs , /health
+#
+# 시크릿은 이미지에 굽지 않고 런타임 주입: env_file=model_server/.env (gitignore됨, SoT는 .env.example).
+# stage 1(현재): app 단독으로 부팅·/health 검증 가능. qdrant/볼륨은 이후 단계(라이브 번역)용.
+
+services:
+  app:
+    build:
+      context: ./model_server          # Dockerfile·.dockerignore 위치
+    image: wlighter-model-server:latest
+    env_file:
+      - ./model_server/.env            # 실키/설정 런타임 주입(이미지에 미포함)
+    ports:
+      - "8000:8000"
+    volumes:
+      - hf_cache:/cache/huggingface    # KURE 임베딩 모델 캐시(재다운로드 방지) — stage 2
+      # rdb+SQLite 영속화 쓸 때 DB 파일 보존(주석 해제 + .env에 CONTENT_STORE_BACKEND=rdb):
+      # - db_data:/app/var
+    # 배포 권장 토글(주석 해제 시 .env보다 우선). stage 1은 미설정이어도 /health 동작.
+    # environment:
+    #   - WARMUP_ON_STARTUP=1           # prod: 첫 요청 콜드스타트 방지(KURE 사전 적재)
+    #   - QDRANT_URL=http://qdrant:6333 # retriever url= 전환(TODO #1) 후에만 유효
+    restart: unless-stopped
+    depends_on:
+      - qdrant                          # 시작 순서만 보장(app은 qdrant 없이도 부팅됨)
+
+  # 라이브 번역 RAG용 벡터 DB. stage 1에선 띄워둬도 app이 강결합하지 않음.
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"                     # REST/gRPC
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  hf_cache:
+  qdrant_data:
+  # db_data:
