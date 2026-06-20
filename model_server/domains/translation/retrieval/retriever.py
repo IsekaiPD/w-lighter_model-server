@@ -153,13 +153,11 @@ _QDRANT_CLIENT_CACHE: dict[str, Any] = {}
 
 
 def make_qdrant_client(config: PipelineConfig):
-    """qdrant 클라이언트(공유 인스턴스)를 반환한다. 현재는 로컬 임베디드 모드.
+    """qdrant 클라이언트(공유 인스턴스)를 반환한다.
 
-    TODO(도커 전환): 서버로 올릴 때는 아래 path= 한 줄을 url= 방식으로 교체.
-        client = QdrantClient(url="http://localhost:6333")
-      - 코드 변경은 이 한 줄뿐이지만, qdrant_local 컬렉션을 서버에 재적재하는
-        작업은 별도로 필요하다.
-      - 서버 전환이 끝나면, 아래 cache_key를 url 기준으로 바꾸면 된다.
+    - config.qdrant_url(=env QDRANT_URL)이 있으면 **서버 모드**(url=, self-host 컨테이너).
+    - 비면 **임베디드 모드**(path=, 로컬 폴더) 폴백 — 단위 테스트/오프라인 부팅용.
+    cache_key를 url/path로 구분해 같은 대상엔 클라이언트 1개만 공유한다(임베디드는 폴더 락 충돌 방지).
 
     TODO(mock 구조 정리): config.mock=True 일 때 타는 레거시 JSON 경로
       (_load_items / _load_or_create_index 등)는 단위 테스트가 qdrant 없이
@@ -168,10 +166,19 @@ def make_qdrant_client(config: PipelineConfig):
     """
     from qdrant_client import QdrantClient
 
-    cache_key = str(config.resolved_qdrant_path())  # 도커 전환 시 url 문자열로 교체
+    url = (config.qdrant_url or "").strip()
+    if url:
+        cache_key = f"url::{url}"
+        client = _QDRANT_CLIENT_CACHE.get(cache_key)
+        if client is None:
+            client = QdrantClient(url=url)
+            _QDRANT_CLIENT_CACHE[cache_key] = client
+        return client
+
+    cache_key = f"path::{config.resolved_qdrant_path()}"
     client = _QDRANT_CLIENT_CACHE.get(cache_key)
     if client is None:
-        client = QdrantClient(path=cache_key)
+        client = QdrantClient(path=str(config.resolved_qdrant_path()))
         _QDRANT_CLIENT_CACHE[cache_key] = client
     return client
 
