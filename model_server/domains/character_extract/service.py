@@ -1,7 +1,4 @@
-"""Character extract 도메인 서비스 — 시놉시스 → 등장인물 추출 엔진 오케스트레이션.
-
-엔진(`character_extract.extract_characters`)은 재사용(재작성 X).
-"""
+"""Character extract 도메인 서비스 — 시놉시스 → 등장인물 추출 엔진 오케스트레이션."""
 from __future__ import annotations
 
 from typing import Any
@@ -23,7 +20,7 @@ def extract(payload: dict[str, Any]) -> dict[str, Any]:
         limit=int(payload.get("limit") or 20),
     )
 
-    # workId가 주어지면 추출 결과를 CHARACTERS에 적재(rdb 백엔드일 때만 실제 저장; 아니면 no-op).
+    # workId가 주어지면 CHARACTERS에 적재(rdb 백엔드일 때만 저장, 아니면 no-op).
     # 영속화 실패가 추출 응답을 막지 않도록 best-effort.
     work_id = payload.get("workId") or payload.get("work_id")
     if work_id is not None:

@@ -542,11 +542,11 @@ class IdiomRetriever(ChunkingMixin):
 
     def retrieve(self, query: str, top_k: int | None = None,
                  return_k: int | None = None) -> list[RetrievalResult]:
-        """쿼리 문자열을 받아 청킹+임베딩 후 검색. (단독 사용/하위호환용)
+        """쿼리 문자열을 청킹+임베딩 후 검색한다. (단독 사용 경로)
 
-        top_k    : (A) 문장(청크) 1개당 가져올 후보 수. 기본 config.idiom_top_k
-        return_k : (B) 통합 후 최종 반환 상한.       기본 config.idiom_return_k
-        pipeline처럼 쿼리를 미리 임베딩해 공유하는 경우에는 search()를 직접 쓴다.
+        top_k    : 청크 1개당 가져올 후보 수. 기본 config.idiom_top_k
+        return_k : 통합 후 최종 반환 상한. 기본 config.idiom_return_k
+        쿼리를 미리 임베딩해 공유할 때는 search()를 직접 쓴다.
         """
         chunks = self._chunk_query(query)
         chunk_vectors = self.backend.embed(chunks)

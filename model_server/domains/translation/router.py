@@ -1,4 +1,4 @@
-"""Translation 도메인 라우터 — 기존 api_server.py의 /api/translate, /api/inspect-chat 대체."""
+"""Translation 도메인 라우터 — /translate, /inspect-chat 엔드포인트."""
 from __future__ import annotations
 
 from fastapi import APIRouter

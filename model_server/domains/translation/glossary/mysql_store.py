@@ -39,11 +39,7 @@ def normalize_mysql_work_id(value: Any) -> int:
 
 
 def _load_driver() -> tuple[str, Any]:
-    """Load an installed MySQL DB-API driver without requiring a dependency.
-
-    Preference is PyMySQL because it is pure Python and declared in
-    requirements.txt, then mysql-connector-python if present.
-    """
+    """Load an installed MySQL DB-API driver, preferring PyMySQL then mysql-connector-python."""
 
     try:
         return "pymysql", importlib.import_module("pymysql")
@@ -61,7 +57,7 @@ class MySQLGlossaryRepository(GlossaryRepository):
     """MySQL 8.x implementation of the single-table glossary repository.
 
     컬럼명은 ERD(`project_docs/ERD_planning.txt`) GLOSSARY를 정본으로 따른다.
-    Expected schema (created out-of-band, not migrated here)::
+    Expected schema (created out-of-band)::
 
         CREATE TABLE glossary (
           glossary_id     BIGINT AUTO_INCREMENT PRIMARY KEY,

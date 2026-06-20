@@ -1,4 +1,4 @@
-"""Relationship map 라우터 — 기존 api_server.py의 /api/relation-prompt, /api/generate-relation-image 대체.
+"""Relationship map 라우터.
 
 POST /api/v1/relationship-map : 캐릭터 설정집 → 인물 관계도 데이터(+옵션 HTML).
 """

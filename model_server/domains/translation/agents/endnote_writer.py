@@ -6,9 +6,7 @@ kculture RAG(`AnnotationRetriever`)가 찾아낸 한국 문화 표현을, 해당
 
 - finalTranslation 은 절대 수정하지 않는다(각주는 별도 필드 readerEndnotes).
 - 검색 결과가 없으면 LLM 을 호출하지 않고 빈 리스트를 반환한다(비용 가드).
-- mock 모드에서는 결정적 각주를 만들어 테스트/스모크가 네트워크 없이 돈다.
-
-LLM 호출 패턴은 agents/translator.py 를 따른다.
+- mock 모드에서는 결정적 각주를 만들어 네트워크 없이 검증한다.
 """
 from __future__ import annotations
 
@@ -141,7 +139,7 @@ def build_reader_endnote_hook(writer: EndnoteWriter) -> Callable[[dict[str, Any]
     """v3 그래프 readerEndnoteWriterHook 용 클로저.
 
     state 에서 sourceText/finalTranslation/annotationRetrievals/sourceChunks 를 꺼내
-    EndnoteWriter 로 각주를 작성한다. (그래프가 raw dict 리스트를 받아 정규화한다)
+    EndnoteWriter 로 각주를 작성한다.
     """
 
     def _hook(state: dict[str, Any]) -> list[dict[str, Any]]:

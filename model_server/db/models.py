@@ -1,15 +1,11 @@
-"""DB 모델 — ERD(`project_docs/ERD_planning.txt`) 충실 매핑, 포터블(SQLite↔MySQL).
+"""DB 모델 — ERD(`project_docs/ERD_planning.txt`) 매핑, 포터블(SQLite↔MySQL).
 
 모델서버 소유 테이블만 정의한다(works/episodes/characters/translation_results).
-USERS·PAYMENTS·PLAN·CREDITTRANSACTION 등 결제/계정 테이블은 WEB(Django) 소유라 여기서 정의하지 않는다.
-그래서 `works.user_id`는 cross-boundary FK(→USERS)지만 여기선 **제약 없는 INT**로 둔다
+USERS·PAYMENTS·PLAN·CREDITTRANSACTION 등 결제/계정 테이블은 WEB(Django) 소유라 제외한다.
+그래서 `works.user_id`는 cross-boundary FK(→USERS)지만 여기선 제약 없는 INT로 둔다
 (로컬 SQLite에 USERS 테이블이 없어도 동작; 공유 MySQL에선 실제 FK가 존재).
 
-glossary 테이블은 의도적으로 제외 — 기존 `domains/translation/glossary/`에 자체 영속화 추상화
-(InMemory/MySQL repository + WorkMemory 변환)가 이미 있어 그쪽이 소유한다. 저장층 컬럼명은
-ERD(original_word/translated_word/glossary_type/target_country/memo)로 **정렬 완료**(2026-06-20);
-엔진 GlossaryEntry(source/target/category)와는 `glossary_record_to_work_memory_entry`가 변환한다.
-db_repo.hydrate_work_memory는 그 repo에 위임한다.
+glossary 테이블은 의도적으로 제외 — `domains/translation/glossary/`가 자체 영속화 추상화로 소유한다.
 """
 from __future__ import annotations
 
@@ -58,9 +54,8 @@ class Episode(Base, TimestampMixin):
 class Character(Base, TimestampMixin):
     """ERD CHARACTERS — 등장인물. character_extract 결과 적재 대상.
 
-    매핑(extraction → 컬럼): char_name→char_name, age→age, role→role(ERD VARCHAR(5)),
-    gender→gender(M/F/U 정규화), relationships→relationships, appearance→`apperance`(ERD 오타 그대로),
-    detail_setting→detail_setting. extraction의 `profile_label`은 ERD 컬럼이 없어 미저장.
+    매핑(extraction → 컬럼): gender는 M/F/U 정규화, appearance는 `apperance`(ERD 오타 그대로).
+    extraction의 `profile_label`은 ERD 컬럼이 없어 미저장.
     """
 
     __tablename__ = "characters"

@@ -1,6 +1,6 @@
 """Cover 도메인 서비스 — 표지 프롬프트/이미지 생성 엔진 오케스트레이션.
 
-엔진(`cover_generate.generate_cover_image`)은 재사용(재작성 X). dry_run으로 프롬프트만 받을 수 있다.
+`cover_generate.generate_cover_image` 호출. dry_run이면 프롬프트만 반환한다.
 """
 from __future__ import annotations
 

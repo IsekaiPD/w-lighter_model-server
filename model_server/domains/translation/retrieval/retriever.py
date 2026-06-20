@@ -130,8 +130,7 @@ class SentenceTransformerEmbeddingBackend:
 
 @lru_cache(maxsize=None)
 def _cached_st_backend(model: str) -> "SentenceTransformerEmbeddingBackend":
-    # KURE 등 로컬 임베딩 모델은 로딩(메모리 적재)이 무거우므로 프로세스당 1회만 만든다.
-    # 같은 모델명 요청은 이 캐시된 인스턴스(=encoder)를 재사용해 매 요청 재로딩을 막는다.
+    # 로컬 임베딩 모델은 로딩이 무거우므로 프로세스당 1회만 만들어 재사용한다.
     return SentenceTransformerEmbeddingBackend(model)
 
 
@@ -140,29 +139,23 @@ def create_embedding_backend(config: PipelineConfig) -> EmbeddingBackend:
         return MockEmbeddingBackend()
     if config.embedding_model.startswith("text-embedding-"):
         return OpenAIEmbeddingBackend(config.embedding_model)
-    # 모델명이 같으면 캐시된 백엔드(로딩 완료된 encoder)를 재사용한다.
     return _cached_st_backend(config.embedding_model)
 
 
 # qdrant 클라이언트는 경로(또는 서버)당 1개만 만들어 공유한다.
-# - 로컬 임베디드 모드: 같은 폴더를 여러 클라이언트가 열면 락 충돌이 나므로 공유 필수.
-# - 서버 모드(도커): 같은 서버에 연결을 중복 생성할 필요가 없으므로 공유가 정석.
-# 두 retriever(IdiomRetriever, AnnotationRetriever)가 각자 호출해도
-# 같은 인스턴스를 받도록 모듈 레벨에서 캐시한다.
+# 임베디드 모드에서 같은 폴더를 여러 클라이언트가 열면 락 충돌이 나므로 공유가 필수.
 _QDRANT_CLIENT_CACHE: dict[str, Any] = {}
 
 
 def make_qdrant_client(config: PipelineConfig):
     """qdrant 클라이언트(공유 인스턴스)를 반환한다.
 
-    - config.qdrant_url(=env QDRANT_URL)이 있으면 **서버 모드**(url=, self-host 컨테이너).
-    - 비면 **임베디드 모드**(path=, 로컬 폴더) 폴백 — 단위 테스트/오프라인 부팅용.
-    cache_key를 url/path로 구분해 같은 대상엔 클라이언트 1개만 공유한다(임베디드는 폴더 락 충돌 방지).
+    config.qdrant_url(=env QDRANT_URL)이 있으면 서버 모드(url=, self-host 컨테이너),
+    비면 임베디드 모드(path=, 로컬 폴더) 폴백 — 단위 테스트/오프라인 부팅용.
+    cache_key를 url/path로 구분해 같은 대상엔 클라이언트 1개만 공유한다.
 
-    TODO(mock 구조 정리): config.mock=True 일 때 타는 레거시 JSON 경로
-      (_load_items / _load_or_create_index 등)는 단위 테스트가 qdrant 없이
-      돌도록 남겨둔 구조다. 도커 서버가 표준이 되어 테스트도 서버(또는 테스트용
-      컬렉션)를 쓰게 되면 이 JSON 경로를 제거할 수 있다.
+    TODO(mock 구조 정리): config.mock=True 일 때 타는 레거시 JSON 경로는 단위
+      테스트가 qdrant 없이 돌도록 남겨둔 구조다. 테스트가 서버를 쓰게 되면 제거 가능.
     """
     from qdrant_client import QdrantClient
 
@@ -187,8 +180,6 @@ class ChunkingMixin:
     """쿼리 청킹 공통 로직. idiom/annotation retriever가 공유한다.
 
     config.chunk_strategy = "paragraph"(기본) | "sentence" 로 전략을 고른다.
-    이전에는 idiom_retriever 안에만 있었으나, 두 검색이 동일 메커니즘을 쓰게 되어
-    공통 토대(base)로 올렸다.
     """
 
     # Kiwi 인스턴스는 생성 비용이 크므로 클래스 단위로 1회만 만들어 재사용한다.
@@ -245,17 +236,14 @@ class ChunkingMixin:
 
 
 def embed_query(backend: EmbeddingBackend, chunk_fn, query: str):
-    """쿼리를 청킹하고 KURE로 임베딩한다. (chunks, vectors) 를 돌려준다.
+    """쿼리를 청킹하고 임베딩한다. (chunks, vectors) 를 돌려준다.
 
-    pipeline이 이 함수를 1회 호출해 두 검색(idiom/annotation)에 같은
-    (chunks, vectors)를 넘기면, KURE 추론을 1회로 줄일 수 있다.
-    backend/chunk_fn 을 인자로 받아 base가 특정 retriever에 의존하지 않게 한다.
+    두 검색(idiom/annotation)에 같은 (chunks, vectors)를 넘겨 임베딩 추론을 1회로 줄인다.
     """
     chunks = chunk_fn(query)
     vectors = backend.embed(chunks)
     return chunks, vectors
 
 
-# 하위 호환: 기존 `from .retriever import IdiomRetriever` 를 깨지 않기 위해 재노출.
-# (IdiomRetriever 본체는 idiom_retriever.py 로 분리됨)
+# 하위 호환: `from .retriever import IdiomRetriever` 를 깨지 않기 위해 재노출.
 from .idiom_retriever import IdiomRetriever  # noqa: E402,F401

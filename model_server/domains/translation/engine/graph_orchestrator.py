@@ -906,10 +906,10 @@ def deterministic_precheck(state: TranslationGraphState) -> TranslationGraphStat
 
 
 def _llm_reviewer_findings(state: TranslationGraphState, reviewer_type: str) -> list[dict[str, Any]]:
-    """주입된 LLM 리뷰어 hook을 호출해 (advisory) findings를 만든다.
+    """주입된 LLM 리뷰어 hook으로 advisory findings를 만든다.
 
-    hook은 (state, reviewer_type) -> list[v3 issue dict]. 리뷰 실패가 그래프를 막지
-    않도록 예외는 빈 리스트로 흡수한다(reviewers.py의 fail-soft와 동일 철학).
+    hook 시그니처: (state, reviewer_type) -> list[v3 issue dict].
+    리뷰 실패가 그래프를 막지 않도록 예외는 빈 리스트로 흡수한다(fail-soft).
     """
     hook = state.get("reviewerHook")
     if hook is None:
@@ -2076,11 +2076,10 @@ def align_endnotes_to_final_translation(state: TranslationGraphState) -> Transla
 
 
 def _review_cards_from_findings(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """LLM 리뷰어 findings(reviewFindings)를 화면 검수항목용 카드로 변환한다.
+    """LLM 리뷰어 findings를 화면 검수항목 카드로 변환한다.
 
-    section 태그가 있는 findings(=LLM 리뷰어: voice/naturalness/cultural)만 카드로 만든다.
-    결정론적 critic findings(section 없음)는 loop.authorReviewCards 쪽에서 이미 처리되므로 제외.
-    화면은 card.section 으로 '말투/자연스러움/문화권 유의사항' 소제목 그룹을 만든다(advisory).
+    section 태그가 있는 findings(voice/naturalness/cultural)만 카드로 만든다.
+    결정론적 critic findings(section 없음)는 loop.authorReviewCards에서 처리되므로 제외한다.
     """
     cards: list[dict[str, Any]] = []
     for index, finding in enumerate(findings or [], start=1):

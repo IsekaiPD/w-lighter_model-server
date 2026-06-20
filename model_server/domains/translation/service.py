@@ -1,8 +1,6 @@
-"""Translation 도메인 서비스 — 오케스트레이션.
+"""Translation 도메인 서비스 — translate()/inspect_chat() 오케스트레이션.
 
-통합초안 backend/services/translation_service.py 의 translate()/inspect_chat() 로직을
-이 도메인으로 이식했다. 엔진은 같은 패키지의 것을 import해 재사용(재작성 X).
-- 절대경로(from app.translation… / from backend…) → 로컬 상대경로로 교체.
+- 엔진은 같은 패키지의 것을 import해 재사용한다.
 - glossary hydrate / 결과 영속화는 db.repository 스텁(TODO: RDB 연동).
 - 파이프라인은 (locale, mock)별 프로세스 캐시. warm-up은 lifespan에서 트리거.
 """
@@ -61,7 +59,7 @@ def _chatbot(locale: str) -> ChatbotAgent:
 
 
 # ------------------------------------------------------------------ #
-# 헬퍼 (통합초안 translation_service에서 이식)
+# 헬퍼
 # ------------------------------------------------------------------ #
 def _payload_value(payload: dict[str, Any], *keys: str, default: Any = None) -> Any:
     for key in keys:

@@ -1,4 +1,4 @@
-"""Guide 도메인 라우터 — 기존 api_server.py의 /api/guide 대체.
+"""Guide 도메인 라우터.
 
 POST /api/v1/guide : 작품 정보 → 현지화 가이드(시장 트렌드·컨텍스트팩·정책 유의사항).
 """

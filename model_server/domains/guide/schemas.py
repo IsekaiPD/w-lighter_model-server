@@ -1,7 +1,7 @@
 """Guide 도메인 Pydantic 스키마.
 
-`generate_guide(payload)` 엔진이 다양한 키(titleElements/comparableSignals 등)를 직접 읽으므로
-요청은 유연하게(extra=allow) 받되 주요 키를 문서화한다. 응답은 모드별 가변(~39키)이라 통과시킨다.
+엔진이 추가 키를 직접 읽으므로 요청은 extra=allow로 받고 주요 키만 문서화한다.
+응답은 모드별 가변(~39키)이라 그대로 통과시킨다.
 """
 from __future__ import annotations
 

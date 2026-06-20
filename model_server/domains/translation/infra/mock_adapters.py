@@ -28,7 +28,7 @@ def translation_payload(config: Any, resources: Any, source_text: str, retrieval
 
 
 def inspection_payload(resources: Any, source_text: str, translation_under_inspection: str) -> dict[str, Any]:
-    # Inspector 새 구조: {summary, issues[]}. mock 은 이슈 없음(빈 배열)으로 결정적 반환.
+    # Inspector 구조: {summary, issues[]}. mock 은 이슈 없음(빈 배열)으로 결정적 반환.
     return {
         "summary": "[MOCK 검수] 구체적인 문화권 리스크나 현지화 문제는 확인되지 않았습니다.",
         "issues": [],

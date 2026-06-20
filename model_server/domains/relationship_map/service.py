@@ -1,7 +1,4 @@
-"""Relationship map 도메인 서비스 — 인물 관계도 추출/렌더 엔진 오케스트레이션.
-
-엔진(`relationship_generate.generate_relation_data` + `relationship_html.build_relation_html`)은 재사용(재작성 X).
-"""
+"""Relationship map 도메인 서비스 — 인물 관계도 추출/렌더 엔진 오케스트레이션."""
 from __future__ import annotations
 
 from typing import Any

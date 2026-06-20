@@ -1,7 +1,7 @@
 """SQLAlchemy 선언적 베이스 + 공통 타임스탬프 믹스인.
 
-포터블 설계: 컬럼/모델은 DB 종류와 무관. SQLite(로컬)와 MySQL(배포)는 연결 URL로만 갈린다
-(`db/session.py`). `func.now()`/`server_default`는 양쪽 모두에서 동작한다.
+컬럼/모델은 DB 종류와 무관하며 SQLite(로컬)·MySQL(배포)는 연결 URL로만 갈린다(`db/session.py`).
+`func.now()`/`server_default`는 양쪽 모두에서 동작한다.
 """
 from __future__ import annotations
 

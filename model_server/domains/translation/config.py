@@ -10,7 +10,7 @@ from .infra.project_paths import package_project_root
 
 
 class TranslationMode(str, Enum):
-    # 레거시/v2 파이프라인 폐지 후 단일 모드만 유지.
+    # 단일 번역 모드.
     V3_LITERARY_PACKAGE = "v3_literary_package"
 
 
@@ -23,15 +23,13 @@ ALLOWED_TRANSLATION_MODELS = (
 )
 
 # 텍스트(채팅) 모델 단일 노브 — guide/character/relationship과 같은 env(WLIGHTER_TEXT_MODEL) 공유.
-# 과거 품질모드별(fast/standard/quality/baseline) 모델 차등은 폐지하고 한 모델로 통일.
 DEFAULT_TEXT_MODEL = os.getenv("WLIGHTER_TEXT_MODEL", "gpt-5.4-mini")
 
 # Qdrant 접속: QDRANT_URL이 있으면 서버 모드(url=, self-host 컨테이너), 비면 임베디드(path=) 폴백.
 # core/config.py settings.qdrant_url(/health·lifespan용)과 같은 env를 공유한다.
 DEFAULT_QDRANT_URL = os.getenv("QDRANT_URL", "").strip() or None
 
-# kculture 문화 각주 검색 임계치(코사인). 서술형 원문 vs 서술형 카드는 KURE 코사인이 0.55~0.6 근처라
-# 0.6이면 정답 카드(예: 0.581)도 잘려 endnotes가 안 뜬다. 기본 0.55(정답 통과·과도 주석 억제 균형).
+# kculture 문화 각주 검색 임계치(코사인). 기본 0.55 — 정답 카드 통과와 과도 주석 억제의 균형.
 # 올리면 각주 보수적, 내리면 적극적. env로 배포별 조절.
 DEFAULT_ANNOTATION_SCORE_THRESHOLD = float(os.getenv("WLIGHTER_ANNOTATION_SCORE_THRESHOLD", "0.55"))
 
@@ -79,7 +77,7 @@ class PipelineConfig:
             override = validate_translation_model(override, field_name="model override")
             self.model_override = override
 
-        # 모델은 단일 노브(WLIGHTER_TEXT_MODEL, 기본 gpt-5.4-mini)로 통일. translation/review 동일.
+        # translation/review 모두 단일 노브(WLIGHTER_TEXT_MODEL)를 따른다.
         if self.translation_model is None:
             self.translation_model = override or DEFAULT_TEXT_MODEL
         else:

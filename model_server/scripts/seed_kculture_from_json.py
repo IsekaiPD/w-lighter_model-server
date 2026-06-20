@@ -1,9 +1,9 @@
-r"""kculture RAG JSON -> qdrant 컬렉션 시드 (재임베딩, 정본 경로).
+r"""kculture RAG JSON -> qdrant 컬렉션 시드 (재임베딩).
 
 정본 JSON(kculture_rag_documents_reviewed.json)을 읽어 KURE-v1로 임베딩하고
-qdrant `kculture` 컬렉션에 적재한다. 런타임 retriever와 **동일한 임베딩 백엔드
-(create_embedding_backend)** 와 **검색텍스트(build_annotation_search_text)** 를 재사용하므로
-쿼리 시점 벡터와 정합이 보장된다. (qdrant_local 빌드 산출물에 의존하지 않는 재현가능 경로.)
+qdrant `kculture` 컬렉션에 적재한다. 런타임 retriever와 동일한 임베딩 백엔드
+(create_embedding_backend)·검색텍스트(build_annotation_search_text)를 재사용하므로
+쿼리 시점 벡터와 정합이 보장된다.
 
 payload는 라이브 쿼리 계약에 맞춰 평탄화한다:
   - source_id   : _retrieve_qdrant 의 dedup 키 (JSON의 id)

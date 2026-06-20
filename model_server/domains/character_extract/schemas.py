@@ -1,7 +1,4 @@
-"""Character extract 도메인 Pydantic 스키마.
-
-`extract_characters(...)` 엔진 호출용. 시놉시스 → 등장인물 목록(LLM).
-"""
+"""Character extract 도메인 Pydantic 스키마. 시놉시스 → 등장인물 목록."""
 from __future__ import annotations
 
 from typing import Any

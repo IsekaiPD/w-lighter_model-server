@@ -1,14 +1,8 @@
 """직접 번역 엔진 부품 (순수 스텝).
 
-원문을 한 번 번역하고(translator) 번역 안전성(잔류 한글/소스 카피/locale 준수)을
-점검한 뒤, 필요하면 strict 재시도까지 수행하는 자족적 부품이다.
-
-과거에는 이 로직이 `translation_pipeline.TranslationPipeline`(god-object)의
-`run_direct_only`/`_run_direct_translation_once`/`_finalize_direct_translation`
-+ 다수 private 헬퍼로 흩어져 있었다. v3 그래프의 `translate_once` 콜백이 실제로
-필요로 하는 유일한 옛 부품이라, 다른 파이프라인 import 없이 여기로 분리했다.
-
-의존: agents.translator.Translator + config + (표준 re/json/pathlib) 만.
+원문을 한 번 번역하고 번역 안전성(잔류 한글/소스 카피/locale 준수)을
+점검한 뒤, 필요하면 strict 재시도까지 수행한다. v3 그래프의 `translate_once`
+콜백이 호출한다.
 """
 from __future__ import annotations
 
@@ -33,10 +27,7 @@ class DirectTranslationResult:
 
 
 class DirectTranslator:
-    """원문 1회 번역 + 번역 안전성 점검 + strict 재시도 엔진.
-
-    공개 진입점은 `translate_once(...)`. v3 그래프가 `translate_once` 콜백으로 호출한다.
-    """
+    """원문 1회 번역 + 번역 안전성 점검 + strict 재시도. 진입점은 translate_once."""
 
     def __init__(self, config: PipelineConfig | None = None):
         self.config = config or PipelineConfig()
