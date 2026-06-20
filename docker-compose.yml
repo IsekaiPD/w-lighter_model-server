@@ -17,9 +17,12 @@ services:
       - hf_cache:/cache/huggingface    # KURE 임베딩 모델 캐시(재다운로드 방지) — stage 2
       # rdb+SQLite 영속화 쓸 때 DB 파일 보존(주석 해제 + .env에 CONTENT_STORE_BACKEND=rdb):
       # - db_data:/app/var
-    # 배포 권장 토글(주석 해제 시 .env보다 우선). stage 1은 미설정이어도 /health 동작.
-    # environment:
-    #   - WARMUP_ON_STARTUP=1           # prod: 첫 요청 콜드스타트 방지(KURE 사전 적재)
+    # 배포 권장 토글(주석 해제 시 .env보다 우선). 코드 기본값은 False라 bare uvicorn/CI는 빠른 부팅,
+    # 도커로 띄울 때만(=이 레시피) warm-up ON → 배포 콜드스타트 방지. (compose는 docker compose 실행 때만 읽힘)
+    # stage 2 검증 완료(2026-06-20): 1차 기동 시 KURE가 hf_cache 볼륨에 적재(2.1G),
+    # HF_HUB_OFFLINE=1 재기동에도 warm-up 성공(~1.8s, 재다운로드 0) → 캐시 재사용 증명.
+    environment:
+      - WARMUP_ON_STARTUP=1            # 첫 요청 콜드스타트 방지(KURE 사전 적재) — 도커 실행에만 적용
     #   - QDRANT_URL=http://qdrant:6333 # retriever url= 전환(TODO #1) 후에만 유효
     restart: unless-stopped
     depends_on:
