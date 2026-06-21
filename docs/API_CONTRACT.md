@@ -1,0 +1,227 @@
+# API_CONTRACT — w-lighter MODEL 서버 (FastAPI)
+
+WEB(Django)이 호출하는 MODEL 서버의 HTTP 계약. **실제 코드(`domains/*/router.py`·`schemas.py`)에서 도출한 정본**이며,
+스키마 변경 시 이 문서를 같은 작업에서 갱신한다. 인터랙티브 탐색은 `GET /docs`(Swagger UI) 참고.
+
+## 호출 구조 (안 A)
+
+```
+[브라우저] → Django(WEB) → FastAPI(MODEL)   ← 서버-대-서버 (CORS 무관)
+```
+
+- 브라우저는 MODEL 서버를 직접 부르지 않는다. **Django가 프록시**해서 호출한다.
+- 인증·크레딧 차감·rate limit은 **Django(WEB) 측에서** 처리. MODEL 서버는 내부망 전용(외부 비공개).
+- 내부 토큰(Django↔FastAPI 공유 시크릿 헤더)은 연동 실배선 시 추가 예정(현재 미구현).
+
+## 공통 규약
+
+- **Base URL**: 배포 내부망 기준 `http://<model-host>:8000`. 도메인 엔드포인트 prefix = `/api/v1`.
+- **요청/응답**: JSON (`Content-Type: application/json`). 한국어 원문은 UTF-8.
+- **요청 추가 키**: 대부분 `extra=ignore`(미정의 키 무시), `guide`만 `extra=allow`(엔진이 직접 사용).
+- **응답 추가 키**: 모든 응답이 `extra=allow` — 아래 표는 **보장되는 키**이고, 엔진이 키를 더 실어 보낼 수 있다(특히 `guide`는 모드별 ~39키).
+
+### 공통 에러 형식
+
+| 상태 | 형식 | 발생 |
+|---|---|---|
+| `400` | `{"ok": false, "errorCode": "<code>", "message": "<설명>"}` | 잘못된 입력(빈 값/로케일 정규화 실패 등). `errorCode`=`invalid_request` 또는 로케일 에러코드 |
+| `422` | `{"detail": [ ... ]}` (FastAPI 기본) | 스키마 검증 실패(필수 필드 누락/타입 불일치/범위 초과) |
+| `503` | `{"ok": false, "errorCode": "engine_not_ready", "message": "<설명>"}` | 엔진 미준비(Qdrant/KURE/OpenAI 키 미설정 등). 구성 단계에선 정상 |
+
+> 참고: `400`은 도메인 검증(서비스/엔진이 던지는 `ValueError`), `422`는 Pydantic 스키마 검증. 둘 다 "입력 문제"지만 형식이 다름.
+
+---
+
+## GET /health
+
+부팅/헬스체크용. 외부 의존(Qdrant/KURE) 없이 항상 200.
+
+**응답 200**
+```json
+{
+  "ok": true,
+  "app": "webnovel-model-server",
+  "mockMode": false,
+  "qdrant": "url",
+  "warm": { "translation": true }
+}
+```
+- `mockMode`: `WLIGHTER_MOCK_MODE` 반영. `qdrant`: `"url"`(서버모드) 또는 `"embedded(...)"`. `warm`: warm-up 적재 여부.
+
+---
+
+## POST /api/v1/translation/translate
+
+한국어 웹소설 원문 → 목표 로케일 번역 + 문화 각주(readerEndnotes) + 리뷰 카드.
+
+**요청** (`sourceText` 필수, `targetLocale`/`targetCountry` 중 하나 이상)
+
+| 필드 | 타입 | 필수 | 기본 | 설명 |
+|---|---|---|---|---|
+| `sourceText` | string | ✅ | — | 번역할 한국어 원문(min 1자) |
+| `targetLocale` | string | △ | null | 예: `ko_en_us`, `ko_ja` |
+| `targetCountry` | string | △ | null | 예: `US`, `JP`, `CN`, `TH` |
+| `sourceLocale` | string | | `"ko"` | 원문 로케일 |
+| `genre` | string | | null | 장르 힌트 |
+| `workId` | string | | null | 작품 식별자 |
+| `episodeId` | string | | null | 회차 식별자 |
+| `workMemory` | object | | null | 승인 용어집 등 작품 메모리(dict) |
+| `includeInternal` | bool | | `false` | true면 응답에 `internal` 디버그 블록 포함 |
+| `saveTranslationResult` | bool | | `false` | true면 결과를 `translation_results`에 저장(rdb 백엔드일 때) |
+
+△ = `targetLocale`·`targetCountry` 중 최소 하나. 서비스가 normalize(둘 다 없으면 `400`).
+
+**응답 200** (보장 키)
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `country` / `locale` | string | 정규화된 목표 |
+| `pipeline` | string\|null | 사용 파이프라인 |
+| `finalTranslation` | string | 최종 번역문 |
+| `deliveryStatus` | string | 예: `deliverable` |
+| `userVisibleErrorCode` | string\|null | 사용자 표시용 에러코드 |
+| `message` | string | 보조 메시지 |
+| `translationRationale` | object | 번역 근거(중첩) |
+| `readerEndnotes` | array<object> | 독자용 문화 각주(없으면 `[]`) |
+| `authorReviewCards` | array<object> | 작가 리뷰 카드(말투/자연스러움/문화) |
+| `qaIssues` | array<object> | QA 이슈 |
+| `metadata` | object | 빌드/모델 메타 |
+| `internal` | object\|null | `includeInternal=true`일 때만 |
+
+**에러**: `422`(`sourceText` 누락/빈 값·타입 불일치 — Pydantic 검증), `400`(`targetLocale`·`targetCountry` 둘 다 없음 또는 로케일 정규화 실패 — 서비스 검증), `503`(엔진 미준비).
+
+---
+
+## POST /api/v1/translation/inspect-chat
+
+번역 검수 챗봇 — 질문에 대한 답변(+선택적 수정 제안).
+
+**요청** (`question` 필수)
+
+| 필드 | 타입 | 필수 | 기본 | 설명 |
+|---|---|---|---|---|
+| `question` | string | ✅ | — | 질문(min 1자) |
+| `sourceText` | string | | `""` | 원문 컨텍스트 |
+| `currentTranslation` | string | | `""` | 현재 번역문 |
+| `targetLocale` / `targetCountry` | string | | null | 목표 |
+| `workflow` | object | | null | 워크플로 상태 |
+| `chatHistory` | array<object> | | null | 이전 대화 |
+| `title` / `episodeId` | string | | null | 작품/회차 |
+
+**응답 200**
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `answer` | string | 챗봇 답변 |
+| `proposedTranslation` | string\|null | 수정 제안(있으면) |
+| `changeSummary` | string\|null | 변경 요약 |
+| `needsUserConfirmation` | bool | 사용자 확인 필요 여부 |
+
+---
+
+## POST /api/v1/guide  ·  GET /api/v1/guide/_status
+
+작품 정보 → 현지화 가이드(시장 트렌드·컨텍스트팩·정책 유의사항). 응답은 **모드별 가변(~39키)** — `extra=allow`로 통과.
+
+**요청** (모두 선택, 엔진이 추가 키도 직접 사용 → `extra=allow`)
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `title` / `genre` / `synopsis` | string | 작품 정보 |
+| `targetCountry` | string | `japan/english/china/thailand` 또는 `JP/US/CN/TH` |
+| `targetMarket` | string | 시장 |
+| `titleElements` | array<string> | 제목 요소 |
+| `comparableSignals` | array<string> | 비교작 신호 |
+| `legacyGuide` / `includeContextPack` / `includeInternal` | bool | 토글 |
+
+**응답 200**: `generationMode`(string) + 모드별 다수 키(htmlReport·contextPackBriefing 등). 엔진 출력 그대로 통과.
+
+**`GET /_status` 200**: 도메인 상태(서비스 준비 여부 등).
+
+**에러**: `400`(검증 실패), `503`(데이터/LLM 미준비).
+
+---
+
+## POST /api/v1/cover  ·  GET /api/v1/cover/_status
+
+작품·캐릭터 정보 → 표지 이미지(base64). `dryRun=true`면 최종 프롬프트만.
+
+**요청**
+
+| 필드 | 타입 | 기본 | 설명 |
+|---|---|---|---|
+| `workTitle` | string | `""` | 작품명 |
+| `genre` | string | `""` | 장르 |
+| `synopsis` | string | `""` | 시놉시스 |
+| `characters` | array<object> | `[]` | 캐릭터 설정집 |
+| `targetCountry` | string | `"KR"` | `KR/US/CN/JP/TH` |
+| `userPrompt` | string | `""` | 추가 요청(최대 500자) |
+| `dryRun` | bool | `false` | true면 이미지 생성 없이 최종 프롬프트만 |
+
+**응답 200**: `status`(string) + 엔진 출력(`final_prompt`, `image_base64` 등). `dryRun=false`면 실 이미지 base64.
+
+**에러**: `400`(프롬프트 검증), `503`(OpenAI 키 미설정 등).
+
+---
+
+## POST /api/v1/relationship-map  ·  GET /api/v1/relationship-map/_status
+
+캐릭터 설정집 → 인물 관계도 데이터(+옵션 HTML).
+
+**요청**
+
+| 필드 | 타입 | 기본 | 설명 |
+|---|---|---|---|
+| `workTitle` | string | `""` | 작품명 |
+| `characters` | array<object> | `[]` | 캐릭터 설정집 |
+| `limit` | int | `12` | 관계도 캐릭터 수(1~20) |
+| `includeHtml` | bool | `true` | true면 관계도 HTML도 반환 |
+
+**응답 200**: `data`(characters/relations/groups) + `htmlReport`(includeHtml=true). `extra=allow`.
+
+**에러**: `400`(빈 캐릭터/limit 범위), `503`(엔진 도달, 키 필요).
+
+---
+
+## POST /api/v1/character-extract  ·  GET /api/v1/character-extract/_status
+
+시놉시스 → 등장인물 목록(이름·역할·외형·관계 등).
+
+**요청** (`synopsis` 필수)
+
+| 필드 | 타입 | 필수 | 기본 | 설명 |
+|---|---|---|---|---|
+| `workTitle` | string | | `""` | 작품명 |
+| `genre` | string | | `""` | 장르 |
+| `synopsis` | string | ✅ | — | 등장인물 추출 대상(min 1자) |
+| `limit` | int | | `20` | 추출 인물 수(1~30) |
+| `workId` | int | | null | 주면 결과를 해당 작품 `CHARACTERS`에 적재(rdb 백엔드일 때) |
+
+**응답 200**
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `work_title` | string\|null | 작품명 |
+| `genre` | string\|null | 장르 |
+| `count` | int\|null | 추출 인물 수 |
+| `characters` | array<object> | 인물 목록(이름·역할·외형·관계 등) |
+
+**에러**: `422`(빈 시놉시스/limit 범위 등 스키마 검증), `503`(OpenAI 키 미설정 등).
+
+---
+
+## 엔드포인트 요약
+
+| 메서드 | 경로 | 용도 |
+|---|---|---|
+| GET | `/health` | 헬스체크 |
+| POST | `/api/v1/translation/translate` | 번역 + 문화 각주 + 리뷰 카드 |
+| POST | `/api/v1/translation/inspect-chat` | 번역 검수 챗봇 |
+| POST | `/api/v1/guide` | 현지화 가이드 |
+| POST | `/api/v1/cover` | 표지 이미지(base64) |
+| POST | `/api/v1/relationship-map` | 인물 관계도 |
+| POST | `/api/v1/character-extract` | 등장인물 추출 |
+| GET | `/api/v1/{guide,cover,relationship-map,character-extract}/_status` | 도메인 상태 |
+
+> 모든 응답은 `extra=allow` — 표의 키는 **보장 최소 집합**이고, 실제 응답엔 엔진이 키를 더 실을 수 있다.
+> 정확한 실시간 스키마는 `GET /docs`(Swagger) / `GET /openapi.json` 참조.
