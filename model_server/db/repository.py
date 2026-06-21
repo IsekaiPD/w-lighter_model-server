@@ -1,4 +1,4 @@
-"""저장소 인터페이스 — works/episodes/characters/translation_results 영속화 + glossary hydrate 위임.
+"""저장소 인터페이스 — 작품/회차/캐릭터/번역/관계도/가이드/표지/채팅 영속화.
 
 rdb 비활성(content_store_backend=memory)이면 쓰기는 graceful no-op, 읽기는 빈 결과.
 glossary hydrate는 `domains/translation/glossary/` 추상화에 위임한다.
@@ -6,6 +6,8 @@ glossary hydrate는 `domains/translation/glossary/` 추상화에 위임한다.
 from __future__ import annotations
 
 from dataclasses import asdict
+import json
+import re
 from typing import Any
 
 from core.logging import get_logger
@@ -28,6 +30,59 @@ def _trunc(value: Any, max_len: int) -> str:
     return text[:max_len].rstrip() if len(text) > max_len else text
 
 
+def _json_dump(value: Any) -> str:
+    """TEXT 컬럼 저장용 JSON 문자열. 이미 문자열이면 그대로 둔다."""
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, ensure_ascii=False, default=str)
+
+
+def _bool_int(value: Any) -> int:
+    if isinstance(value, bool):
+        return 1 if value else 0
+    text = _s(value).lower()
+    return 1 if text in {"1", "true", "yes", "y", "on"} else 0
+
+
+_PROFILE_LABEL_RE = re.compile(r"^\s*프로필\s*라벨\s*:\s*(.+?)\s*$", re.MULTILINE)
+_DETAIL_PREFIX_RE = re.compile(r"^\s*세부\s*설정\s*:\s*", re.MULTILINE)
+
+
+def split_profile_label(detail_setting: Any) -> tuple[str, str]:
+    """detail_setting에 묻어둔 profile_label을 분리한다.
+
+    DB 컬럼 추가 없이 아래 고정 포맷을 사용한다.
+    프로필 라벨: 전직 형사
+    세부 설정: ...
+    """
+    detail = _s(detail_setting)
+    if not detail:
+        return "", ""
+    match = _PROFILE_LABEL_RE.search(detail)
+    profile_label = match.group(1).strip() if match else ""
+    cleaned = _PROFILE_LABEL_RE.sub("", detail).strip()
+    cleaned = _DETAIL_PREFIX_RE.sub("", cleaned).strip()
+    return profile_label, cleaned
+
+
+def pack_profile_label(profile_label: Any, detail_setting: Any, *, max_len: int = 1000) -> str:
+    """profile_label을 detail_setting에 고정 포맷으로 합쳐 저장한다."""
+    label = _trunc(profile_label, 80)
+    detail = _s(detail_setting)
+    existing_label, cleaned_detail = split_profile_label(detail)
+    if not label:
+        label = existing_label
+    if not cleaned_detail:
+        cleaned_detail = detail if not existing_label else ""
+    if label:
+        combined = f"프로필 라벨: {label}"
+        if cleaned_detail:
+            combined += f"\n세부 설정: {cleaned_detail}"
+    else:
+        combined = cleaned_detail or detail
+    return _trunc(combined, max_len)
+
+
 _GENDER_M = {"m", "male", "남", "남자", "남성", "사내", "boy", "man"}
 _GENDER_F = {"f", "female", "여", "여자", "여성", "girl", "woman"}
 
@@ -43,7 +98,10 @@ def normalize_gender(value: Any) -> str:
 
 
 def _map_character(raw: dict[str, Any]) -> dict[str, Any]:
-    """character_extract 출력 1건 → CHARACTERS 컬럼 dict. profile_label은 ERD 컬럼 없어 미저장."""
+    """character_extract 출력 1건 → CHARACTERS 컬럼 dict.
+
+    profile_label은 화면/DB 컬럼 추가를 피하기 위해 detail_setting에 묻어 저장한다.
+    """
     return {
         "char_name": _trunc(raw.get("char_name"), 30),
         "gender": normalize_gender(raw.get("gender")),
@@ -51,7 +109,7 @@ def _map_character(raw: dict[str, Any]) -> dict[str, Any]:
         "role": _trunc(raw.get("role"), 5),  # ERD VARCHAR(5) — extraction(≤10)보다 짧으므로 절단
         "appearance": _trunc(raw.get("appearance"), 300),
         "relationships": _trunc(raw.get("relationships"), 500),
-        "detail_setting": _trunc(raw.get("detail_setting"), 1000),
+        "detail_setting": pack_profile_label(raw.get("profile_label"), raw.get("detail_setting"), max_len=1000),
     }
 
 
@@ -163,14 +221,28 @@ def get_characters(work_id: int) -> list[dict[str, Any]]:
         rows = session.execute(
             select(Character).where(Character.work_id == int(work_id)).order_by(Character.character_id)
         ).scalars().all()
-        return [
-            {
-                "character_id": r.character_id, "work_id": r.work_id, "char_name": r.char_name,
-                "gender": r.gender, "age": r.age, "role": r.role, "appearance": r.appearance,
-                "relationships": r.relationships, "detail_setting": r.detail_setting,
-            }
-            for r in rows
-        ]
+        results: list[dict[str, Any]] = []
+        for r in rows:
+            profile_label, cleaned_detail = split_profile_label(r.detail_setting)
+            results.append(
+                {
+                    "character_id": r.character_id,
+                    "work_id": r.work_id,
+                    "char_name": r.char_name,
+                    "gender": r.gender,
+                    "age": r.age,
+                    "role": r.role,
+                    "appearance": r.appearance,
+                    "relationships": r.relationships,
+                    # API/LLM용으로는 profile_label을 복원해 넘긴다.
+                    "profile_label": profile_label,
+                    # 관계도/표지 프롬프트에는 라벨 줄을 제거한 세부 설정만 전달한다.
+                    "detail_setting": cleaned_detail or r.detail_setting,
+                    # 디버깅/이관용 원본. 화면에서 필요 없으면 무시 가능.
+                    "detail_setting_raw": r.detail_setting,
+                }
+            )
+        return results
     finally:
         session.close()
 
@@ -213,6 +285,123 @@ def save_translation_result(payload: dict[str, Any]) -> dict[str, Any]:
         session.commit()
         session.refresh(row)
         return {"saved": True, "translation_id": row.translation_id}
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+# ------------------------------------------------------------------ #
+# relation_maps / localization_guides / covers / chat_messages
+# ------------------------------------------------------------------ #
+def save_relation_map(*, work_id: int, map_content: Any) -> dict[str, Any]:
+    """관계도 결과 저장 → {saved, map_id}. map_content는 HTML 문자열 또는 JSON 직렬화 대상."""
+    if not rdb_enabled():
+        return {"saved": False, "reason": "persistence_disabled"}
+    from .models import RelationMap, Work
+
+    session = get_session()
+    try:
+        if session.get(Work, int(work_id)) is None:
+            return {"saved": False, "reason": f"work_id {work_id} not found"}
+        row = RelationMap(work_id=int(work_id), map_content=_json_dump(map_content))
+        session.add(row)
+        session.commit()
+        session.refresh(row)
+        return {"saved": True, "map_id": row.map_id}
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def save_localization_guide(*, work_id: int, target_country: str | None, guide_content: Any) -> dict[str, Any]:
+    """현지화 가이드 저장 → {saved, guide_id}."""
+    if not rdb_enabled():
+        return {"saved": False, "reason": "persistence_disabled"}
+    from .models import LocalizationGuide, Work
+
+    session = get_session()
+    try:
+        if session.get(Work, int(work_id)) is None:
+            return {"saved": False, "reason": f"work_id {work_id} not found"}
+        country = _s(target_country).upper() or None
+        row = LocalizationGuide(
+            work_id=int(work_id),
+            target_country=_trunc(country, 2) if country else None,
+            guide_content=_json_dump(guide_content),
+        )
+        session.add(row)
+        session.commit()
+        session.refresh(row)
+        return {"saved": True, "guide_id": row.guide_id}
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def save_cover(*, work_id: int, target_country: str, cover_url: str, main_cover_yn: Any = False) -> dict[str, Any]:
+    """표지 저장 → {saved, cover_id}. cover_url은 ERD상 VARCHAR(255)이므로 URL/파일 경로만 저장한다."""
+    if not rdb_enabled():
+        return {"saved": False, "reason": "persistence_disabled"}
+    if not _s(cover_url):
+        return {"saved": False, "reason": "cover_url is required"}
+    from .models import Cover, Work
+
+    session = get_session()
+    try:
+        if session.get(Work, int(work_id)) is None:
+            return {"saved": False, "reason": f"work_id {work_id} not found"}
+        row = Cover(
+            work_id=int(work_id),
+            cover_url=_trunc(cover_url, 255),
+            target_country=_trunc(_s(target_country).upper() or "KR", 2),
+            main_cover_yn=_bool_int(main_cover_yn),
+        )
+        session.add(row)
+        session.commit()
+        session.refresh(row)
+        return {"saved": True, "cover_id": row.cover_id, "cover_url": row.cover_url}
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def save_chat_messages(*, translation_id: int, messages: list[dict[str, Any]]) -> dict[str, Any]:
+    """검수 챗봇 메시지 묶음 저장 → {saved, count, message_ids}."""
+    if not rdb_enabled():
+        return {"saved": False, "count": 0, "message_ids": [], "reason": "persistence_disabled"}
+    if not messages:
+        return {"saved": True, "count": 0, "message_ids": []}
+    from .models import ChatMessage, TranslationResult
+
+    session = get_session()
+    try:
+        if session.get(TranslationResult, int(translation_id)) is None:
+            return {"saved": False, "count": 0, "message_ids": [], "reason": f"translation_id {translation_id} not found"}
+        rows: list[ChatMessage] = []
+        for item in messages:
+            if not isinstance(item, dict):
+                continue
+            sender = _s(item.get("sender_type") or item.get("senderType")).upper()
+            if sender not in {"USER", "ASSISTANT"}:
+                continue
+            message_text = str(item.get("message_text") or item.get("messageText") or "").strip()
+            if not message_text:
+                continue
+            rows.append(ChatMessage(translation_id=int(translation_id), sender_type=sender, message_text=message_text))
+        if not rows:
+            return {"saved": True, "count": 0, "message_ids": []}
+        session.add_all(rows)
+        session.commit()
+        ids = [r.message_id for r in rows]
+        return {"saved": True, "count": len(ids), "message_ids": ids}
     except Exception:
         session.rollback()
         raise

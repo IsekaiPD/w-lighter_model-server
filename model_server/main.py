@@ -5,7 +5,10 @@
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from api.v1.router import api_router
 from common.exceptions import register_exception_handlers
@@ -14,6 +17,9 @@ from core.config import settings
 from core.lifespan import lifespan
 from health.router import router as health_router
 
+_MODEL_SERVER_ROOT = Path(__file__).resolve().parent
+_GENERATED_DIR = _MODEL_SERVER_ROOT / "generated"
+
 
 def create_app() -> FastAPI:
     app = FastAPI(title=settings.app_name, lifespan=lifespan)
@@ -21,6 +27,9 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
     app.include_router(health_router)  # GET /health
     app.include_router(api_router, prefix=settings.api_v1_prefix)  # /api/v1/<domain>/...
+    # 표지 생성 결과를 파일로 저장했을 때 covers.cover_url=/generated/covers/... 로 조회 가능하게 한다.
+    _GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+    app.mount("/generated", StaticFiles(directory=str(_GENERATED_DIR)), name="generated")
     return app
 
 

@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 class GuideRequest(BaseModel):
     model_config = {"extra": "allow"}  # generate_guide가 추가 키를 직접 사용
 
+    workId: int | None = Field(None, description="주면 DB의 작품 정보를 보강하고 가이드 결과를 저장")
     title: str | None = None
     genre: str | None = None
     synopsis: str | None = None
@@ -23,6 +24,7 @@ class GuideRequest(BaseModel):
     legacyGuide: bool | None = None
     includeContextPack: bool | None = None
     includeInternal: bool | None = None
+    saveGuide: bool | None = Field(True, description="workId가 있을 때 localization_guides에 저장")
 
 
 class GuideResponse(BaseModel):

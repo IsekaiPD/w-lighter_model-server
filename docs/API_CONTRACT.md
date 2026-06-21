@@ -32,6 +32,27 @@ WEB(Django)이 호출하는 MODEL 서버의 HTTP 계약. **실제 코드(`domain
 
 ---
 
+### DB 영속화 (공통 패턴)
+
+AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규칙**을 따른다(구조 A: 보통 Django가 `workId`/`translationId`를 넘김).
+
+- 저장은 **식별자 + save 플래그 + rdb 백엔드** 3박자가 맞아야 동작한다:
+  `workId`(또는 inspect-chat은 `translationId`)가 있고 + `save*` 플래그가 `true`(기본)고 + 서버가 `CONTENT_STORE_BACKEND=rdb`일 때.
+- 셋 중 하나라도 빠지면 **graceful no-op**(저장만 건너뜀, 본 응답은 정상). 예: `workId` 없음 → 저장 안 함, memory 백엔드 → 안 함.
+- 저장을 시도하면 응답에 **`persisted*` 키**가 붙는다(`{saved: bool, ...id}` 또는 실패 사유). best-effort라 저장 실패해도 본 산출물은 200으로 반환된다.
+- write 경계: **works/episodes(작품/회차)는 WEB(Django)이 생성**, 모델 서버는 AI 산출물(translation_results·characters·relation_maps·localization_guides·covers·chat_messages)만 write.
+
+| 엔드포인트 | 식별자 | save 플래그 | 응답 키 | 대상 테이블 |
+|---|---|---|---|---|
+| translate | `episodeId` | `saveTranslationResult` | `persisted` | translation_results |
+| inspect-chat | `translationId` | `saveChatMessages` | `persistedChatMessages` | chat_messages |
+| guide | `workId` | `saveGuide` | `persistedGuide` | localization_guides |
+| cover | `workId` | `saveCover` | `persistedCover` | covers |
+| relationship-map | `workId` | `saveRelationMap` | `persistedRelationMap` | relation_maps |
+| character-extract | `workId` | (workId만으로 적재) | (응답 내) | characters |
+
+---
+
 ## GET /health
 
 부팅/헬스체크용. 외부 의존(Qdrant/KURE) 없이 항상 200.
@@ -87,6 +108,9 @@ WEB(Django)이 호출하는 MODEL 서버의 HTTP 계약. **실제 코드(`domain
 | `qaIssues` | array<object> | QA 이슈 |
 | `metadata` | object | 빌드/모델 메타 |
 | `internal` | object\|null | `includeInternal=true`일 때만 |
+| `persisted` | object | `saveTranslationResult` 저장 시도 시에만(`{saved, translation_id}`) — DB 영속화 공통 참조 |
+
+요청에 `saveTranslationResult`(bool, 기본 false) + `episodeId`가 있으면 `translation_results`에 저장하고 `persisted`로 결과(특히 `translation_id`)를 반환한다. 이 `translation_id`를 inspect-chat의 `translationId`로 넘기면 챗 로그가 연결된다.
 
 **에러**: `422`(`sourceText` 누락/빈 값·타입 불일치 — Pydantic 검증), `400`(`targetLocale`·`targetCountry` 둘 다 없음 또는 로케일 정규화 실패 — 서비스 검증), `503`(엔진 미준비).
 
@@ -107,6 +131,8 @@ WEB(Django)이 호출하는 MODEL 서버의 HTTP 계약. **실제 코드(`domain
 | `workflow` | object | | null | 워크플로 상태 |
 | `chatHistory` | array<object> | | null | 이전 대화 |
 | `title` / `episodeId` | string | | null | 작품/회차 |
+| `translationId` | int | | null | 주면 검수 대화를 `chat_messages`에 저장(rdb일 때) |
+| `saveChatMessages` | bool | | `true` | `translationId`가 있을 때 저장 여부 |
 
 **응답 200**
 
@@ -116,6 +142,7 @@ WEB(Django)이 호출하는 MODEL 서버의 HTTP 계약. **실제 코드(`domain
 | `proposedTranslation` | string\|null | 수정 제안(있으면) |
 | `changeSummary` | string\|null | 변경 요약 |
 | `needsUserConfirmation` | bool | 사용자 확인 필요 여부 |
+| `persistedChatMessages` | object | `translationId` 저장 시도 시에만(`{saved, count, message_ids}`) — DB 영속화 공통 참조 |
 
 ---
 
@@ -133,8 +160,11 @@ WEB(Django)이 호출하는 MODEL 서버의 HTTP 계약. **실제 코드(`domain
 | `titleElements` | array<string> | 제목 요소 |
 | `comparableSignals` | array<string> | 비교작 신호 |
 | `legacyGuide` / `includeContextPack` / `includeInternal` | bool | 토글 |
+| `workId` | int | 주면 작품 정보 보강 + 가이드 결과를 `localization_guides`에 저장(rdb일 때) |
+| `saveGuide` | bool | `workId`가 있을 때 저장 여부(기본 `true`) |
 
 **응답 200**: `generationMode`(string) + 모드별 다수 키(htmlReport·contextPackBriefing 등). 엔진 출력 그대로 통과.
+`workId` 저장 시 `persistedGuide`(`{saved, guide_id}`) 추가 — DB 영속화 공통 참조.
 
 **`GET /_status` 200**: 도메인 상태(서비스 준비 여부 등).
 
@@ -157,8 +187,13 @@ WEB(Django)이 호출하는 MODEL 서버의 HTTP 계약. **실제 코드(`domain
 | `targetCountry` | string | `"KR"` | `KR/US/CN/JP/TH` |
 | `userPrompt` | string | `""` | 추가 요청(최대 500자) |
 | `dryRun` | bool | `false` | true면 이미지 생성 없이 최종 프롬프트만 |
+| `workId` | int | null | 주면 표지 URL을 `covers`에 저장(rdb일 때) |
+| `coverUrl` | string | null | 이미 저장된 표지 URL/S3 경로가 있으면 `covers.cover_url`에 저장 |
+| `mainCoverYn` | bool | `false` | 대표 표지 여부 |
+| `saveCover` | bool | `true` | `workId`가 있을 때 저장 여부 |
 
 **응답 200**: `status`(string) + 엔진 출력(`final_prompt`, `image_base64` 등). `dryRun=false`면 실 이미지 base64.
+`workId` 저장 시 `persistedCover`(`{saved, cover_id, cover_url}`) 추가. 파일로 저장된 표지는 `/generated/...`로 조회 가능 — DB 영속화 공통 참조.
 
 **에러**: `400`(프롬프트 검증), `503`(OpenAI 키 미설정 등).
 
@@ -176,8 +211,12 @@ WEB(Django)이 호출하는 MODEL 서버의 HTTP 계약. **실제 코드(`domain
 | `characters` | array<object> | `[]` | 캐릭터 설정집 |
 | `limit` | int | `12` | 관계도 캐릭터 수(1~20) |
 | `includeHtml` | bool | `true` | true면 관계도 HTML도 반환 |
+| `workId` | int | null | 주면 DB 작품/캐릭터를 조회하고 관계도를 `relation_maps`에 저장(rdb일 때) |
+| `saveRelationMap` | bool | `true` | `workId`가 있을 때 저장 여부 |
 
 **응답 200**: `data`(characters/relations/groups) + `htmlReport`(includeHtml=true). `extra=allow`.
+`workId` 저장 시 `persistedRelationMap`(`{saved, map_id}`) 추가 — DB 영속화 공통 참조.
+> `workId`만 주고 `characters`를 비우면 DB에 저장된 캐릭터를 조회해 관계도를 만든다.
 
 **에러**: `400`(빈 캐릭터/limit 범위), `503`(엔진 도달, 키 필요).
 
