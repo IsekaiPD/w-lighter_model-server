@@ -55,6 +55,8 @@ class InspectChatRequest(BaseModel):
     chatHistory: list[dict[str, Any]] | None = None
     title: str | None = None
     episodeId: str | None = None
+    translationId: int | None = Field(None, description="주면 검수 챗봇 대화를 chat_messages에 저장")
+    saveChatMessages: bool = Field(True, description="translationId가 있을 때 chat_messages에 저장")
 
 
 class InspectChatResponse(BaseModel):

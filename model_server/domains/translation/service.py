@@ -224,6 +224,17 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
     return response
 
 
+def _should_save_chat(payload: dict[str, Any]) -> bool:
+    value = payload.get("saveChatMessages")
+    if value is None:
+        value = payload.get("save_chat_messages")
+    if value is None:
+        return True
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() not in {"0", "false", "no", "off"}
+
+
 def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
     question = str(_payload_value(payload, "question", "question_text", default="") or "").strip()
     if not question:
@@ -262,9 +273,27 @@ def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
         translation_memory=[],
         chat_history=chat_history,
     )
-    return {
+    response = {
         "answer": reply.answer,
         "proposedTranslation": reply.proposed_translation,
         "changeSummary": reply.change_summary,
         "needsUserConfirmation": reply.needs_user_confirmation,
     }
+
+    translation_id = _payload_value(payload, "translationId", "translation_id") or workflow.get("translationId") or workflow.get("translation_id")
+    if translation_id is not None and _should_save_chat(payload):
+        assistant_text = reply.answer or ""
+        if reply.proposed_translation:
+            assistant_text = f"{assistant_text}\n\n[수정 제안 번역문]\n{reply.proposed_translation}".strip()
+        try:
+            response["persistedChatMessages"] = db_repo.save_chat_messages(
+                translation_id=int(translation_id),
+                messages=[
+                    {"senderType": "USER", "messageText": question},
+                    {"senderType": "ASSISTANT", "messageText": assistant_text},
+                ],
+            )
+        except Exception as exc:  # noqa: BLE001
+            response["persistedChatMessages"] = {"saved": False, "reason": f"{type(exc).__name__}: {exc}"}
+
+    return response

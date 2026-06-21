@@ -1,6 +1,6 @@
 """DB 모델 — ERD(`project_docs/ERD_planning.txt`) 매핑, 포터블(SQLite↔MySQL).
 
-모델서버 소유 테이블만 정의한다(works/episodes/characters/translation_results).
+모델서버 소유 테이블을 정의한다(works/episodes/characters/translation_results + relation_maps/localization_guides/covers/chat_messages).
 USERS·PAYMENTS·PLAN·CREDITTRANSACTION 등 결제/계정 테이블은 WEB(Django) 소유라 제외한다.
 그래서 `works.user_id`는 cross-boundary FK(→USERS)지만 여기선 제약 없는 INT로 둔다
 (로컬 SQLite에 USERS 테이블이 없어도 동작; 공유 MySQL에선 실제 FK가 존재).
@@ -33,6 +33,9 @@ class Work(Base, TimestampMixin):
 
     episodes: Mapped[list["Episode"]] = relationship(back_populates="work", cascade="all, delete-orphan")
     characters: Mapped[list["Character"]] = relationship(back_populates="work", cascade="all, delete-orphan")
+    relation_maps: Mapped[list["RelationMap"]] = relationship(back_populates="work", cascade="all, delete-orphan")
+    localization_guides: Mapped[list["LocalizationGuide"]] = relationship(back_populates="work", cascade="all, delete-orphan")
+    covers: Mapped[list["Cover"]] = relationship(back_populates="work", cascade="all, delete-orphan")
 
 
 class Episode(Base, TimestampMixin):
@@ -54,8 +57,8 @@ class Episode(Base, TimestampMixin):
 class Character(Base, TimestampMixin):
     """ERD CHARACTERS — 등장인물. character_extract 결과 적재 대상.
 
-    매핑(extraction → 컬럼): gender는 M/F/U 정규화, appearance는 `apperance`(ERD 오타 그대로).
-    extraction의 `profile_label`은 ERD 컬럼이 없어 미저장.
+    매핑(extraction → 컬럼): gender는 M/F/U 정규화.
+    extraction의 `profile_label`은 별도 컬럼을 추가하지 않고 detail_setting 첫 줄에 고정 포맷으로 합쳐 저장한다.
     """
 
     __tablename__ = "characters"
@@ -66,8 +69,7 @@ class Character(Base, TimestampMixin):
     gender: Mapped[str | None] = mapped_column(String(5), nullable=True)  # CHECK: M/F/U
     age: Mapped[str | None] = mapped_column(String(10), nullable=True)
     role: Mapped[str | None] = mapped_column(String(5), nullable=True)
-    # ERD 컬럼명은 'apperance'(오타). 물리 컬럼은 ERD와 동일하게, 파이썬 속성만 appearance로 노출.
-    appearance: Mapped[str | None] = mapped_column("apperance", String(300), nullable=True)
+    appearance: Mapped[str | None] = mapped_column(String(300), nullable=True)
     relationships: Mapped[str | None] = mapped_column(String(500), nullable=True)
     detail_setting: Mapped[str | None] = mapped_column(String(1000), nullable=True)
 
@@ -93,3 +95,62 @@ class TranslationResult(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
     episode: Mapped["Episode"] = relationship(back_populates="translation_results")
+    chat_messages: Mapped[list["ChatMessage"]] = relationship(
+        back_populates="translation", cascade="all, delete-orphan"
+    )
+
+
+class ChatMessage(Base):
+    """ERD CHAT_MESSAGES — 번역 검수 챗봇 대화 로그."""
+
+    __tablename__ = "chat_messages"
+
+    message_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    translation_id: Mapped[int] = mapped_column(ForeignKey("translation_results.translation_id"), nullable=False, index=True)
+    sender_type: Mapped[str] = mapped_column(String(10), nullable=False)  # USER / ASSISTANT
+    message_text: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    translation: Mapped["TranslationResult"] = relationship(back_populates="chat_messages")
+
+
+class LocalizationGuide(Base):
+    """ERD LOCALIZATION_GUIDES — 현지화 가이드 결과 저장."""
+
+    __tablename__ = "localization_guides"
+
+    guide_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    work_id: Mapped[int] = mapped_column(ForeignKey("works.work_id"), nullable=False, index=True)
+    target_country: Mapped[str | None] = mapped_column(CHAR(2), nullable=True)
+    guide_content: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    work: Mapped["Work"] = relationship(back_populates="localization_guides")
+
+
+class Cover(Base):
+    """ERD COVERS — 표지 이미지 URL/경로 저장."""
+
+    __tablename__ = "covers"
+
+    cover_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    work_id: Mapped[int] = mapped_column(ForeignKey("works.work_id"), nullable=False, index=True)
+    cover_url: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    target_country: Mapped[str] = mapped_column(CHAR(2), nullable=False)
+    main_cover_yn: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    work: Mapped["Work"] = relationship(back_populates="covers")
+
+
+class RelationMap(Base):
+    """ERD RELATION_MAPS — HTML/JSON 관계도 결과 저장."""
+
+    __tablename__ = "relation_maps"
+
+    map_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    work_id: Mapped[int] = mapped_column(ForeignKey("works.work_id"), nullable=False, index=True)
+    map_content: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    work: Mapped["Work"] = relationship(back_populates="relation_maps")
