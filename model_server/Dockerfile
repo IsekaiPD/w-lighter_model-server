@@ -49,6 +49,11 @@ COPY --from=builder /opt/venv /opt/venv
 # 앱 코드 복사(.dockerignore가 .env·캐시·로컬DB 제외).
 COPY --chown=appuser:appuser . .
 
+# WORKDIR /app 자체는 root 소유(COPY --chown은 복사된 파일만 chown) → appuser가 새 파일 생성 불가.
+# rdb 기본값에서 DATABASE_URL 없이 뜰 때 SQLite 폴백(/app/wlighter_local.db) 쓰기를 위해 디렉터리도 appuser로.
+# (prod는 MySQL DATABASE_URL이라 무관하나, out-of-box 컨테이너가 DB 쓰기에서 깨지지 않도록.)
+RUN chown appuser:appuser /app
+
 USER appuser
 
 EXPOSE 8000
