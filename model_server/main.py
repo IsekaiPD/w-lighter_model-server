@@ -22,7 +22,13 @@ _GENERATED_DIR = _MODEL_SERVER_ROOT / "generated"
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title=settings.app_name, lifespan=lifespan)
+    app = FastAPI(
+        title=settings.app_name,
+        lifespan=lifespan,
+        docs_url="/docs" if settings.enable_docs else None,
+        redoc_url="/redoc" if settings.enable_docs else None,
+        openapi_url="/openapi.json" if settings.enable_docs else None,
+    )
     register_middleware(app)
     register_exception_handlers(app)
     app.include_router(health_router)  # GET /health

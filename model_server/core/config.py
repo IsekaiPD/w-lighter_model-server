@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     # 무거운 파이프라인(KURE/qdrant) startup warm-up 여부. 기본 off(빠른 부팅).
     warmup_on_startup: bool = False
 
+    enable_docs: bool = True
+
 
 @lru_cache
 def get_settings() -> Settings:
