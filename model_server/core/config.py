@@ -35,9 +35,10 @@ class Settings(BaseSettings):
 
     # --- 저장소 백엔드 ---
     # memory: 프로세스 메모리(휘발). rdb: SQLAlchemy(database_url; 비면 로컬 SQLite 파일).
-    # 기본 memory는 부팅 빠르고 테스트 결정적. 영속화 테스트/배포는 rdb로 전환.
-    glossary_store_backend: str = "memory"   # memory | rdb | mysql
-    content_store_backend: str = "memory"    # memory | rdb
+    # 기본 rdb (안 B, 2026-06-21 결정): 실서비스 가정에서 "깜빡 memory→prod 데이터 증발" footgun 제거.
+    #   로컬은 DATABASE_URL 비우면 SQLite 파일로 폴백(서버 불요). 테스트/CI는 CONTENT_STORE_BACKEND=memory 명시.
+    glossary_store_backend: str = "memory"   # memory | rdb | mysql  (별도 추상화 — content와 무관)
+    content_store_backend: str = "rdb"       # memory | rdb
     # SQLAlchemy 연결 URL. 비면 rdb일 때 로컬 SQLite 파일(model_server/wlighter_local.db)로 폴백.
     # MySQL 전환 예: mysql+pymysql://user:pw@host:3306/dbname?charset=utf8mb4
     database_url: str = ""                    # DATABASE_URL

@@ -50,8 +50,8 @@ curl http://localhost:8000/health
 | env | 값 | 이유 |
 |---|---|---|
 | `WARMUP_ON_STARTUP` | `1` (compose에 이미 ON) | 첫 요청 콜드스타트 방지(KURE 사전 적재) |
-| `CONTENT_STORE_BACKEND` | `rdb` | DB 영속화 활성(기본 memory=휘발성) |
-| `DATABASE_URL` | `mysql+pymysql://…` | MySQL 전환은 이 한 줄만(코드 불변) |
+| `CONTENT_STORE_BACKEND` | `rdb` (코드 기본값 — 안 B) | DB 영속화 활성. 비우면 자동 rdb. (테스트만 `memory` 명시) |
+| `DATABASE_URL` | `mysql+pymysql://…` | **prod 필수**: 비우면 rdb가 컨테이너 SQLite로 폴백(데이터 갇힘). 전환은 이 한 줄만(코드 불변) |
 | `WLIGHTER_ANNOTATION_SCORE_THRESHOLD` | `0.55`(기본) | 문화 각주 검색 임계치(↑보수적 / ↓적극적) |
 | CORS origin | 좁히기 | 현재 `*` |
 

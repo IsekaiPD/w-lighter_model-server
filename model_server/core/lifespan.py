@@ -22,9 +22,16 @@ async def lifespan(app: FastAPI):
     app.state.warm = {"translation": False}
 
     # DB 테이블 보장(rdb일 때만; memory면 no-op). 로컬 SQLite 부트스트랩.
+    # 2차 footgun 가드(안 B): rdb인데 DATABASE_URL이 비면 로컬 SQLite로 폴백한다.
+    # dev는 정상이지만 prod에서 MySQL을 깜빡한 경우일 수 있어 명시 경고(데이터가 컨테이너 SQLite에 갇힘).
     try:
-        from db.session import init_db
+        from db.session import init_db, rdb_enabled
 
+        if rdb_enabled() and not settings.database_url.strip():
+            logger.warning(
+                "content_store_backend=rdb 이지만 DATABASE_URL이 비어 로컬 SQLite로 폴백합니다 "
+                "(dev면 정상, prod면 DATABASE_URL=mysql+pymysql://... 설정 필요)"
+            )
         init_db()
     except Exception as exc:  # noqa: BLE001 — DB 미준비여도 앱은 뜬다
         logger.warning("init_db skipped/failed: %r", exc)
