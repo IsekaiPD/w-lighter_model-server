@@ -16,6 +16,7 @@ from ..retrieval.platform_trends import (
     build_country_profiles,
     load_trend_data,
 )
+from ..infra.report_html import build_guide_html_document
 
 
 KO_US = '미국'
@@ -507,7 +508,20 @@ def _html_report(*, title: str, mode_label: str, target_country: str, genre: str
             f"<div class='guide-section'><div class='guide-section-header'><span class='guide-section-title'>{esc(section.get('title', key))}</span></div><ul class='guide-list'>{items}</ul></div>"
         )
     display_country = _display_country_label(target_country)
-    return f"""
+    quality_items = "".join(
+        f"<li>{esc(item)}</li>"
+        for item in _guide_quality_summary(
+            target_country=target_country,
+            genre=genre,
+            sections=sections,
+            recommendations=recommendations,
+        )
+    )
+    action_items = "".join(
+        f"<li>{esc(item)}</li>"
+        for item in _guide_action_checklist(target_country=target_country, sections=sections)
+    )
+    body_html = f"""
     <div class="guide-report">
       <div class="guide-cover">
         <div class="guide-cover-label">번역 전 현지화 기준서 · 플랫폼 참고 근거</div>
@@ -515,10 +529,13 @@ def _html_report(*, title: str, mode_label: str, target_country: str, genre: str
         <div class="guide-cover-sub"><span>{esc(mode_label)}</span><span>{esc(genre or '장르 미입력')}</span><span>플랫폼 트렌드 참고</span></div>
       </div>
       <div class="guide-legacy-anchors">번역 방향 · 문화 주의사항 · 플랫폼 검토 항목</div>
+      <div class="guide-section"><div class="guide-section-header"><span class="guide-section-title">핵심 판단</span></div><ul class="guide-list">{quality_items}</ul></div>
+      <div class="guide-section"><div class="guide-section-header"><span class="guide-section-title">바로 적용할 체크리스트</span></div><ul class="guide-list">{action_items}</ul></div>
       <div class="guide-section"><div class="guide-section-header"><span class="guide-section-title">선택 국가 요약</span></div><ul class="guide-list"><li>선택 국가: {esc(display_country)}</li><li>이 가이드는 선택한 국가를 기준으로 정리했습니다.</li><li>추천 후보는 내부 참고용으로만 유지했습니다.</li></ul></div>
       {''.join(section_html)}
     </div>
     """
+    return build_guide_html_document(title=f"{display_country} 현지화 기준서", body_html=body_html)
 
 
 def _display_country_label(target_country: str) -> str:
@@ -533,6 +550,48 @@ def _recommendation_payload(recommendations: list[Recommendation]) -> list[dict[
         item["displayCountry"] = _display_country_label(rec.country)
         rows.append(item)
     return rows
+
+
+def _guide_quality_summary(*, target_country: str, genre: str, sections: dict[str, Any], recommendations: list[Recommendation]) -> list[str]:
+    """Build short user-facing summary bullets from deterministic evidence."""
+
+    target_label = _display_country_label(target_country)
+    items = [f"{target_label} 기준으로 장르·시놉시스·공개 플랫폼 신호를 분리해 번역 전 기준을 정리했습니다."]
+    if genre:
+        items.append(f"입력 장르 `{genre}`는 제목/소개문 훅과 태그 후보를 점검하는 1차 기준으로만 사용합니다.")
+    if recommendations:
+        top = recommendations[0]
+        top_label = _display_country_label(top.country)
+        if top.reasons:
+            if top.country == target_country:
+                items.append(f"입력 시놉시스 기준 추천 상위 후보도 {top_label}이며, 주요 근거는 {top.reasons[0]}입니다.")
+            else:
+                items.append(f"입력 시놉시스 기준 추천 상위 후보는 {top_label}이지만, 이 리포트는 사용자가 선택한 {target_label} 기준으로 작성했습니다.")
+    for section_key in ("title_synopsis_localization", "terminology_glossary_risks", "content_rating_sensitivity"):
+        section = sections.get(section_key) or {}
+        section_items = section.get("items") or []
+        if section_items:
+            items.append(str(section_items[0]))
+    return items[:5]
+
+
+def _guide_action_checklist(*, target_country: str, sections: dict[str, Any]) -> list[str]:
+    """Concrete next actions for WEB users after reading the guide."""
+
+    target_label = _display_country_label(target_country)
+    checklist = [
+        f"{target_label}용 제목/소개문에서 장르 훅, 관계 축, 초반 갈등이 한눈에 보이는지 확인합니다.",
+        "고유명사·호칭·스킬명은 작품 glossary에 먼저 고정한 뒤 번역에 반영합니다.",
+        "연령등급, 폭력/성적 표현, 플랫폼 정책 리스크는 게시 전 별도 검수 항목으로 표시합니다.",
+    ]
+    for section_key in ("adaptation_checklist", "evidence_used"):
+        section = sections.get(section_key) or {}
+        for item in section.get("items") or []:
+            text = str(item).strip()
+            if text and text not in checklist:
+                checklist.append(text)
+                break
+    return checklist[:5]
 
 
 def recommend_country(payload: dict[str, Any], *, data_path: Path = DEFAULT_INPUT) -> dict[str, Any]:
@@ -626,6 +685,13 @@ def generate_localization_guide(payload: dict[str, Any], *, data_path: Path = DE
         recommendations=recommendations,
         evidence=evidence,
     )
+    quality_summary = _guide_quality_summary(
+        target_country=selected_country,
+        genre=genre,
+        sections=sections,
+        recommendations=recommendations,
+    )
+    action_checklist = _guide_action_checklist(target_country=selected_country, sections=sections)
     translation_profile = _translation_profile(selected_country, genre=genre, synopsis_present=synopsis_present)
     recommendation_notice = _recommendation_notice(synopsis_present=synopsis_present)
     recommended_country = top.country if synopsis_present and top else None
@@ -639,6 +705,14 @@ def generate_localization_guide(payload: dict[str, Any], *, data_path: Path = DE
         f"{selected_display} 중심으로 번역 전 현지화 기준을 정리했습니다."
         if not synopsis_present
         else f"대상 국가: {selected_display} 기준의 시놉시스 기반 1차 적합도 참고 현지화 기준서입니다."
+    )
+    html_report = _html_report(
+        title=display_title,
+        mode_label='시놉시스 기반 추천 반영' if synopsis_present else '국가/장르 기반 기준서',
+        target_country=selected_country,
+        genre=genre,
+        sections=sections,
+        recommendations=recommendations,
     )
     original = {
         "title": payload.get("title"),
@@ -671,6 +745,8 @@ def generate_localization_guide(payload: dict[str, Any], *, data_path: Path = DE
         "translationProfile": translation_profile,
         "summary_text": summary_text,
         "summaryText": summary_text,
+        "qualitySummary": quality_summary,
+        "actionChecklist": action_checklist,
         "sections": sections,
         "evidenceUsed": [asdict(ev) for ev in evidence],
         "modelPromptPayload": _model_prompt_payload(
@@ -680,22 +756,8 @@ def generate_localization_guide(payload: dict[str, Any], *, data_path: Path = DE
             sections=sections,
             evidence=evidence,
         ),
-        "guide_html": _html_report(
-            title=display_title,
-            mode_label='시놉시스 기반 추천 반영' if synopsis_present else '국가/장르 기반 기준서',
-            target_country=selected_country,
-            genre=genre,
-            sections=sections,
-            recommendations=recommendations,
-        ),
-        "htmlReport": _html_report(
-            title=display_title,
-            mode_label='시놉시스 기반 추천 반영' if synopsis_present else '국가/장르 기반 기준서',
-            target_country=selected_country,
-            genre=genre,
-            sections=sections,
-            recommendations=recommendations,
-        ),
+        "guide_html": html_report,
+        "htmlReport": html_report,
         "createdAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
     # Backward-compatible aliases for older UI/tests.

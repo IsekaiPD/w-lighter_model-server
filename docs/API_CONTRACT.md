@@ -164,6 +164,8 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 | `saveGuide` | bool | `workId`가 있을 때 저장 여부(기본 `true`) |
 
 **응답 200**: `generationMode`(string) + 모드별 다수 키(htmlReport·contextPackBriefing 등). 엔진 출력 그대로 통과.
+`htmlReport`는 relationship-map과 동일하게 `<!doctype html>` + `<head><style>...</style></head>` + `<body>`를 포함한 **CSS 내장 완성형 HTML 문서**다. WEB(Django)은 도메인별 CSS를 따로 주입하지 않고, 공통적으로 iframe `srcdoc` 방식 렌더링을 권장한다.
+품질 보조 키로 `qualitySummary`(핵심 판단 bullet 배열), `actionChecklist`(바로 적용할 체크리스트 배열)가 포함될 수 있다. 프론트는 기본적으로 `htmlReport`를 렌더링하면 되고, 목록/요약 UI가 필요할 때만 이 배열을 별도로 사용한다.
 `workId` 저장 시 `persistedGuide`(`{saved, guide_id}`) 추가 — DB 영속화 공통 참조.
 
 **`GET /_status` 200**: 도메인 상태(서비스 준비 여부 등).
@@ -214,7 +216,7 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 | `workId` | int | null | 주면 DB 작품/캐릭터를 조회하고 관계도를 `relation_maps`에 저장(rdb일 때) |
 | `saveRelationMap` | bool | `true` | `workId`가 있을 때 저장 여부 |
 
-**응답 200**: `data`(characters/relations/groups) + `htmlReport`(includeHtml=true). `extra=allow`.
+**응답 200**: `data`(characters/relations/groups) + `htmlReport`(includeHtml=true). `htmlReport`는 `<!doctype html>` + `<style>`을 포함한 CSS 내장 완성형 HTML 문서다. `extra=allow`.
 `workId` 저장 시 `persistedRelationMap`(`{saved, map_id}`) 추가 — DB 영속화 공통 참조.
 > `workId`만 주고 `characters`를 비우면 DB에 저장된 캐릭터를 조회해 관계도를 만든다.
 

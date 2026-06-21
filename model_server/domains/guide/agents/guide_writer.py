@@ -7,6 +7,8 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
+from ..infra.report_html import build_guide_html_document
+
 DEFAULT_MODEL = "gpt-5.4-mini"
 
 GUIDE_JSON_SCHEMA: dict[str, Any] = {
@@ -189,12 +191,28 @@ def render_llm_html(guide: dict[str, Any], result: dict[str, Any]) -> str:
     input_reading = guide.get("inputReading") or {}
     core = " · ".join(str(item) for item in input_reading.get("coreAppeal") or [])
     assumptions = "".join(f"<li>{_esc(item)}</li>" for item in input_reading.get("assumptions") or [])
+    action_items = [
+        f"{country}용 제목/소개문에서 핵심 포인트({core or '작품 강점'})가 초반에 보이는지 확인합니다.",
+        "고유명사·호칭·스킬명은 작품 glossary에 먼저 고정한 뒤 번역에 반영합니다.",
+        "플랫폼 정책 체크와 문화 메모는 게시 전 검수 항목으로 분리합니다.",
+    ]
+    for key in ("marketTagGuidance", "platformPolicyChecks", "limitations"):
+        for item in guide.get(key) or []:
+            text = str(item).strip()
+            if text and text not in action_items:
+                action_items.append(text)
+                break
+    action_html = "".join(f"<li>{_esc(item)}</li>" for item in action_items[:5])
 
-    return f"""
+    body_html = f"""
 {render_market_snapshot_html(result)}
 <section class="section summary-box">
   <h2>가이드 요약</h2>
   {''.join(f'<p>{_esc(item)}</p>' for item in guide.get('executiveSummary') or [])}
+</section>
+<section class="section">
+  <h2>바로 적용할 체크리스트</h2>
+  <ul class="guide-list">{action_html}</ul>
 </section>
 <section class="section">
   <h2>입력 해석</h2>
@@ -212,6 +230,7 @@ def render_llm_html(guide: dict[str, Any], result: dict[str, Any]) -> str:
 <section class="section"><h2>증거 설명</h2><ul class="guide-list">{bullets('evidenceExplanation')}</ul></section>
 <section class="section"><h2>한계</h2><ul class="guide-list">{bullets('limitations')}</ul></section>
 """
+    return build_guide_html_document(title=f"{country} 현지화 가이드", body_html=body_html)
 
 
 def generate_llm_guide(payload: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
@@ -252,6 +271,12 @@ def generate_llm_guide(payload: dict[str, Any], result: dict[str, Any]) -> dict[
         },
     )
     guide = json.loads(response.output_text)
+    html_report = render_llm_html(guide, result)
+    action_checklist = [
+        *(guide.get("marketTagGuidance") or [])[:1],
+        *(guide.get("platformPolicyChecks") or [])[:2],
+        *(guide.get("limitations") or [])[:1],
+    ]
     out = {
         "generationMode": "llm_with_rag",
         "llmGeneratedGuide": True,
@@ -265,7 +290,10 @@ def generate_llm_guide(payload: dict[str, Any], result: dict[str, Any]) -> dict[
             "countryDataMatchCount": len(evidence_payload["countryDataMatches"]),
         },
         "personalizedGuide": guide,
-        "llmHtmlReport": render_llm_html(guide, result),
+        "qualitySummary": guide.get("executiveSummary") or [],
+        "actionChecklist": action_checklist,
+        "htmlReport": html_report,
+        "llmHtmlReport": html_report,
     }
     if _truthy_flag(payload.get("includeInternal") or payload.get("include_internal"), default=False):
         out["llmGuideEvidenceBytes"] = evidence_bytes
