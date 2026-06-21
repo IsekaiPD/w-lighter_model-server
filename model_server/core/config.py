@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     cors_origins: list[str] = ["*"]
     max_request_body_bytes: int = 512 * 1024  # MAX_REQUEST_BODY_BYTES
+    rate_limit_enabled: bool = True           # RATE_LIMIT_ENABLED
 
     # --- 모델/키 (엔진이 os.getenv로도 읽음) ---
     openai_api_key: str = ""        # OPENAI_API_KEY

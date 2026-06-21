@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from core.config import settings
+from common.rate_limiter import check_rate_limit, read_body_and_replay
 
 
 def register_middleware(app: FastAPI) -> None:
@@ -36,5 +37,25 @@ def register_middleware(app: FastAPI) -> None:
                     )
             except ValueError:
                 return JSONResponse(status_code=400, content={"detail": "Invalid Content-Length header."})
+
+        return await call_next(request)
+
+    @app.middleware("http")
+    async def limit_request_rate(request: Request, call_next):
+        """IP 기준 Rate Limit으로 공개 테스트 중 반복 호출/비용 폭탄을 줄인다."""
+        if not bool(getattr(settings, "rate_limit_enabled", True)):
+            return await call_next(request)
+
+        body = b""
+        if request.method.upper() in {"POST", "PUT", "PATCH"}:
+            body = await read_body_and_replay(request)
+
+        decision = check_rate_limit(request, body)
+        if not decision.allowed:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": decision.detail},
+                headers={"Retry-After": str(decision.retry_after)},
+            )
 
         return await call_next(request)
