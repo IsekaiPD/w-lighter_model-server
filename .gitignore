@@ -28,3 +28,14 @@ Thumbs.db
 # 프로젝트 참고 파일
 CLAUDE.md
 project_docs/
+
+# aws / key files
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+
+# generated outputs
+generated/
+*.log

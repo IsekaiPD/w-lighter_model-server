@@ -195,7 +195,7 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 | `saveCover` | bool | `true` | `workId`가 있을 때 저장 여부 |
 
 **응답 200**: `status`(string) + 엔진 출력(`final_prompt`, `image_base64` 등). `dryRun=false`면 실 이미지 base64.
-`workId` 저장 시 `persistedCover`(`{saved, cover_id, cover_url}`) 추가. 파일로 저장된 표지는 `/generated/...`로 조회 가능 — DB 영속화 공통 참조.
+`workId` 저장 시 `persistedCover`(`{saved, cover_id, cover_url}`) 추가. S3 설정(`AWS_S3_BUCKET_NAME`)이 있으면 생성 이미지를 S3에 업로드하고 `coverUrl`, `imageUrl`, `presignedCoverUrl`, `s3Key`, `s3Uri`를 반환한다. S3 설정이 없으면 기존처럼 `/generated/...` 로컬 경로를 사용한다 — DB 영속화 공통 참조.
 
 **에러**: `400`(프롬프트 검증), `503`(OpenAI 키 미설정 등).
 
