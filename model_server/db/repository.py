@@ -11,6 +11,12 @@ import re
 from typing import Any
 
 from core.logging import get_logger
+from common.limits import (
+    MAX_COVERS_PER_WORK,
+    MAX_GUIDES_PER_WORK,
+    MAX_RELATION_MAPS_PER_WORK,
+    MAX_TRANSLATION_VERSIONS,
+)
 
 from .session import get_session, rdb_enabled
 
@@ -42,6 +48,28 @@ def _bool_int(value: Any) -> int:
         return 1 if value else 0
     text = _s(value).lower()
     return 1 if text in {"1", "true", "yes", "y", "on"} else 0
+
+
+def _prune_old_rows(session, model, filters: list[Any], order_column: Any, keep: int) -> None:
+    """최신 keep개만 남기고 오래된 저장 결과를 삭제한다.
+
+    요구사항 기준 보관 개수 제한:
+    - 번역: 회차 × 국가별 최근 3개
+    - 표지: 작품당 5장
+    - 관계도: 작품당 3개
+    - 가이드: 작품당 5개
+    """
+    if keep <= 0:
+        return
+    old_rows = (
+        session.query(model)
+        .filter(*filters)
+        .order_by(order_column.desc())
+        .offset(keep)
+        .all()
+    )
+    for row in old_rows:
+        session.delete(row)
 
 
 _PROFILE_LABEL_RE = re.compile(r"^\s*프로필\s*라벨\s*:\s*(.+?)\s*$", re.MULTILINE)
@@ -282,6 +310,17 @@ def save_translation_result(payload: dict[str, Any]) -> dict[str, Any]:
             inspection_report=payload.get("inspectionReport") or payload.get("inspection_report"),
         )
         session.add(row)
+        session.flush()
+        _prune_old_rows(
+            session,
+            TranslationResult,
+            [
+                TranslationResult.episode_id == int(episode_id),
+                TranslationResult.target_country == _trunc(country, 2).upper(),
+            ],
+            TranslationResult.translation_id,
+            MAX_TRANSLATION_VERSIONS,
+        )
         session.commit()
         session.refresh(row)
         return {"saved": True, "translation_id": row.translation_id}
@@ -307,6 +346,14 @@ def save_relation_map(*, work_id: int, map_content: Any) -> dict[str, Any]:
             return {"saved": False, "reason": f"work_id {work_id} not found"}
         row = RelationMap(work_id=int(work_id), map_content=_json_dump(map_content))
         session.add(row)
+        session.flush()
+        _prune_old_rows(
+            session,
+            RelationMap,
+            [RelationMap.work_id == int(work_id)],
+            RelationMap.map_id,
+            MAX_RELATION_MAPS_PER_WORK,
+        )
         session.commit()
         session.refresh(row)
         return {"saved": True, "map_id": row.map_id}
@@ -334,6 +381,14 @@ def save_localization_guide(*, work_id: int, target_country: str | None, guide_c
             guide_content=_json_dump(guide_content),
         )
         session.add(row)
+        session.flush()
+        _prune_old_rows(
+            session,
+            LocalizationGuide,
+            [LocalizationGuide.work_id == int(work_id)],
+            LocalizationGuide.guide_id,
+            MAX_GUIDES_PER_WORK,
+        )
         session.commit()
         session.refresh(row)
         return {"saved": True, "guide_id": row.guide_id}
@@ -363,6 +418,14 @@ def save_cover(*, work_id: int, target_country: str, cover_url: str, main_cover_
             main_cover_yn=_bool_int(main_cover_yn),
         )
         session.add(row)
+        session.flush()
+        _prune_old_rows(
+            session,
+            Cover,
+            [Cover.work_id == int(work_id)],
+            Cover.cover_id,
+            MAX_COVERS_PER_WORK,
+        )
         session.commit()
         session.refresh(row)
         return {"saved": True, "cover_id": row.cover_id, "cover_url": row.cover_url}

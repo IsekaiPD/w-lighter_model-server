@@ -9,18 +9,20 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from common.limits import MAX_GENRE, MAX_SYNOPSIS, MAX_WORK_TITLE
+
 
 class GuideRequest(BaseModel):
     model_config = {"extra": "allow"}  # generate_guide가 추가 키를 직접 사용
 
     workId: int | None = Field(None, description="주면 DB의 작품 정보를 보강하고 가이드 결과를 저장")
-    title: str | None = None
-    genre: str | None = None
-    synopsis: str | None = None
-    targetCountry: str | None = Field(None, description="japan/english/china/thailand 또는 JP/US/CN/TH")
-    targetMarket: str | None = None
-    titleElements: list[str] | None = None
-    comparableSignals: list[str] | None = None
+    title: str | None = Field(None, max_length=MAX_WORK_TITLE)
+    genre: str | None = Field(None, max_length=MAX_GENRE)
+    synopsis: str | None = Field(None, max_length=MAX_SYNOPSIS)
+    targetCountry: str | None = Field(None, max_length=20, description="japan/english/china/thailand 또는 JP/US/CN/TH")
+    targetMarket: str | None = Field(None, max_length=20)
+    titleElements: list[str] | None = Field(None, max_length=20)
+    comparableSignals: list[str] | None = Field(None, max_length=20)
     legacyGuide: bool | None = None
     includeContextPack: bool | None = None
     includeInternal: bool | None = None

@@ -1,0 +1,39 @@
+"""서비스 요구사항 기준 입력/저장 제한값.
+
+DB 컬럼 길이와 OpenAI 호출 전 방어용 API 입력 제한을 한곳에서 관리한다.
+"""
+from __future__ import annotations
+
+# 요청 본문 전체 크기 제한. 큰 JSON이 OpenAI 호출까지 가는 것을 막기 위한 1차 방어.
+MAX_REQUEST_BODY_BYTES = 512 * 1024  # 512KB
+
+# 작품/회차
+MAX_WORK_TITLE = 50
+MAX_EPISODE_TITLE = 30
+MAX_GENRE = 10
+MAX_SYNOPSIS = 10000
+
+# 번역/검수
+MAX_SOURCE_TEXT = 8000
+MAX_CURRENT_TRANSLATION = 8000
+MAX_CHAT_QUESTION = 1000
+
+# 표지 생성
+MAX_COVER_PROMPT = 500
+
+# 캐릭터/관계도
+MAX_CHARACTER_COUNT = 20
+MAX_RELATION_CHARACTER_COUNT = 10
+MAX_CHARACTER_NAME = 30
+MAX_CHARACTER_AGE = 10
+MAX_CHARACTER_ROLE = 5
+MAX_CHARACTER_GENDER = 5
+MAX_CHARACTER_RELATIONSHIPS = 500
+MAX_CHARACTER_APPEARANCE = 300
+MAX_CHARACTER_DETAIL = 1000
+
+# 저장 개수 제한
+MAX_TRANSLATION_VERSIONS = 3       # 회차 × 국가별 최근 3개
+MAX_COVERS_PER_WORK = 5            # 작품당 표지 5장
+MAX_RELATION_MAPS_PER_WORK = 3     # 작품당 관계도 3개
+MAX_GUIDES_PER_WORK = 5            # 작품당 현지화 가이드 5개

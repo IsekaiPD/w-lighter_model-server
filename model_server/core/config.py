@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     app_name: str = "webnovel-model-server"
     api_v1_prefix: str = "/api/v1"
     cors_origins: list[str] = ["*"]
+    max_request_body_bytes: int = 512 * 1024  # MAX_REQUEST_BODY_BYTES
 
     # --- 모델/키 (엔진이 os.getenv로도 읽음) ---
     openai_api_key: str = ""        # OPENAI_API_KEY
