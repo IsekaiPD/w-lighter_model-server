@@ -28,6 +28,44 @@ PIPELINE_MARKET_ALIASES = {
 }
 
 
+GUIDE_PUBLIC_KEYS = {
+    "mode",
+    "generationMode",
+    "requiresSelection",
+    "title",
+    "targetCountry",
+    "targetCountryDisplay",
+    "displayCountry",
+    "country",
+    "htmlReport",
+    "llmGeneratedGuide",
+    "message",
+}
+
+RECOMMENDATION_PUBLIC_KEYS = {
+    "mode",
+    "generationMode",
+    "requiresSelection",
+    "title",
+    "genre",
+    "synopsis",
+    "message",
+    "recommendedCountry",
+    "recommended_country",
+    "recommendedCountryDisplay",
+    "recommended_country_display",
+    "recommendedCountries",
+    "countryComparisons",
+    "availableOptions",
+    "available_countries",
+    "limitations",
+    "limitation_notice",
+    "confidence",
+    "storyProfile",
+    "recommendationMethod",
+    "createdAt",
+}
+
 def _truthy_flag(value: Any, *, default: bool) -> bool:
     if value is None:
         return default
@@ -115,8 +153,33 @@ def _include_context_pack(payload: dict[str, Any]) -> bool:
     return _truthy_flag(os.getenv("WLIGHTER_GUIDE_CONTEXT_PACK"), default=True)
 
 
-def _include_internal(payload: dict[str, Any]) -> bool:
-    return _truthy_flag(payload.get("includeInternal") or payload.get("include_internal"), default=False)
+def _include_internal(_payload: dict[str, Any]) -> bool:
+    return _truthy_flag(os.getenv("WLIGHTER_GUIDE_INCLUDE_INTERNAL"), default=False)
+
+
+def _html_report(result: dict[str, Any]) -> Any:
+    for key in ("htmlReport", "llmHtmlReport", "guide_html", "personalizedGuide"):
+        value = result.get(key)
+        if value:
+            return value
+    return None
+
+
+def _shape_guide_response(_payload: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
+    public = {key: result[key] for key in GUIDE_PUBLIC_KEYS if key in result and result[key] is not None}
+    html_report = _html_report(result)
+    if html_report:
+        public["htmlReport"] = html_report
+    public.setdefault("requiresSelection", bool(result.get("requiresSelection", False)))
+    public.setdefault("generationMode", result.get("generationMode") or result.get("generation_mode") or "deterministic_guide")
+    return public
+
+
+def _shape_recommendation_response(_payload: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
+    public = {key: result[key] for key in RECOMMENDATION_PUBLIC_KEYS if key in result and result[key] is not None}
+    public.setdefault("requiresSelection", bool(result.get("requiresSelection", True)))
+    public.setdefault("generationMode", result.get("generationMode") or "recommendation_only")
+    return public
 
 
 def _context_pack_requested_signals(
@@ -306,23 +369,29 @@ def generate_guide(payload: dict[str, Any]) -> dict[str, Any]:
     result = build_localization_advice(payload)
     if result.get("requiresSelection"):
         if _has_synopsis(payload) and not _has_requested_country(payload):
-            return generate_country_recommendation(payload)
+            return _shape_recommendation_response(payload, generate_country_recommendation(payload))
         if use_legacy:
-            return result
-        return {**result, "generationMode": result.get("generationMode") or "recommendation_only"}
+            return _shape_recommendation_response(payload, result)
+        return _shape_recommendation_response(
+            payload,
+            {**result, "generationMode": result.get("generationMode") or "recommendation_only"},
+        )
 
     enriched = _attach_context_pack_briefing(payload, result)
     enriched = {**enriched, **build_policy_attention_payload(payload, enriched)}
 
     deterministic_mode = "deterministic_rag_fallback" if use_legacy else "deterministic_guide"
     if not llm_requested(payload):
-        return {**enriched, "generationMode": enriched.get("generationMode") or deterministic_mode}
+        return _shape_guide_response(
+            payload,
+            {**enriched, "generationMode": enriched.get("generationMode") or deterministic_mode},
+        )
 
     try:
-        return {**enriched, **generate_llm_guide(payload, enriched)}
+        return _shape_guide_response(payload, {**enriched, **generate_llm_guide(payload, enriched)})
     except Exception as exc:
         fallback = dict(enriched)
         fallback["generationMode"] = deterministic_mode
         fallback["llmGeneratedGuide"] = False
         fallback["llmGuideError"] = str(exc)
-        return fallback
+        return _shape_guide_response(payload, fallback)

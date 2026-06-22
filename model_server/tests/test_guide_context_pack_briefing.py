@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import unittest
 from unittest.mock import patch
 
@@ -17,7 +18,6 @@ class GuideContextPackBriefingTests(unittest.TestCase):
             "comparableSignals": ["magic"],
             "declaredSignals": ["magic"],
             "includeContextPack": True,
-            "includeInternal": True,
         }
         result = {"title": "작품", "genre": "판타지"}
         report = {
@@ -51,7 +51,7 @@ class GuideContextPackBriefingTests(unittest.TestCase):
                 ],
             },
         }
-        with patch(
+        with patch.dict(os.environ, {"WLIGHTER_GUIDE_INCLUDE_INTERNAL": "true"}), patch(
             "model_server.domains.guide.guide_pipeline.inspect_context_pack_source",
             return_value={
                 "resolvedTargetMarket": "japan",
@@ -83,7 +83,6 @@ class GuideContextPackBriefingTests(unittest.TestCase):
             "comparableSignals": ["magic"],
             "declaredSignals": ["magic"],
             "includeContextPack": True,
-            "includeInternal": False,
         }
         result = {"title": "작품", "genre": "판타지"}
         report = {
@@ -98,7 +97,7 @@ class GuideContextPackBriefingTests(unittest.TestCase):
                 "direct_signal_rows": [],
             },
         }
-        with patch(
+        with patch.dict(os.environ, {"WLIGHTER_GUIDE_INCLUDE_INTERNAL": "false"}), patch(
             "model_server.domains.guide.guide_pipeline.inspect_context_pack_source",
             return_value={
                 "resolvedTargetMarket": "japan",

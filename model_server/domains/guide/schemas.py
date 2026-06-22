@@ -1,7 +1,7 @@
 """Guide 도메인 Pydantic 스키마.
 
 엔진이 추가 키를 직접 읽으므로 요청은 extra=allow로 받고 주요 키만 문서화한다.
-응답은 모드별 가변(~39키)이라 그대로 통과시킨다.
+응답은 프론트 표시용 HTML 중심 공개 필드만 통과시킨다.
 """
 from __future__ import annotations
 
@@ -25,7 +25,6 @@ class GuideRequest(BaseModel):
     comparableSignals: list[str] | None = Field(None, max_length=20)
     legacyGuide: bool | None = None
     includeContextPack: bool | None = None
-    includeInternal: bool | None = None
     saveGuide: bool | None = Field(True, description="workId가 있을 때 localization_guides에 저장")
 
 
