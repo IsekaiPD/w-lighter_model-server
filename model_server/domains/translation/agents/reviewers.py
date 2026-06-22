@@ -1,11 +1,12 @@
-"""번역 리뷰어 3종 (문체 / 자연스러움 / 문화안전).
+"""번역 리뷰어 4종 (문체 / 자연스러움 / 문화안전 / 용어집).
 
-세 리뷰어는 입출력 구조가 100% 동일하다(완전 통일, 결정 A):
-- 입력: source_text, translation, rationale, translation_profile, source_analysis
-- 출력: {summary, issues[]} — issue = {severity, source_span, target_span, problem, suggestion}
+voice·naturalness·cultural 세 리뷰어는 출력이 {issues[]} 로 동일하다.
+glossary 리뷰어는 일관성 검수(issues[])에 더해 **신규 용어 후보(candidates[])** 도 함께 반환한다.
+- issue     = {source_span, target_span, problem, suggestion}
+- candidate = {source, suggested_target, category, reason}
 
-각 리뷰어는 관점(프롬프트)만 다르다. 공통 LLM 호출/파싱/mock 폴백은 BaseReviewer가 담당한다.
-editor는 세 리뷰어의 issues[]를 동일하게 취합한다.
+각 리뷰어는 관점(프롬프트)만 다르다. 관점 프롬프트는 prompts/review/*.md 로 외부화하고
+load_review_prompt(perspective)로 로드한다. 공통 LLM 호출/파싱/mock 폴백은 BaseReviewer가 담당한다.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from typing import Any
 
 from ..config import PipelineConfig
 from ..infra.openai_client import get_openai_client
-from ..infra.prompt_loader import load_locale_constraints, load_register_guide
+from ..infra.prompt_loader import load_locale_constraints, load_register_guide, load_review_prompt
 from ..text_processing.korean_output import koreanize_texts
 
 
@@ -25,7 +26,6 @@ REVIEW_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
-        "summary": {"type": "string", "description": "이 관점 검수 결과의 한국어 요약."},
         "issues": {
             "type": "array",
             "description": "이 관점에서 발견한 문제 + 수정 제안. 문제 없으면 빈 배열.",
@@ -33,23 +33,47 @@ REVIEW_SCHEMA: dict[str, Any] = {
                 "type": "object",
                 "additionalProperties": False,
                 "properties": {
-                    "severity": {"type": "string", "description": "LOW | MEDIUM | HIGH | CRITICAL"},
                     "source_span": {"type": "string", "description": "근거가 되는 한국어 원문 구간(그대로 인용)."},
                     "target_span": {"type": "string", "description": "문제가 되는 번역문 구간(그대로 인용)."},
                     "problem": {"type": "string", "description": "무엇이 왜 문제인지 한국어로. (필요시 문제 종류도 여기 기술)"},
                     "suggestion": {"type": "string", "description": "대상 언어 수정 제안. 책임지기 어려우면 빈 문자열."},
                 },
-                "required": ["severity", "source_span", "target_span", "problem", "suggestion"],
+                "required": ["source_span", "target_span", "problem", "suggestion"],
             },
         },
     },
-    "required": ["summary", "issues"],
+    "required": ["issues"],
+}
+
+
+# glossary 리뷰어 전용 스키마: 공통(summary/issues)에 신규 용어 후보(candidates)를 추가.
+GLOSSARY_REVIEW_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "issues": REVIEW_SCHEMA["properties"]["issues"],
+        "candidates": {
+            "type": "array",
+            "description": "원문에 등장하지만 승인 용어집에 없는, 회차 간 일관 표기가 필요한 신규 용어 후보. 없으면 빈 배열.",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "source": {"type": "string", "description": "한국어 원문 표기(그대로 인용)."},
+                    "suggested_target": {"type": "string", "description": "제안하는 대상 언어 표기."},
+                    "category": {"type": "string", "description": "person | place | organization 중 하나."},
+                    "reason": {"type": "string", "description": "왜 용어집 후보인지 한국어로."},
+                },
+                "required": ["source", "suggested_target", "category", "reason"],
+            },
+        },
+    },
+    "required": ["issues", "candidates"],
 }
 
 
 @dataclass(slots=True)
 class ReviewIssue:
-    severity: str
     source_span: str
     target_span: str
     problem: str
@@ -58,18 +82,13 @@ class ReviewIssue:
 
 @dataclass(slots=True)
 class ReviewResult:
-    perspective: str  # "voice" | "naturalness" | "cultural_safety"
-    summary: str
+    perspective: str  # "voice" | "naturalness" | "cultural_safety" | "glossary"
     issues: list[ReviewIssue] = field(default_factory=list)
+    # glossary 리뷰어만 채운다(원문 등장·승인 용어집에 없는 신규 용어 후보). 나머지는 항상 빈 리스트.
+    candidates: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
-
-    def max_severity(self) -> str:
-        order = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
-        if not self.issues:
-            return "NONE"
-        return max(self.issues, key=lambda i: order.get((i.severity or "").upper(), 0)).severity.upper()
 
 
 def _fmt_profile(profile: dict[str, Any] | None) -> str:
@@ -91,8 +110,7 @@ class BaseReviewer:
     """관점만 다른 리뷰어들의 공통 베이스. LLM 호출/파싱/mock 폴백을 담당."""
 
     perspective: str = "base"
-    # 하위 클래스가 채운다: {lang} 등을 format할 수 있는 관점별 지시문.
-    PERSPECTIVE_PROMPT: str = ""
+    SCHEMA: dict[str, Any] = REVIEW_SCHEMA  # 하위 클래스가 다른 스키마로 교체 가능(glossary).
 
     def __init__(self, config: PipelineConfig):
         self.config = config
@@ -106,10 +124,11 @@ class BaseReviewer:
         rationale: str = "",
         translation_profile: dict[str, Any] | None = None,
         source_analysis: dict[str, Any] | None = None,
+        approved_glossary: list[dict[str, Any]] | None = None,
     ) -> ReviewResult:
         if self.config.mock:
             # mock: 문제 없음(빈 issues)으로 결정적 반환.
-            return ReviewResult(perspective=self.perspective, summary=f"[MOCK {self.perspective}] 특이사항 없음.", issues=[])
+            return ReviewResult(perspective=self.perspective, issues=[])
 
         try:
             client = get_openai_client()
@@ -124,6 +143,9 @@ class BaseReviewer:
                 profile=_fmt_profile(translation_profile),
                 analysis=_fmt_analysis(source_analysis),
             )
+            extra = self._extra_user_context(approved_glossary=approved_glossary)
+            if extra:
+                user = f"{user}\n{extra}"
             response = client.responses.create(
                 model=self.config.review_model,
                 input=[
@@ -137,34 +159,43 @@ class BaseReviewer:
                     },
                     {"role": "user", "content": user},
                 ],
-                text={"format": {"type": "json_schema", "name": schema_name, "schema": REVIEW_SCHEMA, "strict": True}},
+                text={"format": {"type": "json_schema", "name": schema_name, "schema": self.SCHEMA, "strict": True}},
             )
             payload = json.loads(response.output_text)
             self._koreanize(payload)
             return self._from_payload(payload)
         except Exception:
             # 리뷰 실패가 파이프라인을 막지 않도록 빈 결과 반환.
-            return ReviewResult(perspective=self.perspective, summary="", issues=[])
+            return ReviewResult(perspective=self.perspective, issues=[])
 
     def _build_perspective_prompt(self) -> str:
-        """관점별 지시문을 만든다. 하위 클래스가 추가 컨텍스트(예: locale 제약)를 덧붙일 수 있다."""
-        return self.PERSPECTIVE_PROMPT.format(lang=self.resources.target_language)
+        """관점별 지시문을 만든다. prompts/review/*.md 에서 로드하고 {lang}을 채운다.
+
+        하위 클래스가 추가 컨텍스트(예: locale 제약)를 덧붙일 수 있다.
+        """
+        return load_review_prompt(self.perspective).format(lang=self.resources.target_language)
+
+    def _extra_user_context(self, *, approved_glossary: list[dict[str, Any]] | None = None) -> str:
+        """user 메시지 끝에 덧붙일 관점별 추가 데이터(기본 없음).
+
+        GlossaryReviewer가 승인 용어집을 주입하는 데 쓴다.
+        """
+        return ""
 
     def _koreanize(self, payload: dict[str, Any]) -> None:
         issues = payload.get("issues", []) or []
-        texts = [payload.get("summary", "")] + [i.get("problem", "") for i in issues]
-        translated = koreanize_texts(texts, model=self.config.review_model)
-        payload["summary"] = translated[0]
-        for i, t in zip(issues, translated[1:]):
+        problems = [i.get("problem", "") for i in issues]
+        if not problems:
+            return
+        translated = koreanize_texts(problems, model=self.config.review_model)
+        for i, t in zip(issues, translated):
             i["problem"] = t
 
     def _from_payload(self, payload: dict[str, Any]) -> ReviewResult:
         return ReviewResult(
             perspective=self.perspective,
-            summary=payload.get("summary", ""),
             issues=[
                 ReviewIssue(
-                    severity=row.get("severity", ""),
                     source_span=row.get("source_span", ""),
                     target_span=row.get("target_span", ""),
                     problem=row.get("problem", ""),
@@ -194,25 +225,17 @@ Source analysis:
 
 Output rules:
 - JSON only. Do not create fields outside the schema.
-- `summary` and `issues[].problem` MUST be written in Korean. Only `issues[].suggestion` may be in {target_language}.
-- If there is no problem, return an empty `issues` array and set `summary` to the Korean text "특이사항 없음".
+- `issues[].problem` MUST be written in Korean. Only `issues[].suggestion` may be in {target_language}.
+- If there is no problem, return an empty `issues` array.
 - At most 5 issues, each concise.
 """
 
 
 class VoiceReviewer(BaseReviewer):
     perspective = "voice"
-    PERSPECTIVE_PROMPT = (
-        "You are a web-novel editor specializing in character-voice (speech style / personality) consistency. "
-        "Check the following:\n"
-        "- Whether each character's distinctive speech style/personality survives in the {lang} dialogue\n"
-        "- Whether the emotional line and mood come through in {lang}\n"
-        "- Consistency of each character's register (formal/informal, honorifics)\n"
-        "- Lines where a character sounds out-of-character (OOC) in {lang}"
-    )
 
     def _build_perspective_prompt(self) -> str:
-        base = self.PERSPECTIVE_PROMPT.format(lang=self.resources.target_language)
+        base = super()._build_perspective_prompt()
         # 대상 언어가 register(존대/공손도)를 표현하는 방식을 알려준다. 현재 locale 것만 끼운다.
         guide = load_register_guide(self.resources.locale)
         if guide:
@@ -222,38 +245,14 @@ class VoiceReviewer(BaseReviewer):
 
 class NaturalnessReviewer(BaseReviewer):
     perspective = "naturalness"
-    PERSPECTIVE_PROMPT = (
-        "You are a translation editor who catches unnatural, literal translation. Check the following:\n"
-        "- Whether idioms/metaphors are translated too literally into {lang}\n"
-        "- Whether Korean sentence structure remains in {lang} and reads awkwardly\n"
-        "- Whether culture-specific expressions are appropriately localized\n"
-        "- Clear defects such as omissions, leftover Korean characters, or broken sentence boundaries\n"
-        "Do not force a specific word choice; only raise an issue when the problem is concrete."
-    )
 
 
 
 class CulturalSafetyReviewer(BaseReviewer):
     perspective = "cultural_safety"
-    PERSPECTIVE_PROMPT = (
-        "You are a dedicated 'cultural safety' reviewer. Your ONLY job is to catch genuine cultural risks\n"
-        "(taboos, discrimination, hate, political/religious/historical sensitivity, serious etiquette violations, etc.)\n"
-        "that match the constraint table below.\n"
-        "\n"
-        "Must do:\n"
-        "- Raise an issue only for expressions that concretely match a category in the 'locale constraints' below.\n"
-        "- Do not over-soften intentionally rough or villainous dialogue. Flag only when there is a concrete risk.\n"
-        "- In `problem`, state which constraint (category/ID) is triggered and why.\n"
-        "\n"
-        "Never flag (these are NOT your job):\n"
-        "- Mere awkwardness, literal-translation feel, meme-like reading, or long/clunky phrasing — i.e. 'naturalness' issues\n"
-        "- That a Korean cultural element is unfamiliar to {lang} readers or under-explained\n"
-        "  (unfamiliar cultural elements are not explained in the body but handled by separate endnotes, so they are not a risk)\n"
-        "Those belong to the naturalness reviewer; do not duplicate them here. If there is no risk, return an empty `issues` array."
-    )
 
     def _build_perspective_prompt(self) -> str:
-        base = self.PERSPECTIVE_PROMPT.format(lang=self.resources.target_language)
+        base = super()._build_perspective_prompt()
         # locale별 위험 카테고리 테이블(US01~US13 등)을 그대로 실어 판단 기준을 고정한다.
         try:
             constraints = load_locale_constraints(self.resources.locale)
@@ -262,3 +261,39 @@ class CulturalSafetyReviewer(BaseReviewer):
         if constraints:
             base += "\n\n[Locale constraints — flag only what matches a category in this table]\n" + constraints
         return base
+
+
+class GlossaryReviewer(BaseReviewer):
+    perspective = "glossary"
+    SCHEMA = GLOSSARY_REVIEW_SCHEMA
+
+    def _from_payload(self, payload: dict[str, Any]) -> ReviewResult:
+        # 공통(summary/issues) 파싱 후 신규 용어 후보(candidates)를 추가로 채운다.
+        result = super()._from_payload(payload)
+        result.candidates = [
+            {
+                "source": str(row.get("source") or "").strip(),
+                "suggested_target": str(row.get("suggested_target") or "").strip(),
+                "category": str(row.get("category") or "").strip(),
+                "reason": str(row.get("reason") or "").strip(),
+            }
+            for row in (payload.get("candidates") or [])
+            if isinstance(row, dict) and str(row.get("source") or "").strip()
+        ]
+        return result
+
+    def _extra_user_context(self, *, approved_glossary: list[dict[str, Any]] | None = None) -> str:
+        # 승인 용어집(원문 등장으로 확정된 항목)을 user 메시지에 실어 일관성 검수 기준을 고정한다.
+        rows = approved_glossary or []
+        lines: list[str] = []
+        for row in rows[:50]:
+            source = str(row.get("source") or "").strip()
+            target = str(row.get("target") or "").strip()
+            if source and target:
+                lines.append(f"- {source} => {target}")
+        if not lines:
+            return ""
+        return (
+            "[Approved glossary — verify the translation uses each approved target term "
+            "wherever its Korean source appears]\n" + "\n".join(lines)
+        )

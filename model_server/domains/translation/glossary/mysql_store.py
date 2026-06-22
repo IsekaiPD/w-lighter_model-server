@@ -233,16 +233,17 @@ class MySQLGlossaryRepository(GlossaryRepository):
     def list_glossary(self, work_id: str, target_country: str, *, limit: int = 50) -> list[GlossaryEntryRecord]:
         normalized_work_id = normalize_mysql_work_id(work_id)
         normalized_country = normalize_target_country(target_country) or ""
+        query = (
+            "SELECT * FROM glossary "
+            "WHERE work_id=%s AND target_country=%s "
+            "ORDER BY original_word, glossary_type"
+        )
+        params: tuple[Any, ...] = (normalized_work_id, normalized_country)
+        if int(limit) > 0:  # limit<=0 → 무제한(LIMIT 절 생략; MySQL LIMIT 0은 0행이므로)
+            query += " LIMIT %s"
+            params += (int(limit),)
         with self._connect() as conn, self._cursor(conn) as cur:
-            cur.execute(
-                """
-                SELECT * FROM glossary
-                WHERE work_id=%s AND target_country=%s
-                ORDER BY original_word, glossary_type
-                LIMIT %s
-                """,
-                (normalized_work_id, normalized_country, max(0, int(limit))),
-            )
+            cur.execute(query, params)
             rows = cur.fetchall()
         return [self._row_to_entry(row) for row in rows]
 
@@ -264,7 +265,7 @@ class MySQLGlossaryRepository(GlossaryRepository):
                 raise
         return deleted
 
-    def hydrate_work_memory(self, work_id: str, target_country: str, *, limit: int = 50) -> WorkMemory | None:
+    def hydrate_work_memory(self, work_id: str, target_country: str, *, limit: int = 0) -> WorkMemory | None:
         records = self.list_glossary(work_id, target_country, limit=limit)
         return hydrate_work_memory_from_records(work_id, target_country, records, limit=limit)
 

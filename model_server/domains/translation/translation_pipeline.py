@@ -8,7 +8,9 @@ from typing import Any, Callable
 
 from .agents.direct_translator import DirectTranslator
 from .agents.endnote_writer import EndnoteWriter, build_reader_endnote_hook
-from .agents.reviewers import CulturalSafetyReviewer, NaturalnessReviewer, VoiceReviewer
+from .agents.reviewers import CulturalSafetyReviewer, GlossaryReviewer, NaturalnessReviewer, VoiceReviewer
+from .agents.revisor import RevisorAgent
+from .agents.residue_repairer import KoreanResidueRepairer
 from .config import PipelineConfig
 from .retrieval.annotation_retriever import AnnotationRetriever
 from .engine.graph_orchestrator import build_v3_graph_literary_package
@@ -67,18 +69,15 @@ def _hard_glossary_context(work_memory: dict[str, Any] | None) -> str:
 
 
 # 리뷰어 출력(reviewers.py) → v3 그래프 issue 형식 어댑터
-_SECTION_LABELS = {"voice": "말투", "naturalness": "자연스러움", "cultural": "문화권 유의사항"}
-_SEVERITY_TO_PRIORITY = {"CRITICAL": "P1", "HIGH": "P1", "MEDIUM": "P2", "LOW": "P3"}
+_SECTION_LABELS = {"voice": "말투", "naturalness": "자연스러움", "cultural": "문화권 유의사항", "glossary": "용어집"}
 
 
 def _review_issue_to_v3(reviewer_type: str, issue: Any) -> dict[str, Any]:
-    severity = str(getattr(issue, "severity", "") or "").upper()
+    # advisory 전용: severity/priority 없이 사용자 취사선택 카드로만 다룬다.
+    # (하류 _issue_priority가 priority 부재 시 P3로 폴백 → repair P0 트리거와 무관)
     return {
         "code": f"{reviewer_type}_review",
         "type": f"{reviewer_type}_review",
-        # advisory 전용: P0(차단)로는 매핑하지 않는다.
-        "priority": _SEVERITY_TO_PRIORITY.get(severity, "P3"),
-        "severity": severity,
         "message": getattr(issue, "problem", "") or "",
         "sourceSpan": getattr(issue, "source_span", "") or "",
         "targetSpan": getattr(issue, "target_span", "") or "",
@@ -90,10 +89,34 @@ def _review_issue_to_v3(reviewer_type: str, issue: Any) -> dict[str, Any]:
     }
 
 
-def build_reviewer_hook(reviewers: dict[str, Any]) -> Callable[[dict[str, Any], str], list[dict[str, Any]]]:
-    """후보 번역을 voice/naturalness/cultural 리뷰어로 검토해 v3 issue 리스트를 만든다.
+def build_revisor_hook(revisor: RevisorAgent) -> Callable[[dict[str, Any]], dict[str, Any]]:
+    """draft + reviewFindings를 리바이저로 취사선택 반영 → {finalTranslation, decisions} 반환."""
 
-    voice/naturalness/cultural 외 reviewer_type과 빈 번역은 빈 리스트를 반환한다.
+    def _hook(state: dict[str, Any]) -> dict[str, Any]:
+        result = revisor.revise(
+            source_text=state.get("sourceText") or "",
+            draft_translation=state.get("draftTranslation") or "",
+            findings=state.get("reviewFindings") or [],
+        )
+        return {"finalTranslation": result.finalTranslation, "decisions": result.decisions}
+
+    return _hook
+
+
+def build_residue_repair_hook(repairer: KoreanResidueRepairer) -> Callable[[dict[str, Any], list[dict[str, Any]]], dict[int, str]]:
+    """한글 잔류 문장 단위({index, sentence})를 받아 {index: fixed}로 수리."""
+
+    def _hook(state: dict[str, Any], units: list[dict[str, Any]]) -> dict[int, str]:
+        return repairer.repair(source_text=state.get("sourceText") or "", units=units)
+
+    return _hook
+
+
+def build_reviewer_hook(reviewers: dict[str, Any]) -> Callable[[dict[str, Any], str], list[dict[str, Any]]]:
+    """후보 번역을 voice/naturalness/cultural/glossary 리뷰어로 검토해 v3 issue 리스트를 만든다.
+
+    등록되지 않은 reviewer_type과 빈 번역은 빈 리스트를 반환한다.
+    glossary 리뷰어에는 확정 승인 용어집(state["approvedGlossary"])을 함께 넘긴다.
     """
 
     def _hook(state: dict[str, Any], reviewer_type: str) -> list[dict[str, Any]]:
@@ -109,7 +132,21 @@ def build_reviewer_hook(reviewers: dict[str, Any]) -> Callable[[dict[str, Any], 
             rationale="",
             translation_profile=None,
             source_analysis=state.get("sourceAnalysis"),
+            approved_glossary=state.get("approvedGlossary") if reviewer_type == "glossary" else None,
         )
+        if reviewer_type == "glossary":
+            # 신규 용어 후보를 state로 표면화. 승인 용어집에 이미 있는 source는 결정론적으로 제외(dedup).
+            approved_sources = {
+                str((row or {}).get("source") or "").strip()
+                for row in (state.get("approvedGlossary") or [])
+            }
+            fresh = [
+                cand
+                for cand in (getattr(result, "candidates", None) or [])
+                if cand.get("source") and cand["source"] not in approved_sources
+            ]
+            if fresh:
+                state["glossaryCandidates"] = fresh
         return [_review_issue_to_v3(reviewer_type, issue) for issue in (result.issues or [])]
 
     return _hook
@@ -127,7 +164,10 @@ class TranslationPipeline:
             "voice": VoiceReviewer(self.config),
             "naturalness": NaturalnessReviewer(self.config),
             "cultural": CulturalSafetyReviewer(self.config),
+            "glossary": GlossaryReviewer(self.config),
         }
+        self.revisor = RevisorAgent(self.config)
+        self.residue_repairer = KoreanResidueRepairer(self.config)
 
     def run(
         self,
@@ -181,6 +221,8 @@ class TranslationPipeline:
             annotation_retrieval_hook=build_annotation_retrieval_hook(self.annotation_retriever),
             reader_endnote_writer_hook=build_reader_endnote_hook(self.endnote_writer),
             reviewer_hook=build_reviewer_hook(self.reviewers),
+            revisor_hook=build_revisor_hook(self.revisor),
+            residue_repair_hook=build_residue_repair_hook(self.residue_repairer),
         )
 
     # service가 호출하는 호환 별칭.

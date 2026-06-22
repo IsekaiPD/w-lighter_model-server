@@ -113,6 +113,12 @@ def _blocked_response(*, country: str, locale: str, block_reason: str) -> dict[s
         "authorReviewCards": [],
         "qaIssues": [],
         "metadata": {"blockReason": block_reason},
+        "translationReport": {
+            "translationRationale": {},
+            "glossaryCandidates": [],
+            "readerEndnotes": [],
+            "culturalRiskResult": [],
+        },
     }
 
 
@@ -197,6 +203,31 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
         "qaIssues": [] if is_blocked else result.get("qaIssues", []),
         "metadata": metadata,
     }
+    # 화면설계서 번역 리포트 4종 묶음. 리바이저 decisions·신규 용어 후보 등 실데이터 기반.
+    revisor_decisions = list((result.get("internal") or {}).get("revisorDecisions") or [])
+    glossary_candidates = list((result.get("internal") or {}).get("glossaryCandidates") or [])
+    report_rationale = {} if is_blocked else dict(result.get("translationRationale") or {})
+    if not is_blocked and revisor_decisions:
+        # rationale items를 리바이저의 '적용된' 결정에서 실데이터로 채운다(하드코딩 폴백 대체).
+        applied = [d for d in revisor_decisions if d.get("action") == "applied"]
+        if applied:
+            report_rationale["items"] = [
+                {
+                    "sourceSpan": d.get("sourceSpan", ""),
+                    "targetSpan": d.get("revisedSpan") or d.get("targetSpan", ""),
+                    "category": d.get("reviewerType", ""),
+                    "strategy": d.get("action", ""),
+                    "explanation": d.get("reason", ""),
+                }
+                for d in applied
+            ]
+    response["translationReport"] = {
+        "translationRationale": report_rationale,
+        "glossaryCandidates": [] if is_blocked else glossary_candidates,
+        "readerEndnotes": [] if is_blocked else result.get("readerEndnotes", []),
+        "culturalRiskResult": [] if is_blocked else [d for d in revisor_decisions if d.get("reviewerType") == "cultural"],
+    }
+
     if include_internal:
         response["internal"] = internal
 

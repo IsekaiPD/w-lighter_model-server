@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Iterable
+from typing import Any, Iterable
 
 from ..infra.openai_client import get_openai_client
 from ..infra.prompt_loader import load_runtime_prompt
@@ -85,3 +85,46 @@ def korean_char_ratio(text: str) -> float:
 def is_korean_source(text: str, threshold: float = 0.5) -> bool:
     """원문이 한국어인지 판정. 한글 비중이 threshold(기본 0.5) 이상이면 True."""
     return korean_char_ratio(text) >= threshold
+
+
+# ------------------------------------------------------------------ #
+# 한글 잔류 검출 / 인덱스 기반 수리 (integrity 게이트용)
+# ------------------------------------------------------------------ #
+# 문장 끝 구분자/개행 '뒤'에서 분할(zero-width lookbehind) → 구분자·공백 보존.
+# 따라서 ``"".join(split_into_units(t)) == t`` (가역적). 인덱스 치환의 안정성 근거.
+_UNIT_SPLIT_RE = re.compile(r"(?<=[.!?。！？…\n])")
+
+
+def split_into_units(text: str) -> list[str]:
+    """번역문을 문장 단위로 분할하되 구분자·공백을 보존(재조립 시 원문 복원)."""
+    if not text:
+        return []
+    return _UNIT_SPLIT_RE.split(text)
+
+
+def has_korean_residue(text: str) -> bool:
+    """번역문(본문)에 한글이 1자라도 남아있으면 True. (readerEndnotes는 별개라 무관)"""
+    return has_hangul(text or "")
+
+
+def korean_residue_units(text: str) -> list[dict[str, Any]]:
+    """한글이 포함된 문장 단위만 {index, sentence}로 반환. index는 split_into_units 기준."""
+    return [
+        {"index": idx, "sentence": unit}
+        for idx, unit in enumerate(split_into_units(text))
+        if has_hangul(unit)
+    ]
+
+
+def apply_unit_repairs(text: str, repairs: dict[int, str]) -> str:
+    """split_into_units 인덱스 기준으로 해당 unit을 fixed로 치환 후 재조립.
+
+    문자열 검색이 아니라 인덱스 치환이라 'problem 문자열 매칭 실패' 위험이 없다.
+    """
+    if not repairs:
+        return text
+    units = split_into_units(text)
+    for index, fixed in repairs.items():
+        if isinstance(index, int) and 0 <= index < len(units):
+            units[index] = fixed
+    return "".join(units)

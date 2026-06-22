@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from ..config import PipelineConfig
-from .project_paths import cultural_review_prompt_root, repository_root
+from .project_paths import cultural_review_prompt_root, repository_root, review_prompt_root
 
 
 LOCALE_CONSTRAINT_FILES: dict[str, str] = {
@@ -12,6 +12,15 @@ LOCALE_CONSTRAINT_FILES: dict[str, str] = {
     "ko_en_us": "CULTURAL_CONSTRAINTS_US.md",
     "ko_zh_cn": "CULTURAL_CONSTRAINTS_CN.md",
     "ko_th_th": "CULTURAL_CONSTRAINTS_TH.md",
+}
+
+
+# 리뷰어 관점 프롬프트 파일 (key = reviewer.perspective). 인라인 상수 대신 .md 로 외부화.
+REVIEW_PROMPT_FILES: dict[str, str] = {
+    "voice": "VOICE_REVIEW_PROMPT.md",
+    "naturalness": "NATURALNESS_REVIEW_PROMPT.md",
+    "cultural_safety": "CULTURAL_REVIEW_PROMPT.md",
+    "glossary": "GLOSSARY_REVIEW_PROMPT.md",
 }
 
 
@@ -53,6 +62,15 @@ def load_locale_constraints(locale: str) -> str:
     except KeyError as exc:
         raise KeyError(f"No cultural constraint prompt registered for locale: {locale}") from exc
     return load_prompt_file(prompt_root() / file_name)
+
+
+def load_review_prompt(perspective: str) -> str:
+    """리뷰어 관점 프롬프트(.md)를 로드. `{lang}` 자리표시자는 보존되어 호출부가 format한다."""
+    try:
+        file_name = REVIEW_PROMPT_FILES[perspective]
+    except KeyError as exc:
+        raise KeyError(f"No review prompt registered for perspective: {perspective}") from exc
+    return load_prompt_file(review_prompt_root(Path(__file__)) / file_name)
 
 
 # Per-language register guidance for the voice reviewer: how each target language realizes

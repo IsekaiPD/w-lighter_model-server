@@ -108,7 +108,7 @@ class GlossaryRepository(Protocol):
     def delete_entry(self, entry_id: int) -> bool:
         ...
 
-    def hydrate_work_memory(self, work_id: str, target_country: str, *, limit: int = 50) -> WorkMemory | None:
+    def hydrate_work_memory(self, work_id: str, target_country: str, *, limit: int = 0) -> WorkMemory | None:
         ...
 
 
@@ -135,7 +135,7 @@ def hydrate_work_memory_from_records(
     target_country: str,
     records: list[GlossaryEntryRecord],
     *,
-    limit: int = 50,
+    limit: int = 0,
 ) -> WorkMemory | None:
     """Build engine WorkMemory from stored rows.
 
@@ -144,7 +144,7 @@ def hydrate_work_memory_from_records(
     so the country is converted here with ``country_to_locale``.
     """
 
-    selected = records[: max(0, limit)]
+    selected = records if limit <= 0 else records[:limit]  # limit<=0 → 무제한
     if not selected:
         return None
     return WorkMemory(
@@ -234,7 +234,7 @@ class InMemoryGlossaryRepository:
                 if row.work_id == work_id and row.target_country == target_country
             ]
         rows.sort(key=lambda row: (row.original_word.casefold(), row.glossary_type))
-        return rows[: max(0, limit)]
+        return rows if limit <= 0 else rows[:limit]  # limit<=0 → 무제한(상한 제거)
 
     def get_entry(self, entry_id: int) -> GlossaryEntryRecord | None:
         with self._lock:
@@ -245,7 +245,7 @@ class InMemoryGlossaryRepository:
         with self._lock:
             return self._entries.pop(int(entry_id), None) is not None
 
-    def hydrate_work_memory(self, work_id: str, target_country: str, *, limit: int = 50) -> WorkMemory | None:
+    def hydrate_work_memory(self, work_id: str, target_country: str, *, limit: int = 0) -> WorkMemory | None:
         records = self.list_glossary(work_id, target_country, limit=limit)
         return hydrate_work_memory_from_records(work_id, target_country, records, limit=limit)
 
