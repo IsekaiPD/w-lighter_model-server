@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from typing import Annotated, Any, Callable, Literal, TypedDict
 
 try:  # optional at runtime; requirements.txt includes langgraph for graph mode
@@ -19,6 +19,7 @@ from .literary_package import (
     detect_idiom_notes,
     normalize_work_memory,
     run_translation_loop,
+    TranslationLoopResult,
     write_translation_rationale,
     _critic_issues,
     _failure_signals,
@@ -27,6 +28,13 @@ from .literary_package import (
     _maybe_apply_deterministic_known_person_residue_patch,
     _maybe_apply_deterministic_known_proper_noun_variant_patch,
     _review_cards_from_issues,
+    _glossary_source_set,
+    _source_present,
+)
+from ..text_processing.korean_output import (
+    apply_unit_repairs,
+    has_korean_residue,
+    korean_residue_units,
 )
 
 
@@ -40,11 +48,10 @@ GraphNodeName = Literal[
     "review_naturalness",
     "review_cultural",
     "review_glossary",
-    "review_integrity",
     "aggregate_review",
-    "repair_or_accept",
+    "revise_translation",
+    "check_korean_residue",
     "final_integrity_check",
-    "run_qa_and_repair",
     "chunk_source_text",
     "detect_annotation_candidates",
     "retrieve_korean_culture_context",
@@ -106,6 +113,8 @@ class TranslationGraphState(TypedDict, total=False):
     savedTranslationId: Any
     glossarySavedCount: int
     glossaryCandidateCapture: dict[str, Any]
+    glossaryCandidates: list[dict[str, Any]]  # glossary 리뷰어가 추출한 신규 용어 후보(승인 dedup 후)
+    revisorDecisions: list[dict[str, Any]]    # 리바이저의 finding별 적용/기각 결정
     maxIterations: int
     graphExecutionFrame: str
     _ragPackets: Any
@@ -117,6 +126,8 @@ class TranslationGraphState(TypedDict, total=False):
     captureHook: Callable[[TranslationGraphState], dict[str, Any]] | None
     annotationCandidateHook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None
     annotationRetrievalHook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None
+    revisorHook: Callable[[TranslationGraphState], dict[str, Any]] | None
+    residueRepairHook: Callable[[TranslationGraphState, list[dict[str, Any]]], dict[int, str]] | None
     readerEndnoteWriterHook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None
     # LLM 리뷰어 hook: (state, reviewer_type) -> list[v3 issue dict]. 없으면 결정론적 리뷰만.
     reviewerHook: Callable[[TranslationGraphState, str], list[dict[str, Any]]] | None
@@ -178,6 +189,21 @@ def load_work_memory(state: TranslationGraphState) -> TranslationGraphState:
             work_memory = request_memory
             source = "request_payload"
     memory = normalize_work_memory(work_memory, state["targetLocale"])
+    # Confirm the active glossary deterministically: keep only entries whose
+    # Korean source (or alias) actually appears in this episode's source text.
+    # The fetch layer no longer caps the row count, so this presence filter —
+    # not an arbitrary limit — is what bounds the list the reviewers and the
+    # term-candidate dedup operate on downstream.
+    fetched_count = len(memory.approvedGlossary) if memory else 0
+    if memory and memory.approvedGlossary:
+        source_text = state.get("sourceText") or ""
+        glossary_sources = _glossary_source_set(memory)
+        present = [
+            entry
+            for entry in memory.approvedGlossary
+            if _source_present(source_text, entry, glossary_sources)
+        ]
+        memory = replace(memory, approvedGlossary=present)
     approved = [asdict(entry) for entry in memory.approvedGlossary] if memory else []
     state.update(
         {
@@ -187,7 +213,12 @@ def load_work_memory(state: TranslationGraphState) -> TranslationGraphState:
             "approvedGlossary": approved,
         }
     )
-    return _trace(state, "load_work_memory", approvedGlossaryCount=len(approved))
+    return _trace(
+        state,
+        "load_work_memory",
+        approvedGlossaryFetched=fetched_count,
+        approvedGlossaryCount=len(approved),
+    )
 
 
 def prepare_translation_context(state: TranslationGraphState) -> TranslationGraphState:
@@ -247,21 +278,20 @@ def run_literary_translation(
     *,
     translate_once: Callable[..., tuple[str, dict[str, Any]]] | None = None,
 ) -> TranslationGraphState:
-    if translate_once is None:
-        draft, metadata = _graph_translate_once(
-            source_text=state["sourceText"],
-            target_locale=state["targetLocale"],
-            idiom_notes=state.get("idiomNotes") or [],
-            work_memory=state.get("workMemory"),
-            translate_once=None,
-            strict=False,
-            attempt=1,
-            revision_context="",
-        )
-    else:
-        # Keep external/model translator calls centralized in repair_or_accept so
-        # graph reviewer structure does not perturb established retry ordering.
-        draft, metadata = "", {"draft_deferred_to": "repair_or_accept"}
+    # Produce the real initial draft here so the deterministic precheck and the
+    # LLM reviewers downstream run against the actual translation rather than an
+    # empty string. repair_or_accept reuses this draft for attempt 1, so the
+    # model translator is still called only once for the initial pass.
+    draft, metadata = _graph_translate_once(
+        source_text=state["sourceText"],
+        target_locale=state["targetLocale"],
+        idiom_notes=state.get("idiomNotes") or [],
+        work_memory=state.get("workMemory"),
+        translate_once=translate_once,
+        strict=False,
+        attempt=1,
+        revision_context="",
+    )
     state["draftTranslation"] = draft
     state["draftMetadata"] = dict(metadata or {})
     return _trace(
@@ -974,10 +1004,6 @@ def review_cultural(state: TranslationGraphState) -> TranslationGraphState:
 
 def review_glossary(state: TranslationGraphState) -> TranslationGraphState:
     return _review_by_codes(state, "glossary", "review_glossary")
-
-
-def review_integrity(state: TranslationGraphState) -> TranslationGraphState:
-    return _review_by_codes(state, "integrity", "review_integrity")
 
 
 def aggregate_review(state: TranslationGraphState) -> TranslationGraphState:
@@ -1776,6 +1802,84 @@ def _maybe_retry_graph_body_hangul_residue(
         )
 
 
+def revise_translation(state: TranslationGraphState) -> TranslationGraphState:
+    """리바이저 원맨 체제: draft + reviewFindings를 취사선택 반영해 최종 번역문 + decisions 생성.
+
+    리바이저 출력이 곧 최종본이다. 결과를 TranslationLoopResult로 담아 state["_loop"]에 넣으면,
+    final_integrity_check가 그 최종본을 검증(한글 잔류 시 차단)하고 build_translation_package가
+    패키징한다. (repair_or_accept 없음 — 재번역으로 리바이저 결과를 덮지 않는다.)
+    리바이저 hook이 없거나 draft가 비면 draft를 그대로 최종본으로 둔다.
+    """
+    hook = state.get("revisorHook")
+    draft = state.get("draftTranslation") or ""
+    result: dict[str, Any] = {}
+    if hook and draft.strip():
+        try:
+            result = hook(state) or {}
+        except Exception:
+            result = {}
+    revised = str(result.get("finalTranslation") or "").strip() or draft
+    decisions = [d for d in (result.get("decisions") or []) if isinstance(d, dict)]
+    loop = TranslationLoopResult(
+        finalTranslation=revised,
+        iterations=[{"action": "revisor", "translation": revised, "metadata": {}}],
+        judge=_judge([]),
+        qaIssues=[],
+        authorReviewCards=[],
+        deliveryStatus="deliverable",
+        userVisibleErrorCode=None,
+    )
+    state["_loop"] = loop
+    state["draftTranslation"] = revised
+    state["finalTranslation"] = revised
+    state["revisorDecisions"] = decisions
+    return _trace(
+        state,
+        "revise_translation",
+        decisionCount=len(decisions),
+        finalTranslationChanged=(revised != draft),
+    )
+
+
+_RESIDUE_MAX_PASSES = 2
+
+
+def check_korean_residue(state: TranslationGraphState) -> TranslationGraphState:
+    """리바이저 최종본의 한글 잔류 검사 + 인덱스 기반 수리(최대 2패스).
+
+    한글 포함 문장 단위를 뽑아 residueRepairHook으로 고치고 인덱스로 치환한다.
+    hook이 없거나 더 못 고치면 멈추고, 2패스 초과면 남은 잔류는 그대로 둔다.
+    (빈 출력 차단·잔류 잔존 시 차단 판정은 이후 final_integrity_check가 담당)
+    """
+    hook = state.get("residueRepairHook")
+    final = state.get("finalTranslation") or ""
+    passes = 0
+    while passes < _RESIDUE_MAX_PASSES and has_korean_residue(final):
+        units = korean_residue_units(final)
+        if not units:
+            break
+        fixes: dict[int, str] = {}
+        if hook:
+            try:
+                fixes = hook(state, units) or {}
+            except Exception:
+                fixes = {}
+        if not fixes:
+            break
+        final = apply_unit_repairs(final, fixes)
+        passes += 1
+    state["finalTranslation"] = final
+    loop = state.get("_loop")
+    if loop is not None:
+        loop.finalTranslation = final
+    return _trace(
+        state,
+        "check_korean_residue",
+        residuePasses=passes,
+        residueRemaining=has_korean_residue(final),
+    )
+
+
 def repair_or_accept(
     state: TranslationGraphState,
     *,
@@ -1883,15 +1987,6 @@ def repair_or_accept(
         failureCategory=_graph_failure_category(loop.deliveryStatus, loop.qaIssues),
         finalDeliveryStatus=loop.deliveryStatus,
     )
-
-
-def run_qa_and_repair(
-    state: TranslationGraphState,
-    *,
-    max_iterations: int = 2,
-    translate_once: Callable[..., tuple[str, dict[str, Any]]] | None = None,
-) -> TranslationGraphState:
-    return repair_or_accept(state, max_iterations=max_iterations, translate_once=translate_once)
 
 
 def final_integrity_check(state: TranslationGraphState) -> TranslationGraphState:
@@ -2286,12 +2381,9 @@ def _build_stategraph(max_iterations: int, translate_once: Callable[..., tuple[s
     builder.add_node("review_naturalness", _as_langgraph_node(review_naturalness))
     builder.add_node("review_cultural", _as_langgraph_node(review_cultural))
     builder.add_node("review_glossary", _as_langgraph_node(review_glossary))
-    builder.add_node("review_integrity", _as_langgraph_node(review_integrity))
     builder.add_node("aggregate_review", _as_langgraph_node(aggregate_review))
-    builder.add_node(
-        "repair_or_accept",
-        _as_langgraph_node(repair_or_accept, max_iterations=max_iterations, translate_once=translate_once),
-    )
+    builder.add_node("revise_translation", _as_langgraph_node(revise_translation))
+    builder.add_node("check_korean_residue", _as_langgraph_node(check_korean_residue))
     builder.add_node("final_integrity_check", _as_langgraph_node(final_integrity_check))
     builder.add_node("chunk_source_text", _as_langgraph_node(chunk_source_text))
     builder.add_node("detect_annotation_candidates", _as_langgraph_node(detect_annotation_candidates))
@@ -2315,10 +2407,10 @@ def _build_stategraph(max_iterations: int, translate_once: Callable[..., tuple[s
     builder.add_edge("deterministic_precheck", "review_naturalness")
     builder.add_edge("deterministic_precheck", "review_cultural")
     builder.add_edge("deterministic_precheck", "review_glossary")
-    builder.add_edge("deterministic_precheck", "review_integrity")
-    builder.add_edge(["review_voice", "review_naturalness", "review_cultural", "review_glossary", "review_integrity"], "aggregate_review")
-    builder.add_edge("aggregate_review", "repair_or_accept")
-    builder.add_edge("repair_or_accept", "final_integrity_check")
+    builder.add_edge(["review_voice", "review_naturalness", "review_cultural", "review_glossary"], "aggregate_review")
+    builder.add_edge("aggregate_review", "revise_translation")
+    builder.add_edge("revise_translation", "check_korean_residue")
+    builder.add_edge("check_korean_residue", "final_integrity_check")
     builder.add_edge("chunk_source_text", "detect_annotation_candidates")
     builder.add_edge("detect_annotation_candidates", "retrieve_korean_culture_context")
     builder.add_edge("retrieve_korean_culture_context", "write_reader_endnotes")
@@ -2349,14 +2441,14 @@ def _run_compatible_runner(
     state = review_naturalness(state)
     state = review_cultural(state)
     state = review_glossary(state)
-    state = review_integrity(state)
     state = aggregate_review(state)
+    state = revise_translation(state)
+    state = check_korean_residue(state)
     state = chunk_source_text(state)
     state = detect_annotation_candidates(state)
     state = retrieve_korean_culture_context(state)
     state = write_reader_endnotes(state)
     state = filter_rank_endnotes(state)
-    state = repair_or_accept(state, max_iterations=max_iterations, translate_once=translate_once)
     state = final_integrity_check(state)
     state = align_endnotes_to_final_translation(state)
     state = build_translation_package(state)
@@ -2389,6 +2481,9 @@ def run_graph_orchestrator(
         package.internal["graphOrchestrator"]["executionFrame"] = state.get("graphExecutionFrame") or "stategraph_compatible"
         package.internal["readerEndnotes"] = package.readerEndnotes
         package.internal["annotationTrace"] = state.get("annotationTrace") or {"chunkCount": 0, "candidateCount": 0, "retrievalCount": 0, "keptCount": 0}
+        # glossary 리뷰어가 추출한 신규 용어 후보(승인 용어집 dedup 후). translationReport.glossaryCandidates 의 원천.
+        package.internal["glossaryCandidates"] = state.get("glossaryCandidates") or []
+        package.internal["revisorDecisions"] = state.get("revisorDecisions") or []
     return state
 
 
@@ -2404,6 +2499,8 @@ def build_v3_graph_literary_package(
     annotation_retrieval_hook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None = None,
     reader_endnote_writer_hook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None = None,
     reviewer_hook: Callable[[TranslationGraphState, str], list[dict[str, Any]]] | None = None,
+    revisor_hook: Callable[[TranslationGraphState], dict[str, Any]] | None = None,
+    residue_repair_hook: Callable[[TranslationGraphState, list[dict[str, Any]]], dict[int, str]] | None = None,
 ) -> V3LiteraryPackageResult:
     state = run_graph_orchestrator(
         {
@@ -2417,6 +2514,8 @@ def build_v3_graph_literary_package(
             "annotationRetrievalHook": annotation_retrieval_hook,
             "readerEndnoteWriterHook": reader_endnote_writer_hook,
             "reviewerHook": reviewer_hook,
+            "revisorHook": revisor_hook,
+            "residueRepairHook": residue_repair_hook,
         },
         max_iterations=max_iterations,
         translate_once=translate_once,

@@ -509,7 +509,9 @@ def hydrate_work_memory(work_id: str, country: str) -> dict[str, Any] | None:
     """
     try:
         repo = _glossary_repository()
-        wm = repo.hydrate_work_memory(_s(work_id), _s(country))
+        # limit=0 → 상한 없이 작품 glossary 전량 로드. 회차 관련 용어 선별은
+        # 엔진의 load_work_memory 노드가 원문 등장 여부로 결정론 필터링한다.
+        wm = repo.hydrate_work_memory(_s(work_id), _s(country), limit=0)
     except Exception as exc:  # noqa: BLE001 — hydrate 실패가 번역을 막지 않도록
         logger.warning("hydrate_work_memory failed: %r", exc)
         return None

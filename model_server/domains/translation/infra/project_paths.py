@@ -34,3 +34,8 @@ def repository_root(start: Path | None = None) -> Path:
 
 def cultural_review_prompt_root(start: Path | None = None) -> Path:
     return repository_root(start) / "prompts" / "cultural_review"
+
+
+def review_prompt_root(start: Path | None = None) -> Path:
+    """리뷰어 관점 프롬프트(voice/naturalness/cultural/glossary) .md 가 사는 폴더."""
+    return repository_root(start) / "prompts" / "review"
