@@ -18,7 +18,7 @@ WEB(Django)이 호출하는 MODEL 서버의 HTTP 계약. **실제 코드(`domain
 - **Base URL**: 배포 내부망 기준 `http://<model-host>:8000`. 도메인 엔드포인트 prefix = `/api/v1`.
 - **요청/응답**: JSON (`Content-Type: application/json`). 한국어 원문은 UTF-8.
 - **요청 추가 키**: 대부분 `extra=ignore`(미정의 키 무시), `guide`만 `extra=allow`(엔진이 직접 사용).
-- **응답 추가 키**: 모든 응답이 `extra=allow` — 아래 표는 **보장되는 키**이고, 엔진이 키를 더 실어 보낼 수 있다(특히 `guide`는 모드별 ~39키).
+- **응답 추가 키**: 대부분 `extra=allow` — 아래 표는 **보장되는 키**이고, 엔진이 키를 더 실어 보낼 수 있다. 단, `guide` 공개 응답은 프론트 표시용 HTML 중심 필드로 정리한다.
 
 ### 공통 에러 형식
 
@@ -148,7 +148,7 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 
 ## POST /api/v1/guide  ·  GET /api/v1/guide/_status
 
-작품 정보 → 현지화 가이드(시장 트렌드·컨텍스트팩·정책 유의사항). 응답은 **모드별 가변(~39키)** — `extra=allow`로 통과.
+작품 정보 → 현지화 가이드(시장 트렌드·컨텍스트팩·정책 유의사항). 공개 응답은 relationship-map처럼 프론트 표시용 HTML 중심으로 반환한다.
 
 **요청** (모두 선택, 엔진이 추가 키도 직접 사용 → `extra=allow`)
 
@@ -159,13 +159,14 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 | `targetMarket` | string | 시장 |
 | `titleElements` | array<string> | 제목 요소 |
 | `comparableSignals` | array<string> | 비교작 신호 |
-| `legacyGuide` / `includeContextPack` / `includeInternal` | bool | 토글 |
+| `legacyGuide` / `includeContextPack` | bool | 토글 |
 | `workId` | int | 주면 작품 정보 보강 + 가이드 결과를 `localization_guides`에 저장(rdb일 때) |
 | `saveGuide` | bool | `workId`가 있을 때 저장 여부(기본 `true`) |
 
-**응답 200**: `generationMode`(string) + 모드별 다수 키(htmlReport·contextPackBriefing 등). 엔진 출력 그대로 통과.
+**응답 200**: `htmlReport`(완성형 HTML) + 최소 표시/상태 메타(`mode`, `generationMode`, `requiresSelection`, `title`, `targetCountry`, `targetCountryDisplay`, `displayCountry`, `country`, `llmGeneratedGuide`, `message` 등).
 `htmlReport`는 relationship-map과 동일하게 `<!doctype html>` + `<head><style>...</style></head>` + `<body>`를 포함한 **CSS 내장 완성형 HTML 문서**다. WEB(Django)은 도메인별 CSS를 따로 주입하지 않고, 공통적으로 iframe `srcdoc` 방식 렌더링을 권장한다.
-품질 보조 키로 `qualitySummary`(핵심 판단 bullet 배열), `actionChecklist`(바로 적용할 체크리스트 배열)가 포함될 수 있다. 프론트는 기본적으로 `htmlReport`를 렌더링하면 되고, 목록/요약 UI가 필요할 때만 이 배열을 별도로 사용한다.
+`contextPackEvidence`, `contextPackBriefing`, `modelPromptPayload`, `evidenceUsed`, `qualitySummary`, `actionChecklist`, raw LLM error 등 내부 판단/디버그 필드는 공개 응답에 포함하지 않는다.
+국가 선택이 필요한 recommendation-only 응답은 `requiresSelection=true`와 추천/선택에 필요한 최소 필드만 반환한다.
 `workId` 저장 시 `persistedGuide`(`{saved, guide_id}`) 추가 — DB 영속화 공통 참조.
 
 **`GET /_status` 200**: 도메인 상태(서비스 준비 여부 등).
