@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import asdict, replace
 from typing import Annotated, Any, Callable, Literal, TypedDict
@@ -18,15 +19,12 @@ from .literary_package import (
     build_v3_guidelines,
     detect_idiom_notes,
     normalize_work_memory,
-    run_translation_loop,
     TranslationLoopResult,
     write_translation_rationale,
     _critic_issues,
     _failure_signals,
     _judge,
     _mock_literary_translation,
-    _maybe_apply_deterministic_known_person_residue_patch,
-    _maybe_apply_deterministic_known_proper_noun_variant_patch,
     _review_cards_from_issues,
     _glossary_source_set,
     _source_present,
@@ -52,8 +50,6 @@ GraphNodeName = Literal[
     "revise_translation",
     "check_korean_residue",
     "final_integrity_check",
-    "chunk_source_text",
-    "detect_annotation_candidates",
     "retrieve_korean_culture_context",
     "write_reader_endnotes",
     "filter_rank_endnotes",
@@ -68,6 +64,11 @@ GraphNodeName = Literal[
 
 def _append_trace(left: list[dict[str, Any]] | None, right: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
     return list(left or []) + list(right or [])
+
+
+def _last_write_str(left: str | None, right: str | None) -> str:
+    # 병렬 노드(리뷰어 fan-out)가 같은 키에 써도 에러 없이 병합. 값은 노드 내부에서만 읽혀 병합 결과는 미사용.
+    return right if right else (left or "")
 
 
 class TranslationGraphState(TypedDict, total=False):
@@ -103,8 +104,6 @@ class TranslationGraphState(TypedDict, total=False):
     repairTrace: list[dict[str, Any]]
     revisionHistory: list[dict[str, Any]]
     graphRepairTrace: list[dict[str, Any]]
-    sourceChunks: list[dict[str, Any]]
-    annotationCandidates: list[dict[str, Any]]
     annotationRetrievals: list[dict[str, Any]]
     readerEndnotesDraft: list[dict[str, Any]]
     readerEndnotes: list[dict[str, Any]]
@@ -115,6 +114,9 @@ class TranslationGraphState(TypedDict, total=False):
     glossaryCandidateCapture: dict[str, Any]
     glossaryCandidates: list[dict[str, Any]]  # glossary 리뷰어가 추출한 신규 용어 후보(승인 dedup 후)
     revisorDecisions: list[dict[str, Any]]    # 리바이저의 finding별 적용/기각 결정
+    revisorSummary: str                       # 리바이저의 수정 방향성 짧은 평(revisor_summary)
+    currentReviewerSummary: Annotated[str, _last_write_str]  # 리뷰 노드 내부 전달용(훅→trace row); 병렬 write 허용
+    reviewSummaries: dict[str, Any]           # 관점별 LLM 총평 {reviewerType: summary} (aggregate_review 조립)
     maxIterations: int
     graphExecutionFrame: str
     _ragPackets: Any
@@ -280,8 +282,7 @@ def run_literary_translation(
 ) -> TranslationGraphState:
     # Produce the real initial draft here so the deterministic precheck and the
     # LLM reviewers downstream run against the actual translation rather than an
-    # empty string. repair_or_accept reuses this draft for attempt 1, so the
-    # model translator is still called only once for the initial pass.
+    # empty string.
     draft, metadata = _graph_translate_once(
         source_text=state["sourceText"],
         target_locale=state["targetLocale"],
@@ -396,381 +397,6 @@ def _has_general_body_hangul_residue(issues: list[dict[str, Any]], final_transla
     )
 
 
-def _has_prose_hangul_residue(issues: list[dict[str, Any]], final_translation: str = "") -> bool:
-    spans = _hangul_residue_spans(issues)
-    if not spans:
-        return False
-    category = _hangul_residue_category(issues, final_translation)
-    if category in {"system_ui_residue", "name_residue"}:
-        return False
-    repairable_categories = {"genre_term_residue", "prose_residue", "mixed_script_name_residue", "partial_name_residue"}
-    return any(
-        span.get("residueCategory") in repairable_categories
-        or span.get("partialNameResidueDetected")
-        or span.get("mixedScriptNameResidueDetected")
-        or (not span.get("personNameRisk") and span.get("residueCategory") != "system_ui_residue")
-        for span in spans
-    )
-
-
-def _hangul_char_count_from_spans(spans: list[dict[str, Any]]) -> int:
-    return sum(len(_GRAPH_HANGUL_CHAR_RE.findall(str(span.get("text") or ""))) for span in spans)
-
-
-def _is_bracket_or_system_context(span: dict[str, Any]) -> bool:
-    context = str(span.get("context") or "")
-    start = int(span.get("start") or -1)
-    end = int(span.get("end") or -1)
-    if start < 0 or end < 0:
-        span_text = str(span.get("text") or "")
-        span_index = context.find(span_text) if span_text else -1
-        if span_index < 0:
-            return False
-        before = context[:span_index]
-        after = context[span_index + len(span_text) :]
-        return "[" in before[-40:] and "]" in after[:40]
-    # Conservative local check: residue embedded inside a short bracket-like UI
-    # label is system/UI residue, not general prose targeted-repair input.
-    before = context[: max(0, context.find(str(span.get("text") or "")))]
-    after_index = context.find(str(span.get("text") or ""))
-    after = context[after_index + len(str(span.get("text") or "")) :] if after_index >= 0 else ""
-    return "[" in before[-40:] and "]" in after[:40]
-
-
-def _small_prose_residue_evidence(
-    *,
-    issues: list[dict[str, Any]],
-    final_translation: str,
-    source_text: str,
-    metadata: dict[str, Any] | None,
-) -> dict[str, Any]:
-    spans = _hangul_residue_spans(issues)
-    category = _hangul_residue_category(issues, final_translation)
-    metrics = _graph_integrity_metrics(source_text, final_translation, metadata)
-    hangul_char_count = _hangul_char_count_from_spans(spans)
-    repairable_categories = {"genre_term_residue", "prose_residue", "mixed_script_name_residue", "partial_name_residue"}
-    repair_spans = [
-        span
-        for span in spans
-        if span.get("residueCategory") in repairable_categories
-        or span.get("partialNameResidueDetected")
-        or span.get("mixedScriptNameResidueDetected")
-        or (not span.get("personNameRisk") and span.get("residueCategory") != "system_ui_residue")
-    ]
-    non_name_spans = [span for span in repair_spans if span.get("residueCategory") not in {"mixed_script_name_residue", "partial_name_residue"}]
-    partial_name_spans = [span for span in repair_spans if span.get("residueCategory") in {"mixed_script_name_residue", "partial_name_residue"} or span.get("partialNameResidueDetected") or span.get("mixedScriptNameResidueDetected")]
-    genre_spans = [span for span in non_name_spans if span.get("residueCategory") == "genre_term_residue" or span.get("jpParticleAttached")]
-    system_like_spans = [span for span in spans if _is_bracket_or_system_context(span)]
-    name_false_positive_avoided = any(
-        "korean_noun_plus_japanese_particle_without_name_evidence" in (span.get("classificationReasons") or [])
-        or span.get("nameResidueFalsePositiveAvoided")
-        or (span.get("jpParticleAttached") and span.get("residueCategory") in {"genre_term_residue", "prose_residue"})
-        for span in non_name_spans
-    )
-    detected = bool(
-        spans
-        and repair_spans
-        and category in {"prose_residue", "genre_term_residue", "mixed_script_name_residue", "partial_name_residue", "mixed"}
-        and not system_like_spans
-        and not metrics["sourceCopyDetected"]
-        and not metrics["source_prefix_match_200"]
-        and not _has_general_body_hangul_residue(issues, final_translation)
-        and 0 < hangul_char_count <= 16
-        and 0 < len(repair_spans) <= 3
-        and metrics["residualHangulRatio"] <= 0.10
-        and metrics["targetScriptRatio"] >= 0.45
-    )
-    return {
-        "detected": detected,
-        "spanCount": len(repair_spans),
-        "proseSpanCount": len(non_name_spans),
-        "genreTermSpanCount": len(genre_spans),
-        "hangulCharCount": hangul_char_count,
-        "residualHangulRatio": metrics["residualHangulRatio"],
-        "targetScriptRatio": metrics["targetScriptRatio"],
-        "sourceCopyDetected": metrics["sourceCopyDetected"],
-        "source_prefix_match_200": metrics["source_prefix_match_200"],
-        "bulkProseResidueDetected": _has_general_body_hangul_residue(issues, final_translation),
-        "hangulResidueCategory": category,
-        "smallGenreTermResidueDetected": bool(detected and genre_spans),
-        "mixedScriptNameResidueDetected": bool(detected and partial_name_spans and any(span.get("mixedScriptNameResidueDetected") or span.get("residueCategory") == "mixed_script_name_residue" for span in partial_name_spans)),
-        "partialNameResidueDetected": bool(detected and partial_name_spans),
-        "commonNounResidueDetected": bool(detected and any(span.get("commonNounResidueDetected") for span in non_name_spans)),
-        "nameResidueFalsePositiveAvoided": bool(name_false_positive_avoided),
-        "repairAffectedToken": ", ".join(str(span.get("repairAffectedToken") or span.get("text") or "") for span in repair_spans[:3]),
-    }
-
-
-def _coerce_span_index(span: dict[str, Any], key: str, default: int = -1) -> int:
-    try:
-        return int(span.get(key, default))
-    except (TypeError, ValueError):
-        return default
-
-
-def _target_sentence_window(final_translation: str, span: dict[str, Any]) -> dict[str, Any]:
-    """Return the actual target sentence containing the Hangul residue span.
-
-    The QA issue targetSpan is only a diagnostic comma-joined term list; the
-    repair target must instead be the sentence window at the detector's
-    start/end offsets in finalTranslation so replacement can be index-based.
-    """
-    if not final_translation:
-        return {"start": 0, "end": 0, "text": ""}
-    start = _coerce_span_index(span, "start")
-    end = _coerce_span_index(span, "end")
-    if start < 0 or end <= start or start >= len(final_translation):
-        context = str(span.get("context") or "")
-        span_text = str(span.get("text") or span.get("hangulText") or "")
-        if context and span_text:
-            context_index = final_translation.find(context)
-            span_index = context.find(span_text)
-            if context_index >= 0 and span_index >= 0:
-                start = context_index + span_index
-                end = start + len(span_text)
-        if start < 0 or end <= start or start >= len(final_translation):
-            return {"start": 0, "end": min(len(final_translation), 600), "text": final_translation[:600]}
-    end = min(end, len(final_translation))
-    left_match = None
-    for match in _SENTENCE_LEFT_BOUNDARY_RE.finditer(final_translation, 0, start):
-        left_match = match
-    left = 0 if left_match is None else left_match.end()
-    right_match = _SENTENCE_RIGHT_BOUNDARY_RE.search(final_translation, end)
-    right = len(final_translation) if right_match is None else right_match.end()
-    return {"start": left, "end": right, "text": final_translation[left:right].strip()}
-
-
-def _merge_target_sentence_windows(final_translation: str, spans: list[dict[str, Any]]) -> dict[str, Any]:
-    windows = [_target_sentence_window(final_translation, span) for span in spans]
-    windows = [window for window in windows if str(window.get("text") or "").strip()]
-    if not windows:
-        return {"start": 0, "end": min(len(final_translation), 600), "text": final_translation[:600]}
-    start = min(int(window["start"]) for window in windows)
-    end = max(int(window["end"]) for window in windows)
-    return {"start": start, "end": end, "text": final_translation[start:end].strip()}
-
-
-def _strip_code_fence(text: str) -> str:
-    candidate = (text or "").strip()
-    if candidate.startswith("```"):
-        lines = candidate.splitlines()
-        if lines and lines[0].startswith("```"):
-            lines = lines[1:]
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]
-        candidate = "\n".join(lines).strip()
-    return candidate
-
-
-def _extract_window_repair_candidate(original: str, window: dict[str, Any], repaired_output: str) -> str:
-    candidate = _strip_code_fence(repaired_output)
-    if not candidate:
-        return ""
-    start = int(window.get("start") or 0)
-    end = int(window.get("end") or start)
-    prefix = original[:start]
-    suffix = original[end:]
-    # Backward-compatible guard: if a model returns the full translation despite
-    # the sentence-window prompt, extract the changed window and still apply it
-    # by the original detector offsets.
-    if prefix and candidate.startswith(prefix) and (not suffix or candidate.endswith(suffix)):
-        suffix_len = len(suffix)
-        return candidate[len(prefix) : len(candidate) - suffix_len if suffix_len else len(candidate)].strip()
-    if suffix and candidate.endswith(suffix):
-        return candidate[: -len(suffix)].strip()
-    if prefix and candidate.startswith(prefix):
-        return candidate[len(prefix) :].strip()
-    return candidate
-
-
-def _replace_target_sentence_window(original: str, window: dict[str, Any], repaired_window: str) -> str:
-    start = max(0, min(len(original), int(window.get("start") or 0)))
-    end = max(start, min(len(original), int(window.get("end") or start)))
-    replacement = _strip_code_fence(repaired_window)
-    return original[:start] + replacement + original[end:]
-
-
-def _local_target_context(final_translation: str, span: dict[str, Any]) -> str:
-    if not final_translation:
-        return ""
-    return str(_target_sentence_window(final_translation, span).get("text") or "")[:600]
-
-
-def _source_context_for_targeted_repair(source_text: str) -> str:
-    # Do not include full long source text in trace; the prompt can use a bounded
-    # source excerpt as local context when exact alignment is unavailable.
-    return (source_text or "").strip()[:900]
-
-
-def _format_approved_glossary_for_repair(state: TranslationGraphState, limit: int = 24) -> str:
-    glossary = state.get("approvedGlossary") or []
-    rows: list[str] = []
-    for entry in glossary[:limit]:
-        if not isinstance(entry, dict):
-            continue
-        source = str(entry.get("source") or "").strip()
-        target = str(entry.get("target") or "").strip()
-        if source and target:
-            rows.append(f"- {source} => {target}")
-    return "\n".join(rows) if rows else "- none"
-
-
-def _graph_targeted_small_residue_context(
-    state: TranslationGraphState,
-    *,
-    final_translation: str,
-    issues: list[dict[str, Any]],
-    evidence: dict[str, Any],
-) -> str:
-    spans = _hangul_residue_spans(issues)[:3]
-    repair_window = _merge_target_sentence_windows(final_translation, spans)
-    affected = []
-    for index, span in enumerate(spans, start=1):
-        window = _target_sentence_window(final_translation, span)
-        affected.append(
-            "\n".join(
-                [
-                    f"{index}. residualSpan={str(span.get('text') or '')}",
-                    f"   residueCategory={str(span.get('residueCategory') or '')}",
-                    f"   detectorStart={_coerce_span_index(span, 'start')}",
-                    f"   detectorEnd={_coerce_span_index(span, 'end')}",
-                    f"   sentenceWindowStart={window.get('start')}",
-                    f"   sentenceWindowEnd={window.get('end')}",
-                    f"   repairAffectedToken={str(span.get('repairAffectedToken') or span.get('text') or '')}",
-                    f"   mixedScriptNameResidueDetected={bool(span.get('mixedScriptNameResidueDetected'))}",
-                    f"   partialNameResidueDetected={bool(span.get('partialNameResidueDetected'))}",
-                    f"   sentenceWindow={window.get('text') or ''}",
-                ]
-            )
-        )
-    return "\n".join(
-        [
-            "[GRAPH TARGETED SMALL PROSE RESIDUE REPAIR]",
-            f"- targetLocale: {state.get('targetLocale') or 'ko_ja'}",
-            "- The Japanese translation still contains a few Korean/Hangul prose, genre-term, or mixed-script partial-name residues.",
-            "- Rewrite only the affected Japanese sentence or short local paragraph into natural Japanese.",
-            "- For mixed-script partial-name residue, repair the whole affected token using the approved glossary/name map first; if absent, use natural Japanese name notation from context.",
-            "- Do not change unrelated sentences.",
-            "- Do not copy Korean prose.",
-            "- Do not leave Korean words, Korean particles, or Korean sentence fragments.",
-            "- Preserve web novel pacing and tone.",
-            "- Preserve bracket/system UI blocks exactly in count and order.",
-            "- Preserve approved glossary/name map terms.",
-            "- Return only the repaired sentence window text shown under [repair sentence window].",
-            "- Do not return the full translation.",
-            "- No explanation.",
-            "",
-            "[small residue evidence]",
-            f"- residualHangulCharCount: {evidence.get('hangulCharCount')}",
-            f"- residualHangulRatio: {evidence.get('residualHangulRatio')}",
-            f"- affectedSpanCount: {evidence.get('spanCount')}",
-            f"- smallGenreTermResidueDetected: {bool(evidence.get('smallGenreTermResidueDetected'))}",
-            f"- mixedScriptNameResidueDetected: {bool(evidence.get('mixedScriptNameResidueDetected'))}",
-            f"- partialNameResidueDetected: {bool(evidence.get('partialNameResidueDetected'))}",
-            f"- commonNounResidueDetected: {bool(evidence.get('commonNounResidueDetected'))}",
-            f"- repairAffectedToken: {evidence.get('repairAffectedToken') or ''}",
-            f"- mixedScriptNameResidueDetected: {bool(evidence.get('mixedScriptNameResidueDetected'))}",
-            f"- partialNameResidueDetected: {bool(evidence.get('partialNameResidueDetected'))}",
-            f"- commonNounResidueDetected: {bool(evidence.get('commonNounResidueDetected'))}",
-            f"- repairAffectedToken: {evidence.get('repairAffectedToken') or ''}",
-            "",
-            "[affected target spans]",
-            "\n".join(affected) if affected else "- none",
-            "",
-            "[repair sentence window]",
-            f"start={repair_window.get('start')} end={repair_window.get('end')}",
-            str(repair_window.get("text") or ""),
-            "",
-            "[current full target translation for context only; do not return this full text]",
-            final_translation[:6000],
-            "",
-            "[bounded source context]",
-            _source_context_for_targeted_repair(state.get("sourceText") or ""),
-            "",
-            "[approved glossary/name map]",
-            _format_approved_glossary_for_repair(state),
-        ]
-    )
-
-
-def _graph_targeted_small_residue_fallback_context(
-    state: TranslationGraphState,
-    *,
-    final_translation: str,
-    issues: list[dict[str, Any]],
-    evidence: dict[str, Any],
-    failed_reason: str,
-) -> str:
-    spans = _hangul_residue_spans(issues)[:3]
-    repair_window = _merge_target_sentence_windows(final_translation, spans)
-    affected = []
-    for index, span in enumerate(spans, start=1):
-        window = _target_sentence_window(final_translation, span)
-        affected.append(
-            "\n".join(
-                [
-                    f"{index}. residualSpan={str(span.get('text') or '')}",
-                    f"   residueCategory={str(span.get('residueCategory') or '')}",
-                    f"   detectorStart={_coerce_span_index(span, 'start')}",
-                    f"   detectorEnd={_coerce_span_index(span, 'end')}",
-                    f"   sentenceWindowStart={window.get('start')}",
-                    f"   sentenceWindowEnd={window.get('end')}",
-                    f"   sentenceWindow={window.get('text') or ''}",
-                ]
-            )
-        )
-    return "\n".join(
-        [
-            "[GRAPH TARGETED SMALL PROSE RESIDUE FALLBACK]",
-            f"- Previous targeted repair failed for: {failed_reason or 'hangul_residue_remaining'}.",
-            "- This is the final allowed targeted fallback attempt; do not perform another retry.",
-            "- Repair only the affected Japanese sentence or short local paragraph listed below.",
-            "- Do not rewrite unrelated sentences or append commentary.",
-            "- Do not copy Korean source prose.",
-            "- Do not leave Korean/Hangul words, Korean particles, or mixed Hangul/Kana residue.",
-            "- If a residual term is unknown, render it naturally in Japanese prose rather than preserving Hangul.",
-            "- Preserve bracket/system UI block count and order exactly.",
-            "- Preserve web novel pacing, dialogue tone, and paragraph flow.",
-            "- Preserve approved glossary/name map terms.",
-            "- Return only the repaired sentence window text shown under [repair sentence window].",
-            "- Do not return the full translation.",
-            "- No explanation.",
-            "",
-            "[small residue evidence before fallback]",
-            f"- residualHangulCharCount: {evidence.get('hangulCharCount')}",
-            f"- residualHangulRatio: {evidence.get('residualHangulRatio')}",
-            f"- affectedSpanCount: {evidence.get('spanCount')}",
-            f"- smallGenreTermResidueDetected: {bool(evidence.get('smallGenreTermResidueDetected'))}",
-            "",
-            "[affected target spans]",
-            "\n".join(affected) if affected else "- none",
-            "",
-            "[repair sentence window]",
-            f"start={repair_window.get('start')} end={repair_window.get('end')}",
-            str(repair_window.get("text") or ""),
-            "",
-            "[current full target translation for context only; do not return this full text]",
-            final_translation[:6000],
-            "",
-            "[bounded source context]",
-            _source_context_for_targeted_repair(state.get("sourceText") or ""),
-            "",
-            "[approved glossary/name map]",
-            _format_approved_glossary_for_repair(state),
-        ]
-    )
-
-
-def _graph_integrity_failure_type(*, source_copy_detected: bool, prose_residue_detected: bool) -> str:
-    if source_copy_detected and prose_residue_detected:
-        return "source_copy_and_prose_residue"
-    if source_copy_detected:
-        return "source_copy"
-    if prose_residue_detected:
-        return "prose_residue"
-    return "none"
-
-
 def _graph_filter_non_hangul_residue_issues(issues: list[dict[str, Any]]) -> list[dict[str, Any]]:
     filtered: list[dict[str, Any]] = []
     for issue in issues:
@@ -797,33 +423,6 @@ def _graph_failure_category(delivery_status: str, issues: list[dict[str, Any]]) 
     if delivery_status == "qa_warning":
         return "qa_warning"
     return "none"
-
-
-def _debug_artifact_summary(metadata: dict[str, Any] | None, *, candidate_discarded: bool = False, discard_reason: str = "") -> dict[str, Any]:
-    artifact = dict((metadata or {}).get("debug_artifact") or {})
-    if not artifact:
-        return {
-            "debugArtifactDir": None,
-            "rawOutputPath": None,
-            "parsedCandidatePath": None,
-            "metricsPath": None,
-            "fallbackApplied": False,
-            "candidateDiscarded": candidate_discarded,
-            "discardReason": discard_reason,
-        }
-    summary = {
-        "debugArtifactDir": artifact.get("debugArtifactDir"),
-        "rawOutputPath": artifact.get("rawOutputPath"),
-        "parsedCandidatePath": artifact.get("parsedCandidatePath"),
-        "metricsPath": artifact.get("metricsPath"),
-        "promptPreviewPath": artifact.get("promptPreviewPath"),
-        "promptMetadataPath": artifact.get("promptMetadataPath"),
-        "fallbackApplied": bool(artifact.get("fallbackApplied")),
-        "fallbackReason": artifact.get("fallbackReason") or "",
-        "candidateDiscarded": bool(candidate_discarded or artifact.get("candidateDiscarded")),
-        "discardReason": discard_reason or artifact.get("discardReason") or "",
-    }
-    return summary
 
 
 _PRIORITY_RANK = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
@@ -902,6 +501,7 @@ def _record_review_trace(
         "repairRequired": any(bool(issue.get("autoRevisionEligible")) or _issue_priority(issue) == "P0" for issue in issues),
         "finalTranslationChanged": False,
         "deliveryStatusChanged": False,
+        "summary": str(state.get("currentReviewerSummary") or ""),  # 이 관점 전체 평가 총평(LLM 리뷰어)
         "findings": findings,
     }
     # Return reducer-friendly deltas without mutating the incoming list objects.
@@ -972,34 +572,7 @@ def review_naturalness(state: TranslationGraphState) -> TranslationGraphState:
 
 
 def review_cultural(state: TranslationGraphState) -> TranslationGraphState:
-    findings: list[dict[str, Any]] = []
-    if state.get("annotationCandidates"):
-        findings.append(
-            {
-                "reviewerType": "cultural",
-                "code": "reader_endnote_candidate",
-                "priority": "P2",
-                "message": "Annotation branch produced reader-endnote candidates.",
-                "sourceSpan": "",
-                "targetSpan": "",
-                "suggestion": "Keep readerEndnotes separate from finalTranslation.",
-                "autoRevisionEligible": False,
-                "issue": {
-                    "code": "reader_endnote_candidate",
-                    "priority": "P2",
-                    "message": "Annotation branch produced reader-endnote candidates.",
-                    "autoRevisionEligible": False,
-                },
-            }
-        )
-    issues = [
-        issue
-        for issue in state.get("deterministicPrecheckIssues") or []
-        if str(issue.get("code") or issue.get("type") or "") in _REVIEWER_ISSUE_CODES["cultural"]
-    ]
-    findings.extend(_finding_from_issue("cultural", issue) for issue in issues)
-    findings += _llm_reviewer_findings(state, "cultural")
-    return _record_review_trace(state, node="review_cultural", reviewer_type="cultural", findings=findings)
+    return _review_by_codes(state, "cultural", "review_cultural")
 
 
 def review_glossary(state: TranslationGraphState) -> TranslationGraphState:
@@ -1016,9 +589,16 @@ def aggregate_review(state: TranslationGraphState) -> TranslationGraphState:
             "issueCount": int(row.get("issueCount") or 0),
             "maxSeverity": row.get("maxSeverity") or "none",
             "repairRequired": bool(row.get("repairRequired")),
+            "summary": str(row.get("summary") or ""),
         }
         for row in reviewer_trace
     ]
+    # 리포트용: 관점별 LLM 총평 dict {reviewerType: summary}. fan-in 후라 모든 리뷰어 trace가 모임(병렬 안전).
+    state["reviewSummaries"] = {
+        str(row.get("reviewerType") or ""): str(row.get("summary") or "")
+        for row in reviewer_trace
+        if str(row.get("reviewerType") or "") and str(row.get("summary") or "").strip()
+    }
     issues = _dedupe_issues([dict(finding.get("issue") or {}) for finding in findings if finding.get("issue")])
     repair_required = any(_issue_priority(issue) == "P0" or bool(issue.get("autoRevisionEligible")) for issue in issues)
     integrity_required = any(str(issue.get("code") or "") in _REVIEWER_ISSUE_CODES["integrity"] for issue in issues)
@@ -1083,731 +663,12 @@ def _graph_sanitize_integrity_metadata(metadata: dict[str, Any] | None) -> dict[
     return data
 
 
-def _graph_clean_retranslation_context(integrity_failure_type: str) -> str:
-    return "\n".join(
-        [
-            "[GRAPH CLEAN FULL TRANSLATOR RETRY]",
-            f"- Integrity failure type: {integrity_failure_type}.",
-            "- Output Japanese only.",
-            "- Do not copy Korean prose.",
-            "- Translate every Korean sentence into natural Japanese.",
-            "- Preserve bracket/system UI block count and order.",
-            "- Preserve web novel pacing and dialogue tone.",
-            "- Do not append readerEndnotes into finalTranslation.",
-            "- Keep finalTranslation as translation text only.",
-        ]
-    )
-
-
-def _graph_strict_clean_fallback_context(integrity_failure_type: str) -> str:
-    return "\n".join(
-        [
-            "[GRAPH STRICT CLEAN FINAL FALLBACK]",
-            f"- Previous clean full retry was discarded for: {integrity_failure_type}.",
-            "- This is the final allowed fallback attempt; do not perform another retry.",
-            "- Output only the complete Japanese translation.",
-            "- Do not copy Korean source prose, Korean sentence order artifacts, or mixed Hangul/Kana residue.",
-            "- If a term is unknown, translate it naturally in Japanese prose rather than leaving Korean text.",
-            "- The output must not begin with the same source prefix or reproduce the Korean source.",
-            "- Preserve bracket/system UI block count and order exactly.",
-            "- Preserve web novel pacing, dialogue tone, and paragraph flow.",
-            "- Do not append readerEndnotes, annotations, commentary, markdown, or explanations into finalTranslation.",
-            "- Keep finalTranslation as translation text only.",
-        ]
-    )
-
-
-def _targeted_repair_failure_reason(
-    *,
-    final_translation: str,
-    issues: list[dict[str, Any]],
-    metrics: dict[str, Any],
-    before_target_script_ratio: float,
-) -> str:
-    if not final_translation.strip():
-        return "empty_translation"
-    if metrics.get("sourceCopyDetected"):
-        return "source_copy_regression"
-    if any(issue.get("code") in {"bracket_block_count_mismatch", "bracket_block_role_or_order_mismatch", "system_message_missing"} for issue in issues):
-        return "bracket_or_system_block_regression"
-    if _has_prose_hangul_residue(issues, final_translation):
-        return "hangul_residue_remaining"
-    if float(metrics.get("targetScriptRatio") or 0.0) + 0.02 < before_target_script_ratio:
-        return "target_script_ratio_regression"
-    return ""
-
-
-def _maybe_targeted_repair_small_prose_residue(
-    state: TranslationGraphState,
-    *,
-    translate_once: Callable[..., tuple[str, dict[str, Any]]] | None,
-    final: str,
-    issues: list[dict[str, Any]],
-    metadata: dict[str, Any],
-    base_attempt: int,
-    clean_retry_succeeded: bool,
-) -> tuple[str, list[dict[str, Any]], dict[str, Any], bool]:
-    loop = state.get("_loop")
-    if loop is None:
-        return final, issues, metadata, False
-    evidence = _small_prose_residue_evidence(
-        issues=issues,
-        final_translation=final,
-        source_text=state.get("sourceText") or "",
-        metadata=metadata,
-    )
-    if not evidence["detected"]:
-        return final, issues, metadata, False
-    repair_window = _merge_target_sentence_windows(final, _hangul_residue_spans(issues)[:3])
-    context = _graph_targeted_small_residue_context(state, final_translation=final, issues=issues, evidence=evidence)
-    attempt = base_attempt + 1
-    repaired_window_output, repair_metadata = _graph_translate_once(
-        source_text=state["sourceText"],
-        target_locale=state["targetLocale"],
-        idiom_notes=state.get("idiomNotes") or [],
-        work_memory=state.get("workMemory"),
-        translate_once=translate_once,
-        strict=True,
-        attempt=attempt,
-        revision_context=context,
-    )
-    repaired_window = _extract_window_repair_candidate(final, repair_window, repaired_window_output)
-    repaired = _replace_target_sentence_window(final, repair_window, repaired_window)
-    sanitized_repair_metadata = _graph_sanitize_integrity_metadata(repair_metadata)
-    repaired_issues = _critic_issues(
-        source_text=state["sourceText"],
-        final_translation=repaired,
-        target_locale=state["targetLocale"],
-        idiom_notes=state.get("idiomNotes") or [],
-        safety_metadata={**sanitized_repair_metadata, "delivery_status": sanitized_repair_metadata.get("delivery_status") or "deliverable"},
-        work_memory=state.get("workMemory"),
-    )
-    repaired_issues = _graph_filter_non_hangul_residue_issues(repaired_issues)
-    repaired_judge = _judge(repaired_issues)
-    repaired, repaired_issues, repaired_judge = _maybe_apply_deterministic_known_person_residue_patch(
-        source_text=state["sourceText"],
-        final_translation=repaired,
-        target_locale=state["targetLocale"],
-        idiom_notes=state.get("idiomNotes") or [],
-        safety_metadata=sanitized_repair_metadata,
-        work_memory=state.get("workMemory"),
-        issues=repaired_issues,
-        iterations=loop.iterations,
-    )
-    repaired, repaired_issues, repaired_judge = _maybe_apply_deterministic_known_proper_noun_variant_patch(
-        source_text=state["sourceText"],
-        final_translation=repaired,
-        target_locale=state["targetLocale"],
-        idiom_notes=state.get("idiomNotes") or [],
-        safety_metadata=sanitized_repair_metadata,
-        work_memory=state.get("workMemory"),
-        issues=repaired_issues,
-        iterations=loop.iterations,
-    )
-    repaired_issues = _graph_filter_non_hangul_residue_issues(repaired_issues)
-    repaired_judge = _judge(repaired_issues)
-    after_metrics = _graph_integrity_metrics(state.get("sourceText") or "", repaired, sanitized_repair_metadata)
-    failure_reason = _targeted_repair_failure_reason(
-        final_translation=repaired,
-        issues=repaired_issues,
-        metrics=after_metrics,
-        before_target_script_ratio=float(evidence.get("targetScriptRatio") or 0.0),
-    )
-    succeeded = failure_reason == ""
-    after_spans = _hangul_residue_spans(repaired_issues)
-    trace_row = {
-        "action": "targeted_small_prose_residue_repair",
-        "attempt": attempt,
-        "hangulResidueCategory": evidence["hangulResidueCategory"],
-        "smallProseResidueDetected": True,
-        "smallGenreTermResidueDetected": bool(evidence.get("smallGenreTermResidueDetected")),
-        "mixedScriptNameResidueDetected": bool(evidence.get("mixedScriptNameResidueDetected")),
-        "partialNameResidueDetected": bool(evidence.get("partialNameResidueDetected")),
-        "commonNounResidueDetected": bool(evidence.get("commonNounResidueDetected")),
-        "nameResidueFalsePositiveAvoided": bool(evidence.get("nameResidueFalsePositiveAvoided")),
-        "repairAffectedToken": evidence.get("repairAffectedToken") or "",
-        "targetedRepairAttempted": True,
-        "targetedRepairSucceeded": succeeded,
-        "targetedRepairFailedReason": failure_reason,
-        "residualHangulCharCountBefore": evidence["hangulCharCount"],
-        "residualHangulCharCountAfter": _hangul_char_count_from_spans(after_spans),
-        "residualHangulRatioBefore": evidence["residualHangulRatio"],
-        "residualHangulRatioAfter": after_metrics["residualHangulRatio"],
-        "targetedRepairAffectedSpanCount": evidence["spanCount"],
-        "repairAffectedSpanCount": evidence["spanCount"],
-        "targetedRepairWindowStart": repair_window.get("start"),
-        "targetedRepairWindowEnd": repair_window.get("end"),
-        "targetedRepairWindowText": repair_window.get("text") or "",
-        "targetedRepairReturnedFullTranslation": _strip_code_fence(repaired_window_output) != repaired_window,
-        "hangulResidueSpanCount": len(after_spans),
-        "hangulResidueCategoryAfter": _hangul_residue_category(repaired_issues, repaired),
-        "sourceCopyDetected": bool(after_metrics["sourceCopyDetected"]),
-        "proseResidueDetected": _has_prose_hangul_residue(repaired_issues, repaired),
-        "bulkProseResidueDetected": _has_general_body_hangul_residue(repaired_issues, repaired),
-        "cleanTranslatorRetryAttempted": True,
-        "cleanTranslatorRetrySucceeded": clean_retry_succeeded,
-        "fullRetranslationRetryAttempted": True,
-        "fullRetranslationRetrySucceeded": clean_retry_succeeded,
-        "strictCleanFallbackAttempted": False,
-        "strictCleanFallbackSucceeded": False,
-        "strictCleanFallbackFailedReason": "",
-        "strictCleanFallbackDiscardReason": "",
-        "strictCleanFallbackSourceCopyDetected": False,
-        "strictCleanFallbackTargetScriptRatio": None,
-        "strictCleanFallbackResidualHangulRatio": None,
-        "strictCleanFallbackRawOutputPath": None,
-        "strictCleanFallbackParsedCandidatePath": None,
-        "strictCleanFallbackMetricsPath": None,
-        "targetedRepairFallbackAttempted": False,
-        "targetedRepairFallbackSucceeded": False,
-        "targetedRepairFallbackFailedReason": "",
-        "targetedRepairFallbackDiscardReason": "",
-        "targetedRepairFallbackResidualHangulRatioBefore": None,
-        "targetedRepairFallbackResidualHangulRatioAfter": None,
-        "targetedRepairFallbackTargetScriptRatio": None,
-        "targetedRepairFallbackRawOutputPath": None,
-        "targetedRepairFallbackParsedCandidatePath": None,
-        "targetedRepairFallbackMetricsPath": None,
-        "finalFallbackAttemptCount": 0,
-        "targetedRepairRevisionScope": "Targeted LLM repair for a few remaining Korean/Hangul prose residue spans; preserve unrelated translation and bracket/system UI blocks.",
-        "residualHangulRatio": after_metrics["residualHangulRatio"],
-        "targetScriptRatio": after_metrics["targetScriptRatio"],
-        "source_prefix_match_200": after_metrics["source_prefix_match_200"],
-        "source_copy_suspected": after_metrics["sourceCopyDetected"],
-        **_debug_artifact_summary(
-            sanitized_repair_metadata,
-            candidate_discarded=not succeeded,
-            discard_reason=failure_reason,
-        ),
-    }
-    if succeeded:
-        loop.iterations.append(
-            {
-                "iteration": attempt,
-                "action": "Graph Targeted Small Prose Residue Repair",
-                "critique": repaired_issues,
-                "judge": repaired_judge,
-                "revisionScope": trace_row["targetedRepairRevisionScope"],
-                "revisionContext": context,
-                "metadata": repair_metadata,
-            }
-        )
-        loop.qaIssues = repaired_issues
-        loop.judge = repaired_judge
-        loop.authorReviewCards = _review_cards_from_issues(repaired_issues, state.get("idiomNotes") or [])
-        loop.deliveryStatus, loop.userVisibleErrorCode = classify_translation_delivery(repaired_issues, integrity_block=False)
-        loop.finalTranslation = repaired
-        trace_row.update(
-            {
-                "deliveryStatus": loop.deliveryStatus,
-                "qaIssueCount": len(repaired_issues),
-                "integrityFailureType": "none",
-                "failureCategory": _graph_failure_category(loop.deliveryStatus, repaired_issues),
-                "finalDeliveryStatus": loop.deliveryStatus,
-            }
-        )
-        state["graphRepairTrace"] = list(state.get("graphRepairTrace") or []) + [trace_row]
-        return repaired, repaired_issues, sanitized_repair_metadata, True
-    fallback_evidence = _small_prose_residue_evidence(
-        issues=repaired_issues,
-        final_translation=repaired,
-        source_text=state.get("sourceText") or "",
-        metadata=sanitized_repair_metadata,
-    )
-    fallback_allowed = bool(
-        fallback_evidence["detected"]
-        and fallback_evidence.get("hangulResidueCategory") in {"prose_residue", "genre_term_residue", "mixed_script_name_residue", "partial_name_residue"}
-        and not fallback_evidence.get("sourceCopyDetected")
-        and not fallback_evidence.get("bulkProseResidueDetected")
-        and not any(row.get("targetedRepairFallbackAttempted") for row in state.get("graphRepairTrace") or [])
-    )
-    if fallback_allowed:
-        fallback_attempt = attempt + 1
-        fallback_window = _merge_target_sentence_windows(repaired, _hangul_residue_spans(repaired_issues)[:3])
-        fallback_context = _graph_targeted_small_residue_fallback_context(
-            state,
-            final_translation=repaired,
-            issues=repaired_issues,
-            evidence=fallback_evidence,
-            failed_reason=failure_reason,
-        )
-        fallback_window_output, fallback_metadata = _graph_translate_once(
-            source_text=state["sourceText"],
-            target_locale=state["targetLocale"],
-            idiom_notes=state.get("idiomNotes") or [],
-            work_memory=state.get("workMemory"),
-            translate_once=translate_once,
-            strict=True,
-            attempt=fallback_attempt,
-            revision_context=fallback_context,
-        )
-        fallback_window_repair = _extract_window_repair_candidate(repaired, fallback_window, fallback_window_output)
-        fallback_final = _replace_target_sentence_window(repaired, fallback_window, fallback_window_repair)
-        sanitized_fallback_metadata = _graph_sanitize_integrity_metadata(fallback_metadata)
-        fallback_issues = _critic_issues(
-            source_text=state["sourceText"],
-            final_translation=fallback_final,
-            target_locale=state["targetLocale"],
-            idiom_notes=state.get("idiomNotes") or [],
-            safety_metadata={
-                **sanitized_fallback_metadata,
-                "delivery_status": sanitized_fallback_metadata.get("delivery_status") or "deliverable",
-            },
-            work_memory=state.get("workMemory"),
-        )
-        fallback_issues = _graph_filter_non_hangul_residue_issues(fallback_issues)
-        fallback_judge = _judge(fallback_issues)
-        fallback_final, fallback_issues, fallback_judge = _maybe_apply_deterministic_known_person_residue_patch(
-            source_text=state["sourceText"],
-            final_translation=fallback_final,
-            target_locale=state["targetLocale"],
-            idiom_notes=state.get("idiomNotes") or [],
-            safety_metadata=sanitized_fallback_metadata,
-            work_memory=state.get("workMemory"),
-            issues=fallback_issues,
-            iterations=loop.iterations,
-        )
-        fallback_final, fallback_issues, fallback_judge = _maybe_apply_deterministic_known_proper_noun_variant_patch(
-            source_text=state["sourceText"],
-            final_translation=fallback_final,
-            target_locale=state["targetLocale"],
-            idiom_notes=state.get("idiomNotes") or [],
-            safety_metadata=sanitized_fallback_metadata,
-            work_memory=state.get("workMemory"),
-            issues=fallback_issues,
-            iterations=loop.iterations,
-        )
-        fallback_issues = _graph_filter_non_hangul_residue_issues(fallback_issues)
-        fallback_judge = _judge(fallback_issues)
-        fallback_metrics = _graph_integrity_metrics(state.get("sourceText") or "", fallback_final, sanitized_fallback_metadata)
-        fallback_failure_reason = _targeted_repair_failure_reason(
-            final_translation=fallback_final,
-            issues=fallback_issues,
-            metrics=fallback_metrics,
-            before_target_script_ratio=float(fallback_evidence.get("targetScriptRatio") or 0.0),
-        )
-        fallback_residual_hangul_count = _hangul_char_count_from_spans(_hangul_residue_spans(fallback_issues))
-        if fallback_residual_hangul_count or float(fallback_metrics.get("residualHangulRatio") or 0.0) > 0.0:
-            fallback_failure_reason = fallback_failure_reason or "hangul_residue_remaining"
-        fallback_status, fallback_error = classify_translation_delivery(fallback_issues, integrity_block=False)
-        fallback_succeeded = fallback_failure_reason == "" and not fallback_status.startswith("blocked_translation_")
-        fallback_discard_reason = "" if fallback_succeeded else (fallback_failure_reason or _graph_failure_category(fallback_status, fallback_issues))
-        fallback_artifact = _debug_artifact_summary(
-            sanitized_fallback_metadata,
-            candidate_discarded=not fallback_succeeded,
-            discard_reason=fallback_discard_reason,
-        )
-        trace_row.update(
-            {
-                "targetedRepairFallbackAttempted": True,
-                "targetedRepairFallbackSucceeded": fallback_succeeded,
-                "targetedRepairFallbackFailedReason": "" if fallback_succeeded else fallback_discard_reason,
-                "targetedRepairFallbackDiscardReason": fallback_discard_reason,
-                "targetedRepairFallbackResidualHangulRatioBefore": fallback_evidence["residualHangulRatio"],
-                "targetedRepairFallbackResidualHangulRatioAfter": fallback_metrics["residualHangulRatio"],
-                "targetedRepairFallbackTargetScriptRatio": fallback_metrics["targetScriptRatio"],
-                "targetedRepairFallbackRawOutputPath": fallback_artifact.get("rawOutputPath"),
-                "targetedRepairFallbackParsedCandidatePath": fallback_artifact.get("parsedCandidatePath"),
-                "targetedRepairFallbackMetricsPath": fallback_artifact.get("metricsPath"),
-                "targetedRepairFallbackWindowStart": fallback_window.get("start"),
-                "targetedRepairFallbackWindowEnd": fallback_window.get("end"),
-                "finalFallbackAttemptCount": 1,
-            }
-        )
-        loop.iterations.append(
-            {
-                "iteration": fallback_attempt,
-                "action": "Graph Targeted Small Prose Residue Fallback",
-                "critique": fallback_issues,
-                "judge": fallback_judge,
-                "revisionScope": "Final one-shot targeted fallback for small prose or genre-term Hangul residue after targeted repair failure; repair only affected local target context.",
-                "revisionContext": fallback_context,
-                "metadata": fallback_metadata,
-            }
-        )
-        if fallback_succeeded:
-            loop.qaIssues = fallback_issues
-            loop.judge = fallback_judge
-            loop.authorReviewCards = _review_cards_from_issues(fallback_issues, state.get("idiomNotes") or [])
-            loop.deliveryStatus = fallback_status
-            loop.userVisibleErrorCode = fallback_error
-            loop.finalTranslation = fallback_final
-            trace_row.update(
-                {
-                    "deliveryStatus": loop.deliveryStatus,
-                    "qaIssueCount": len(fallback_issues),
-                    "hangulResidueSpanCount": len(_hangul_residue_spans(fallback_issues)),
-                    "hangulResidueCategoryAfter": _hangul_residue_category(fallback_issues, fallback_final),
-                    "integrityFailureType": "none",
-                    "sourceCopyDetected": False,
-                    "proseResidueDetected": _has_prose_hangul_residue(fallback_issues, fallback_final),
-                    "bulkProseResidueDetected": False,
-                    "residualHangulCharCountAfter": fallback_residual_hangul_count,
-                    "residualHangulRatioAfter": fallback_metrics["residualHangulRatio"],
-                    "residualHangulRatio": fallback_metrics["residualHangulRatio"],
-                    "targetScriptRatio": fallback_metrics["targetScriptRatio"],
-                    "source_prefix_match_200": fallback_metrics["source_prefix_match_200"],
-                    "source_copy_suspected": fallback_metrics["sourceCopyDetected"],
-                    "failureCategory": _graph_failure_category(loop.deliveryStatus, fallback_issues),
-                    "finalDeliveryStatus": loop.deliveryStatus,
-                }
-            )
-            state["graphRepairTrace"] = list(state.get("graphRepairTrace") or []) + [trace_row]
-            return fallback_final, fallback_issues, sanitized_fallback_metadata, True
-    # Failed targeted repair is non-destructive: keep the clean-retry output so
-    # a small residual integrity warning can remain deliverable when possible.
-    kept_metrics = _graph_integrity_metrics(state.get("sourceText") or "", final, metadata)
-    trace_row.update(
-        {
-            "deliveryStatus": loop.deliveryStatus,
-            "qaIssueCount": len(issues),
-            "integrityFailureType": "none",
-            "targetedRepairOutputSourceCopyDetected": bool(after_metrics["sourceCopyDetected"]),
-            "targetedRepairOutputProseResidueDetected": _has_prose_hangul_residue(repaired_issues, repaired),
-            "targetedRepairOutputBulkProseResidueDetected": _has_general_body_hangul_residue(repaired_issues, repaired),
-            "sourceCopyDetected": bool(kept_metrics["sourceCopyDetected"]),
-            "proseResidueDetected": _has_prose_hangul_residue(issues, final),
-            "bulkProseResidueDetected": _has_general_body_hangul_residue(issues, final),
-            "residualHangulRatio": kept_metrics["residualHangulRatio"],
-            "targetScriptRatio": kept_metrics["targetScriptRatio"],
-            "source_prefix_match_200": kept_metrics["source_prefix_match_200"],
-            "source_copy_suspected": kept_metrics["sourceCopyDetected"],
-            "failureCategory": _graph_failure_category(loop.deliveryStatus, issues),
-            "finalDeliveryStatus": loop.deliveryStatus,
-        }
-    )
-    state["graphRepairTrace"] = list(state.get("graphRepairTrace") or []) + [trace_row]
-    return final, issues, metadata, False
-
-
-def _maybe_retry_graph_body_hangul_residue(
-    state: TranslationGraphState,
-    *,
-    translate_once: Callable[..., tuple[str, dict[str, Any]]] | None,
-) -> None:
-    if state.get("targetLocale") != "ko_ja":
-        return
-    initial_metadata = {}
-    loop = state.get("_loop")
-    if loop is not None and loop.iterations:
-        initial_metadata = dict(loop.iterations[-1].get("metadata") or {})
-    initial_metrics = _graph_integrity_metrics(state.get("sourceText") or "", state.get("finalTranslation") or "", initial_metadata)
-    prose_residue_detected = _has_prose_hangul_residue(state.get("qaIssues") or [], state.get("finalTranslation") or "")
-    initial_small_residue_evidence = _small_prose_residue_evidence(
-        issues=state.get("qaIssues") or [],
-        final_translation=state.get("finalTranslation") or "",
-        source_text=state.get("sourceText") or "",
-        metadata=initial_metadata,
-    )
-    source_copy_detected = bool(initial_metrics["sourceCopyDetected"])
-    bulk_prose_residue_detected = _has_general_body_hangul_residue(state.get("qaIssues") or [], state.get("finalTranslation") or "")
-    if (
-        initial_small_residue_evidence["detected"]
-        and not source_copy_detected
-        and not bulk_prose_residue_detected
-        and state.get("finalTranslation")
-    ):
-        loop = state.get("_loop")
-        if loop is not None:
-            _maybe_targeted_repair_small_prose_residue(
-                state,
-                translate_once=translate_once,
-                final=state.get("finalTranslation") or "",
-                issues=state.get("qaIssues") or [],
-                metadata=initial_metadata,
-                base_attempt=len(loop.iterations),
-                clean_retry_succeeded=False,
-            )
-        return
-    integrity_failure_type = _graph_integrity_failure_type(
-        source_copy_detected=source_copy_detected,
-        prose_residue_detected=prose_residue_detected,
-    )
-    if integrity_failure_type == "none":
-        return
-    loop = state.get("_loop")
-    if loop is None:
-        return
-    context = _graph_clean_retranslation_context(integrity_failure_type)
-    attempt = len(loop.iterations) + 1
-    final, metadata = _graph_translate_once(
-        source_text=state["sourceText"],
-        target_locale=state["targetLocale"],
-        idiom_notes=state.get("idiomNotes") or [],
-        work_memory=state.get("workMemory"),
-        translate_once=translate_once,
-        strict=True,
-        attempt=attempt,
-        revision_context=context,
-    )
-    sanitized_metadata = _graph_sanitize_integrity_metadata(metadata)
-    issues = _critic_issues(
-        source_text=state["sourceText"],
-        final_translation=final,
-        target_locale=state["targetLocale"],
-        idiom_notes=state.get("idiomNotes") or [],
-        safety_metadata={**sanitized_metadata, "delivery_status": sanitized_metadata.get("delivery_status") or "deliverable"},
-        work_memory=state.get("workMemory"),
-    )
-    issues = _graph_filter_non_hangul_residue_issues(issues)
-    judge = _judge(issues)
-    final, issues, judge = _maybe_apply_deterministic_known_person_residue_patch(
-        source_text=state["sourceText"],
-        final_translation=final,
-        target_locale=state["targetLocale"],
-        idiom_notes=state.get("idiomNotes") or [],
-        safety_metadata=sanitized_metadata,
-        work_memory=state.get("workMemory"),
-        issues=issues,
-        iterations=loop.iterations,
-    )
-    final, issues, judge = _maybe_apply_deterministic_known_proper_noun_variant_patch(
-        source_text=state["sourceText"],
-        final_translation=final,
-        target_locale=state["targetLocale"],
-        idiom_notes=state.get("idiomNotes") or [],
-        safety_metadata=sanitized_metadata,
-        work_memory=state.get("workMemory"),
-        issues=issues,
-        iterations=loop.iterations,
-    )
-    filtered_retry_issues = _graph_filter_non_hangul_residue_issues(issues)
-    if filtered_retry_issues != issues:
-        issues = filtered_retry_issues
-        judge = _judge(issues)
-    retry_metrics = _graph_integrity_metrics(state.get("sourceText") or "", final, sanitized_metadata)
-    retry_any_prose_residue_detected = _has_prose_hangul_residue(issues, final)
-    retry_bulk_prose_residue_detected = _has_general_body_hangul_residue(issues, final)
-    retry_source_copy_detected = bool(retry_metrics["sourceCopyDetected"])
-    retry_failure_type = _graph_integrity_failure_type(
-        source_copy_detected=retry_source_copy_detected,
-        prose_residue_detected=retry_bulk_prose_residue_detected,
-    )
-    retry_row = {
-        "iteration": attempt,
-        "action": "Graph Clean Full Translator Retry",
-        "critique": issues,
-        "judge": judge,
-        "revisionScope": "Clean full Japanese-only retranslation from source text for source-copy or general prose Hangul residue; preserve bracket blocks and do not append annotations.",
-        "revisionContext": context,
-        "metadata": metadata,
-    }
-    loop.iterations.append(retry_row)
-    loop.qaIssues = issues
-    loop.judge = judge
-    loop.authorReviewCards = _review_cards_from_issues(issues, state.get("idiomNotes") or [])
-    loop.deliveryStatus, loop.userVisibleErrorCode = classify_translation_delivery(issues, integrity_block=retry_failure_type != "none")
-    loop.finalTranslation = "" if loop.deliveryStatus.startswith("blocked_translation_") else final
-    small_residue_evidence = _small_prose_residue_evidence(
-        issues=issues,
-        final_translation=final,
-        source_text=state.get("sourceText") or "",
-        metadata=sanitized_metadata,
-    )
-    clean_retry_succeeded = retry_failure_type == "none" and loop.deliveryStatus != "blocked_translation_integrity"
-    clean_candidate_discarded = bool(loop.deliveryStatus.startswith("blocked_translation_"))
-    clean_discard_reason = retry_failure_type if clean_candidate_discarded else ""
-    trace_row = {
-        "action": "clean_full_translator_retry",
-        "attempt": attempt,
-        "deliveryStatus": loop.deliveryStatus,
-        "qaIssueCount": len(issues),
-        "hangulResidueSpanCount": len(_hangul_residue_spans(issues)),
-        "hangulResidueCategory": _hangul_residue_category(issues, final),
-        "integrityFailureType": retry_failure_type if retry_failure_type != "none" else integrity_failure_type,
-        "sourceCopyDetected": retry_source_copy_detected,
-        "proseResidueDetected": retry_any_prose_residue_detected,
-        "bulkProseResidueDetected": retry_bulk_prose_residue_detected,
-        "smallProseResidueDetected": bool(small_residue_evidence["detected"]),
-        "smallGenreTermResidueDetected": bool(small_residue_evidence.get("smallGenreTermResidueDetected")),
-        "nameResidueFalsePositiveAvoided": bool(small_residue_evidence.get("nameResidueFalsePositiveAvoided")),
-        "targetedRepairAttempted": False,
-        "targetedRepairSucceeded": False,
-        "targetedRepairFailedReason": "",
-        "residualHangulCharCountBefore": small_residue_evidence["hangulCharCount"],
-        "residualHangulCharCountAfter": small_residue_evidence["hangulCharCount"],
-        "residualHangulRatioBefore": small_residue_evidence["residualHangulRatio"],
-        "residualHangulRatioAfter": small_residue_evidence["residualHangulRatio"],
-        "targetedRepairAffectedSpanCount": small_residue_evidence["spanCount"],
-        "cleanTranslatorRetryAttempted": True,
-        "cleanTranslatorRetrySucceeded": clean_retry_succeeded,
-        "residualHangulRatio": retry_metrics["residualHangulRatio"],
-        "targetScriptRatio": retry_metrics["targetScriptRatio"],
-        "source_prefix_match_200": retry_metrics["source_prefix_match_200"],
-        "source_copy_suspected": retry_metrics["sourceCopyDetected"],
-        "fullRetranslationRetryAttempted": True,
-        "fullRetranslationRetrySucceeded": clean_retry_succeeded,
-        "strictCleanFallbackAttempted": False,
-        "strictCleanFallbackSucceeded": False,
-        "strictCleanFallbackFailedReason": "",
-        "strictCleanFallbackDiscardReason": "",
-        "strictCleanFallbackSourceCopyDetected": False,
-        "strictCleanFallbackTargetScriptRatio": None,
-        "strictCleanFallbackResidualHangulRatio": None,
-        "strictCleanFallbackRawOutputPath": None,
-        "strictCleanFallbackParsedCandidatePath": None,
-        "strictCleanFallbackMetricsPath": None,
-        "targetedRepairFallbackAttempted": False,
-        "targetedRepairFallbackSucceeded": False,
-        "targetedRepairFallbackFailedReason": "",
-        "targetedRepairFallbackDiscardReason": "",
-        "targetedRepairFallbackResidualHangulRatioBefore": None,
-        "targetedRepairFallbackResidualHangulRatioAfter": None,
-        "targetedRepairFallbackTargetScriptRatio": None,
-        "finalFallbackAttemptCount": 0,
-        "failureCategory": _graph_failure_category(loop.deliveryStatus, issues),
-        "finalDeliveryStatus": loop.deliveryStatus,
-        **_debug_artifact_summary(sanitized_metadata, candidate_discarded=clean_candidate_discarded, discard_reason=clean_discard_reason),
-    }
-    if not clean_retry_succeeded and retry_failure_type in {"source_copy", "prose_residue", "source_copy_and_prose_residue"}:
-        fallback_attempt = attempt + 1
-        fallback_context = _graph_strict_clean_fallback_context(retry_failure_type)
-        fallback_final, fallback_metadata = _graph_translate_once(
-            source_text=state["sourceText"],
-            target_locale=state["targetLocale"],
-            idiom_notes=state.get("idiomNotes") or [],
-            work_memory=state.get("workMemory"),
-            translate_once=translate_once,
-            strict=True,
-            attempt=fallback_attempt,
-            revision_context=fallback_context,
-        )
-        sanitized_fallback_metadata = _graph_sanitize_integrity_metadata(fallback_metadata)
-        fallback_issues = _critic_issues(
-            source_text=state["sourceText"],
-            final_translation=fallback_final,
-            target_locale=state["targetLocale"],
-            idiom_notes=state.get("idiomNotes") or [],
-            safety_metadata={
-                **sanitized_fallback_metadata,
-                "delivery_status": sanitized_fallback_metadata.get("delivery_status") or "deliverable",
-            },
-            work_memory=state.get("workMemory"),
-        )
-        fallback_issues = _graph_filter_non_hangul_residue_issues(fallback_issues)
-        fallback_judge = _judge(fallback_issues)
-        fallback_final, fallback_issues, fallback_judge = _maybe_apply_deterministic_known_person_residue_patch(
-            source_text=state["sourceText"],
-            final_translation=fallback_final,
-            target_locale=state["targetLocale"],
-            idiom_notes=state.get("idiomNotes") or [],
-            safety_metadata=sanitized_fallback_metadata,
-            work_memory=state.get("workMemory"),
-            issues=fallback_issues,
-            iterations=loop.iterations,
-        )
-        fallback_final, fallback_issues, fallback_judge = _maybe_apply_deterministic_known_proper_noun_variant_patch(
-            source_text=state["sourceText"],
-            final_translation=fallback_final,
-            target_locale=state["targetLocale"],
-            idiom_notes=state.get("idiomNotes") or [],
-            safety_metadata=sanitized_fallback_metadata,
-            work_memory=state.get("workMemory"),
-            issues=fallback_issues,
-            iterations=loop.iterations,
-        )
-        fallback_issues = _graph_filter_non_hangul_residue_issues(fallback_issues)
-        fallback_judge = _judge(fallback_issues)
-        fallback_metrics = _graph_integrity_metrics(state.get("sourceText") or "", fallback_final, sanitized_fallback_metadata)
-        fallback_source_copy_detected = bool(fallback_metrics["sourceCopyDetected"])
-        fallback_bulk_prose_residue_detected = _has_general_body_hangul_residue(fallback_issues, fallback_final)
-        fallback_failure_type = _graph_integrity_failure_type(
-            source_copy_detected=fallback_source_copy_detected,
-            prose_residue_detected=fallback_bulk_prose_residue_detected,
-        )
-        fallback_status, fallback_error = classify_translation_delivery(
-            fallback_issues,
-            integrity_block=fallback_failure_type != "none",
-        )
-        fallback_succeeded = fallback_failure_type == "none" and not fallback_status.startswith("blocked_translation_")
-        fallback_discard_reason = "" if fallback_succeeded else (fallback_failure_type if fallback_failure_type != "none" else _graph_failure_category(fallback_status, fallback_issues))
-        fallback_artifact = _debug_artifact_summary(
-            sanitized_fallback_metadata,
-            candidate_discarded=not fallback_succeeded,
-            discard_reason=fallback_discard_reason,
-        )
-        trace_row.update(
-            {
-                "strictCleanFallbackAttempted": True,
-                "strictCleanFallbackSucceeded": fallback_succeeded,
-                "strictCleanFallbackFailedReason": "" if fallback_succeeded else fallback_discard_reason,
-                "strictCleanFallbackDiscardReason": fallback_discard_reason,
-                "strictCleanFallbackSourceCopyDetected": fallback_source_copy_detected,
-                "strictCleanFallbackTargetScriptRatio": fallback_metrics["targetScriptRatio"],
-                "strictCleanFallbackResidualHangulRatio": fallback_metrics["residualHangulRatio"],
-                "strictCleanFallbackRawOutputPath": fallback_artifact.get("rawOutputPath"),
-                "strictCleanFallbackParsedCandidatePath": fallback_artifact.get("parsedCandidatePath"),
-                "strictCleanFallbackMetricsPath": fallback_artifact.get("metricsPath"),
-                "finalFallbackAttemptCount": 1,
-            }
-        )
-        loop.iterations.append(
-            {
-                "iteration": fallback_attempt,
-                "action": "Graph Strict Clean Final Fallback",
-                "critique": fallback_issues,
-                "judge": fallback_judge,
-                "revisionScope": "Final one-shot strict Japanese-only full retranslation after a source-copy or bulk prose-residue clean retry failure; preserve bracket blocks and do not append annotations.",
-                "revisionContext": fallback_context,
-                "metadata": fallback_metadata,
-            }
-        )
-        if fallback_succeeded:
-            loop.qaIssues = fallback_issues
-            loop.judge = fallback_judge
-            loop.authorReviewCards = _review_cards_from_issues(fallback_issues, state.get("idiomNotes") or [])
-            loop.deliveryStatus = fallback_status
-            loop.userVisibleErrorCode = fallback_error
-            loop.finalTranslation = fallback_final
-            trace_row.update(
-                {
-                    "deliveryStatus": loop.deliveryStatus,
-                    "qaIssueCount": len(fallback_issues),
-                    "hangulResidueSpanCount": len(_hangul_residue_spans(fallback_issues)),
-                    "hangulResidueCategory": _hangul_residue_category(fallback_issues, fallback_final),
-                    "sourceCopyDetected": False,
-                    "proseResidueDetected": _has_prose_hangul_residue(fallback_issues, fallback_final),
-                    "bulkProseResidueDetected": False,
-                    "residualHangulCharCountAfter": _hangul_char_count_from_spans(_hangul_residue_spans(fallback_issues)),
-                    "residualHangulRatioAfter": fallback_metrics["residualHangulRatio"],
-                    "residualHangulRatio": fallback_metrics["residualHangulRatio"],
-                    "targetScriptRatio": fallback_metrics["targetScriptRatio"],
-                    "source_prefix_match_200": fallback_metrics["source_prefix_match_200"],
-                    "source_copy_suspected": fallback_metrics["sourceCopyDetected"],
-                    "failureCategory": _graph_failure_category(loop.deliveryStatus, fallback_issues),
-                    "finalDeliveryStatus": loop.deliveryStatus,
-                }
-            )
-        else:
-            loop.finalTranslation = ""
-            loop.deliveryStatus = "blocked_translation_integrity"
-            loop.userVisibleErrorCode = "translation_integrity_failed"
-            trace_row.update(
-                {
-                    "deliveryStatus": loop.deliveryStatus,
-                    "failureCategory": "integrity",
-                    "finalDeliveryStatus": loop.deliveryStatus,
-                }
-            )
-    state["graphRepairTrace"] = list(state.get("graphRepairTrace") or []) + [trace_row]
-    if clean_retry_succeeded and loop.finalTranslation and retry_any_prose_residue_detected:
-        _maybe_targeted_repair_small_prose_residue(
-            state,
-            translate_once=translate_once,
-            final=final,
-            issues=issues,
-            metadata=sanitized_metadata,
-            base_attempt=attempt,
-            clean_retry_succeeded=clean_retry_succeeded,
-        )
-
-
 def revise_translation(state: TranslationGraphState) -> TranslationGraphState:
     """리바이저 원맨 체제: draft + reviewFindings를 취사선택 반영해 최종 번역문 + decisions 생성.
 
     리바이저 출력이 곧 최종본이다. 결과를 TranslationLoopResult로 담아 state["_loop"]에 넣으면,
     final_integrity_check가 그 최종본을 검증(한글 잔류 시 차단)하고 build_translation_package가
-    패키징한다. (repair_or_accept 없음 — 재번역으로 리바이저 결과를 덮지 않는다.)
+    패키징한다. (재번역 수리 루프 없음 — 리바이저 결과를 다시 덮어쓰지 않는다.)
     리바이저 hook이 없거나 draft가 비면 draft를 그대로 최종본으로 둔다.
     """
     hook = state.get("revisorHook")
@@ -1833,6 +694,7 @@ def revise_translation(state: TranslationGraphState) -> TranslationGraphState:
     state["draftTranslation"] = revised
     state["finalTranslation"] = revised
     state["revisorDecisions"] = decisions
+    state["revisorSummary"] = str(result.get("summary") or "")
     return _trace(
         state,
         "revise_translation",
@@ -1877,115 +739,6 @@ def check_korean_residue(state: TranslationGraphState) -> TranslationGraphState:
         "check_korean_residue",
         residuePasses=passes,
         residueRemaining=has_korean_residue(final),
-    )
-
-
-def repair_or_accept(
-    state: TranslationGraphState,
-    *,
-    max_iterations: int = 2,
-    translate_once: Callable[..., tuple[str, dict[str, Any]]] | None = None,
-) -> TranslationGraphState:
-    guidelines = state.get("_guidelinesObject")
-    draft_translation = state.get("draftTranslation") or ""
-    draft_metadata = dict(state.get("draftMetadata") or {})
-
-    def _translate_with_existing_draft(strict: bool, attempt: int, revision_context: str = "") -> tuple[str, dict[str, Any]]:
-        if attempt == 1 and not revision_context.strip() and draft_translation:
-            return draft_translation, dict(draft_metadata)
-        return _graph_translate_once(
-            source_text=state["sourceText"],
-            target_locale=state["targetLocale"],
-            idiom_notes=state.get("idiomNotes") or [],
-            work_memory=state.get("workMemory"),
-            translate_once=translate_once,
-            strict=strict,
-            attempt=attempt,
-            revision_context=revision_context,
-        )
-
-    loop = run_translation_loop(
-        state["sourceText"],
-        state["targetLocale"],
-        guidelines.translatorGuideline if guidelines else "",
-        guidelines.editorGuideline if guidelines else "",
-        idiom_notes=state.get("idiomNotes") or [],
-        max_iterations=max_iterations,
-        translate_once=_translate_with_existing_draft,
-        work_memory=state.get("workMemory"),
-    )
-    filtered_issues = _graph_filter_non_hangul_residue_issues(loop.qaIssues)
-    if filtered_issues != loop.qaIssues:
-        loop.qaIssues = filtered_issues
-        loop.judge = _judge(filtered_issues)
-        loop.authorReviewCards = _review_cards_from_issues(filtered_issues, state.get("idiomNotes") or [])
-        loop.deliveryStatus, loop.userVisibleErrorCode = classify_translation_delivery(filtered_issues)
-        if loop.deliveryStatus.startswith("blocked_translation_"):
-            loop.finalTranslation = ""
-    state.update(
-        {
-            "finalTranslation": loop.finalTranslation,
-            "draftTranslation": loop.iterations[0].get("translation", "") if loop.iterations else "",
-            "qaIssues": loop.qaIssues,
-            "deliveryStatus": loop.deliveryStatus,
-            "repairTrace": loop.iterations,
-            "revisionHistory": loop.iterations,
-            "_loop": loop,
-        }
-    )
-    _maybe_retry_graph_body_hangul_residue(state, translate_once=translate_once)
-    loop = state["_loop"]
-    state.update(
-        {
-            "finalTranslation": loop.finalTranslation,
-            "qaIssues": loop.qaIssues,
-            "deliveryStatus": loop.deliveryStatus,
-            "repairTrace": loop.iterations,
-            "revisionHistory": loop.iterations,
-        }
-    )
-    retry_trace = (state.get("graphRepairTrace") or [])[-1] if state.get("graphRepairTrace") else {}
-    graph_repair_changed = any(
-        row.get("cleanTranslatorRetrySucceeded")
-        or row.get("targetedRepairSucceeded")
-        or row.get("targetedRepairFallbackSucceeded")
-        or row.get("strictCleanFallbackSucceeded")
-        for row in state.get("graphRepairTrace") or []
-    )
-    final_changed = (bool(state.get("draftTranslation")) and (state.get("draftTranslation") or "") != loop.finalTranslation) or graph_repair_changed
-    return _trace(
-        state,
-        "repair_or_accept",
-        deliveryStatus=loop.deliveryStatus,
-        qaIssueCount=len(loop.qaIssues),
-        aggregateIssueCount=(state.get("aggregateReview") or {}).get("issueCount", 0),
-        repairStrategy=(state.get("aggregateReview") or {}).get("repairStrategy", "central_repair"),
-        repairRequired=(state.get("aggregateReview") or {}).get("repairRequired", False),
-        finalTranslationChanged=final_changed,
-        hangulResidueSpanCount=len(_hangul_residue_spans(loop.qaIssues)),
-        hangulResidueCategory=_hangul_residue_category(loop.qaIssues, loop.finalTranslation),
-        integrityFailureType=retry_trace.get("integrityFailureType") or "none",
-        sourceCopyDetected=bool(retry_trace.get("sourceCopyDetected")),
-        proseResidueDetected=bool(retry_trace.get("proseResidueDetected")),
-        cleanTranslatorRetryAttempted=bool(retry_trace.get("cleanTranslatorRetryAttempted")),
-        cleanTranslatorRetrySucceeded=bool(retry_trace.get("cleanTranslatorRetrySucceeded")),
-        residualHangulRatio=retry_trace.get("residualHangulRatio", _graph_integrity_metrics(state.get("sourceText") or "", loop.finalTranslation, {})["residualHangulRatio"]),
-        targetScriptRatio=retry_trace.get("targetScriptRatio", _graph_integrity_metrics(state.get("sourceText") or "", loop.finalTranslation, {})["targetScriptRatio"]),
-        fullRetranslationRetryAttempted=bool(retry_trace.get("fullRetranslationRetryAttempted")),
-        fullRetranslationRetrySucceeded=bool(retry_trace.get("fullRetranslationRetrySucceeded")),
-        strictCleanFallbackAttempted=bool(retry_trace.get("strictCleanFallbackAttempted")),
-        strictCleanFallbackSucceeded=bool(retry_trace.get("strictCleanFallbackSucceeded")),
-        strictCleanFallbackFailedReason=retry_trace.get("strictCleanFallbackFailedReason", ""),
-        targetedRepairFallbackAttempted=bool(retry_trace.get("targetedRepairFallbackAttempted")),
-        targetedRepairFallbackSucceeded=bool(retry_trace.get("targetedRepairFallbackSucceeded")),
-        targetedRepairFallbackFailedReason=retry_trace.get("targetedRepairFallbackFailedReason", ""),
-        targetedRepairFallbackDiscardReason=retry_trace.get("targetedRepairFallbackDiscardReason", ""),
-        targetedRepairFallbackResidualHangulRatioBefore=retry_trace.get("targetedRepairFallbackResidualHangulRatioBefore"),
-        targetedRepairFallbackResidualHangulRatioAfter=retry_trace.get("targetedRepairFallbackResidualHangulRatioAfter"),
-        targetedRepairFallbackTargetScriptRatio=retry_trace.get("targetedRepairFallbackTargetScriptRatio"),
-        finalFallbackAttemptCount=int(retry_trace.get("finalFallbackAttemptCount") or 0),
-        failureCategory=_graph_failure_category(loop.deliveryStatus, loop.qaIssues),
-        finalDeliveryStatus=loop.deliveryStatus,
     )
 
 
@@ -2059,37 +812,6 @@ def final_integrity_check(state: TranslationGraphState) -> TranslationGraphState
     )
 
 
-def chunk_source_text(state: TranslationGraphState) -> TranslationGraphState:
-    source = state.get("sourceText") or ""
-    paragraphs = [part.strip() for part in re.split(r"\n{2,}", source) if part.strip()]
-    if not paragraphs and source.strip():
-        paragraphs = [source.strip()]
-    chunks = [
-        {
-            "chunkId": f"episode-{state.get('episodeId') or 'unknown'}-p{index + 1}",
-            "text": paragraph,
-            "index": index,
-        }
-        for index, paragraph in enumerate(paragraphs)
-    ]
-    state["sourceChunks"] = chunks
-    state["annotationTrace"] = {"chunkCount": len(chunks), "candidateCount": 0, "retrievalCount": 0, "keptCount": 0}
-    return _trace(state, "chunk_source_text", chunkCount=len(chunks))
-
-
-def detect_annotation_candidates(state: TranslationGraphState) -> TranslationGraphState:
-    hook = state.get("annotationCandidateHook")
-    if hook:
-        candidates = hook(state)
-    else:
-        candidates = []
-    state["annotationCandidates"] = list(candidates or [])
-    trace = dict(state.get("annotationTrace") or {})
-    trace["candidateCount"] = len(state["annotationCandidates"])
-    state["annotationTrace"] = trace
-    return _trace(state, "detect_annotation_candidates", candidateCount=len(state["annotationCandidates"]))
-
-
 def retrieve_korean_culture_context(state: TranslationGraphState) -> TranslationGraphState:
     hook = state.get("annotationRetrievalHook")
     if hook:
@@ -2104,15 +826,12 @@ def retrieve_korean_culture_context(state: TranslationGraphState) -> Translation
 
 
 def _normalize_reader_endnote(row: dict[str, Any], index: int) -> dict[str, Any]:
+    # 말미 목록 스타일 미주 3필드: 한국 문화 키워드 / 한국어 미주 / 대상언어 미주.
+    # (스팬·noteId·출처추적 제거 — 인라인 앵커링 안 함.)
     return {
-        "noteId": int(row.get("noteId") or index + 1),
-        "sourceSpan": str(row.get("sourceSpan") or ""),
-        "targetSpan": str(row.get("targetSpan") or ""),
-        "category": str(row.get("category") or "webnovel_genre_convention"),
-        "note": str(row.get("note") or ""),
-        "sourceChunkId": str(row.get("sourceChunkId") or ""),
-        "retrievalRefs": list(row.get("retrievalRefs") or []),
-        "confidence": str(row.get("confidence") or "medium"),
+        "keyword": str(row.get("keyword") or row.get("sourceSpan") or "").strip(),
+        "koreanNote": str(row.get("koreanNote") or "").strip(),
+        "targetNote": str(row.get("targetNote") or row.get("note") or "").strip(),
     }
 
 
@@ -2127,16 +846,18 @@ def write_reader_endnotes(state: TranslationGraphState) -> TranslationGraphState
 
 
 def filter_rank_endnotes(state: TranslationGraphState) -> TranslationGraphState:
-    seen: set[tuple[str, str, str]] = set()
+    seen: set[str] = set()
     kept: list[dict[str, Any]] = []
     for note in state.get("readerEndnotesDraft") or []:
-        if not note.get("sourceSpan") or not note.get("note"):
-            continue
-        key = (str(note.get("sourceSpan")), str(note.get("category")), str(note.get("note")))
-        if key in seen:
-            continue
-        seen.add(key)
-        kept.append({**note, "noteId": len(kept) + 1})
+        keyword = str(note.get("keyword") or "").strip()
+        korean = str(note.get("koreanNote") or "").strip()
+        target = str(note.get("targetNote") or "").strip()
+        if not keyword or not korean or not target:
+            continue  # 3필드 중 하나라도 비면 제거
+        if keyword in seen:
+            continue  # keyword 기준 dedup
+        seen.add(keyword)
+        kept.append({"keyword": keyword, "koreanNote": korean, "targetNote": target})
     state["readerEndnotes"] = kept
     trace = dict(state.get("annotationTrace") or {})
     trace["keptCount"] = len(kept)
@@ -2145,7 +866,6 @@ def filter_rank_endnotes(state: TranslationGraphState) -> TranslationGraphState:
 
 
 def align_endnotes_to_final_translation(state: TranslationGraphState) -> TranslationGraphState:
-    final_translation = state.get("finalTranslation") or ""
     if str(state.get("deliveryStatus") or "").startswith("blocked_translation_"):
         state["readerEndnotes"] = []
         return _trace(
@@ -2155,17 +875,12 @@ def align_endnotes_to_final_translation(state: TranslationGraphState) -> Transla
             blockedNoop=True,
             finalTranslationChanged=False,
         )
-    aligned: list[dict[str, Any]] = []
-    for note in state.get("readerEndnotes") or []:
-        target_span = str(note.get("targetSpan") or "")
-        aligned_note = dict(note)
-        aligned_note["targetSpanFound"] = bool(target_span and target_span in final_translation)
-        aligned.append(aligned_note)
-    state["readerEndnotes"] = aligned
+    # 말미 목록 스타일 미주 — 스팬 앵커링이 없어 노트별 변환은 없다.
+    # A·B 분기 조인 지점으로만 유지하고, 차단 시(위)엔 미주를 비운다.
     return _trace(
         state,
         "align_endnotes_to_final_translation",
-        readerEndnotesCount=len(aligned),
+        readerEndnotesCount=len(state.get("readerEndnotes") or []),
         finalTranslationChanged=False,
     )
 
@@ -2236,6 +951,8 @@ def build_translation_package(state: TranslationGraphState) -> TranslationGraphS
         "graphReviewTrace": state.get("graphReviewTrace") or [],
         "reviewFindings": state.get("reviewFindings") or [],
         "aggregateReview": state.get("aggregateReview") or {},
+        "reviewSummaries": state.get("reviewSummaries") or {},   # 관점별 LLM 총평 {voice/naturalness/cultural: summary}
+        "revisorSummary": state.get("revisorSummary") or "",     # 리바이저 수정 방향성 짧은 평
         "finalIntegrityCheck": state.get("finalIntegrityCheck") or {},
         "graphRepairTrace": state.get("graphRepairTrace") or [],
         "maxIterations": min(max(1, int(state.get("maxIterations") or 2)), 2),
@@ -2385,8 +1102,6 @@ def _build_stategraph(max_iterations: int, translate_once: Callable[..., tuple[s
     builder.add_node("revise_translation", _as_langgraph_node(revise_translation))
     builder.add_node("check_korean_residue", _as_langgraph_node(check_korean_residue))
     builder.add_node("final_integrity_check", _as_langgraph_node(final_integrity_check))
-    builder.add_node("chunk_source_text", _as_langgraph_node(chunk_source_text))
-    builder.add_node("detect_annotation_candidates", _as_langgraph_node(detect_annotation_candidates))
     builder.add_node("retrieve_korean_culture_context", _as_langgraph_node(retrieve_korean_culture_context))
     builder.add_node("write_reader_endnotes", _as_langgraph_node(write_reader_endnotes))
     builder.add_node("filter_rank_endnotes", _as_langgraph_node(filter_rank_endnotes))
@@ -2399,7 +1114,7 @@ def _build_stategraph(max_iterations: int, translate_once: Callable[..., tuple[s
 
     builder.add_edge(START, "normalize_input")
     builder.add_edge("normalize_input", "load_work_memory")
-    builder.add_edge("normalize_input", "chunk_source_text")
+    builder.add_edge("normalize_input", "retrieve_korean_culture_context")
     builder.add_edge("load_work_memory", "prepare_translation_context")
     builder.add_edge("prepare_translation_context", "run_literary_translation")
     builder.add_edge("run_literary_translation", "deterministic_precheck")
@@ -2411,8 +1126,6 @@ def _build_stategraph(max_iterations: int, translate_once: Callable[..., tuple[s
     builder.add_edge("aggregate_review", "revise_translation")
     builder.add_edge("revise_translation", "check_korean_residue")
     builder.add_edge("check_korean_residue", "final_integrity_check")
-    builder.add_edge("chunk_source_text", "detect_annotation_candidates")
-    builder.add_edge("detect_annotation_candidates", "retrieve_korean_culture_context")
     builder.add_edge("retrieve_korean_culture_context", "write_reader_endnotes")
     builder.add_edge("write_reader_endnotes", "filter_rank_endnotes")
     builder.add_edge(["final_integrity_check", "filter_rank_endnotes"], "align_endnotes_to_final_translation")
@@ -2444,8 +1157,6 @@ def _run_compatible_runner(
     state = aggregate_review(state)
     state = revise_translation(state)
     state = check_korean_residue(state)
-    state = chunk_source_text(state)
-    state = detect_annotation_candidates(state)
     state = retrieve_korean_culture_context(state)
     state = write_reader_endnotes(state)
     state = filter_rank_endnotes(state)
@@ -2455,6 +1166,20 @@ def _run_compatible_runner(
     state = persist_result(state) if should_persist(state) else skip_persist(state)
     state = capture_glossary_candidates(state) if should_capture_glossary(state) else skip_capture(state)
     return state
+
+
+def _graph_invoke_config() -> dict[str, Any]:
+    """번역 1건 내부 fan-out(리뷰 4노드 등)의 동시 LLM 호출 상한.
+
+    env `WLIGHTER_LLM_MAX_CONCURRENCY`(기본 4 = 리뷰 fan-out 전부 병렬). LangGraph는 동기 invoke에서도
+    병렬 분기를 스레드풀로 동시 실행하고 이 값으로 동시 개수를 캡한다(실측 검증: 4→0.5s/2→1.0s/1→직렬).
+    0 이하/파싱오류면 미설정(무제한). 범위는 "invoke 1건(=요청 1건)" 내부 — 서버 전체 캡은 §방법3(후속).
+    """
+    try:
+        limit = int(os.getenv("WLIGHTER_LLM_MAX_CONCURRENCY", "4"))
+    except ValueError:
+        limit = 4
+    return {"max_concurrency": limit} if limit > 0 else {}
 
 
 def run_graph_orchestrator(
@@ -2468,7 +1193,7 @@ def run_graph_orchestrator(
     graph = _build_stategraph(max_iterations, translate_once)
     if graph is not None:
         state["graphExecutionFrame"] = "langgraph_stategraph"
-        state = graph.invoke(state)
+        state = graph.invoke(state, config=_graph_invoke_config())
     else:
         state = _run_compatible_runner(state, max_iterations=max_iterations, translate_once=translate_once)
     package = state.get("translationPackage")

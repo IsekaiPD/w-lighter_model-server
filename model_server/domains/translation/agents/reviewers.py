@@ -26,6 +26,7 @@ REVIEW_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
+        "summary": {"type": "string", "description": "이 관점에서 번역 전체에 대한 2~3문장 총평(한국어). 문제 유무와 전반적 인상을 요약."},
         "issues": {
             "type": "array",
             "description": "이 관점에서 발견한 문제 + 수정 제안. 문제 없으면 빈 배열.",
@@ -42,7 +43,7 @@ REVIEW_SCHEMA: dict[str, Any] = {
             },
         },
     },
-    "required": ["issues"],
+    "required": ["summary", "issues"],
 }
 
 
@@ -83,6 +84,7 @@ class ReviewIssue:
 @dataclass(slots=True)
 class ReviewResult:
     perspective: str  # "voice" | "naturalness" | "cultural_safety" | "glossary"
+    summary: str = ""  # 이 관점의 전체 평가 총평(한국어). glossary는 미사용("").
     issues: list[ReviewIssue] = field(default_factory=list)
     # glossary 리뷰어만 채운다(원문 등장·승인 용어집에 없는 신규 용어 후보). 나머지는 항상 빈 리스트.
     candidates: list[dict[str, Any]] = field(default_factory=list)
@@ -194,6 +196,7 @@ class BaseReviewer:
     def _from_payload(self, payload: dict[str, Any]) -> ReviewResult:
         return ReviewResult(
             perspective=self.perspective,
+            summary=str(payload.get("summary") or ""),
             issues=[
                 ReviewIssue(
                     source_span=row.get("source_span", ""),
@@ -225,8 +228,9 @@ Source analysis:
 
 Output rules:
 - JSON only. Do not create fields outside the schema.
+- `summary` (when present in the schema — voice/naturalness/cultural): 이 관점에서 번역 전체에 대한 2~3문장 한국어 총평. 문제 유무와 전반적 인상을 요약.
 - `issues[].problem` MUST be written in Korean. Only `issues[].suggestion` may be in {target_language}.
-- If there is no problem, return an empty `issues` array.
+- If there is no problem, return an empty `issues` array (but still write `summary`).
 - At most 5 issues, each concise.
 """
 

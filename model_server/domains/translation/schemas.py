@@ -31,7 +31,7 @@ class TranslateRequest(BaseModel):
     episodeId: str | None = Field(None, max_length=20)
     workMemory: dict[str, Any] | None = None
     includeInternal: bool = False
-    saveTranslationResult: bool = False
+    saveTranslationResult: bool = True   # 번역 완료 시 선제 저장(기본). 실제 저장엔 episodeId 필요(없으면 graceful no-op).
 
 
 class TranslateResponse(BaseModel):

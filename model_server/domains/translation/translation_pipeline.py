@@ -15,6 +15,8 @@ from .config import PipelineConfig
 from .retrieval.annotation_retriever import AnnotationRetriever
 from .engine.graph_orchestrator import build_v3_graph_literary_package
 from .engine.literary_package import V3LiteraryPackageResult
+from .glossary.store import normalize_category
+from .text_processing.glossary_normalize import canonical_ko_key, light_text
 
 
 def build_annotation_retrieval_hook(
@@ -98,7 +100,7 @@ def build_revisor_hook(revisor: RevisorAgent) -> Callable[[dict[str, Any]], dict
             draft_translation=state.get("draftTranslation") or "",
             findings=state.get("reviewFindings") or [],
         )
-        return {"finalTranslation": result.finalTranslation, "decisions": result.decisions}
+        return {"finalTranslation": result.finalTranslation, "decisions": result.decisions, "summary": result.summary}
 
     return _hook
 
@@ -134,17 +136,34 @@ def build_reviewer_hook(reviewers: dict[str, Any]) -> Callable[[dict[str, Any], 
             source_analysis=state.get("sourceAnalysis"),
             approved_glossary=state.get("approvedGlossary") if reviewer_type == "glossary" else None,
         )
+        # 이 관점의 전체 평가 총평을 노드가 graphReviewTrace row에 실을 수 있도록 stash.
+        # (노드별 working state라 병렬 충돌 없음; aggregate_review가 trace에서 모아 reviewSummaries 구성.)
+        state["currentReviewerSummary"] = str(getattr(result, "summary", "") or "")
         if reviewer_type == "glossary":
-            # 신규 용어 후보를 state로 표면화. 승인 용어집에 이미 있는 source는 결정론적으로 제외(dedup).
-            approved_sources = {
-                str((row or {}).get("source") or "").strip()
+            # 신규 용어 후보를 state로 표면화. 결정론적 정규화 후 dedup·export:
+            # - 한국어 source는 canonical_ko_key로 통일 — 비교키 = 저장값(공백·조사·NFC 변형을 하나로).
+            #   이미 승인된 source는 확실히 제외되고, 저장값도 깨끗한 정규형이 된다.
+            # - suggested_target은 light_text(외국어라 한국어 조사 로직 비적용), category는 enum 보정.
+            approved_keys = {
+                canonical_ko_key((row or {}).get("source") or "")
                 for row in (state.get("approvedGlossary") or [])
             }
-            fresh = [
-                cand
-                for cand in (getattr(result, "candidates", None) or [])
-                if cand.get("source") and cand["source"] not in approved_sources
-            ]
+            approved_keys.discard("")
+            fresh: list[dict[str, Any]] = []
+            seen_keys: set[str] = set()
+            for cand in (getattr(result, "candidates", None) or []):
+                key = canonical_ko_key(cand.get("source") or "")
+                if not key or key in approved_keys or key in seen_keys:
+                    continue  # 빈 키·이미 승인됨·이번 배치 내 중복 → 제외
+                seen_keys.add(key)
+                fresh.append(
+                    {
+                        "source": key,  # 비교키 = 저장값 (canonical 통일)
+                        "suggested_target": light_text(cand.get("suggested_target") or ""),
+                        "category": normalize_category(cand.get("category") or ""),
+                        "reason": str(cand.get("reason") or "").strip(),
+                    }
+                )
             if fresh:
                 state["glossaryCandidates"] = fresh
         return [_review_issue_to_v3(reviewer_type, issue) for issue in (result.issues or [])]
