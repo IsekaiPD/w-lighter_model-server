@@ -203,29 +203,33 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
         "qaIssues": [] if is_blocked else result.get("qaIssues", []),
         "metadata": metadata,
     }
-    # 화면설계서 번역 리포트 4종 묶음. 리바이저 decisions·신규 용어 후보 등 실데이터 기반.
-    revisor_decisions = list((result.get("internal") or {}).get("revisorDecisions") or [])
-    glossary_candidates = list((result.get("internal") or {}).get("glossaryCandidates") or [])
-    report_rationale = {} if is_blocked else dict(result.get("translationRationale") or {})
-    if not is_blocked and revisor_decisions:
-        # rationale items를 리바이저의 '적용된' 결정에서 실데이터로 채운다(하드코딩 폴백 대체).
-        applied = [d for d in revisor_decisions if d.get("action") == "applied"]
-        if applied:
-            report_rationale["items"] = [
-                {
-                    "sourceSpan": d.get("sourceSpan", ""),
-                    "targetSpan": d.get("revisedSpan") or d.get("targetSpan", ""),
-                    "category": d.get("reviewerType", ""),
-                    "strategy": d.get("action", ""),
-                    "explanation": d.get("reason", ""),
-                }
-                for d in applied
-            ]
+    # 화면설계서 번역 리포트 — 웹 4요소(summary·glossary_can·annotation_can·inspection_report) 실데이터 기반.
+    internal_data = result.get("internal") or {}
+    revisor_decisions = list(internal_data.get("revisorDecisions") or [])
+    review_summaries = internal_data.get("reviewSummaries") or {}
+    revisor_summary = str(internal_data.get("revisorSummary") or "")
+    rationale_obj = dict(result.get("translationRationale") or {})
+    # 각 용어 후보/주석에 UI 체크 상태용 applied 키(기본 0) 부여. 웹이 컨펌하면 1로 갱신.
+    glossary_candidates = [] if is_blocked else [{**c, "applied": 0} for c in (internal_data.get("glossaryCandidates") or [])]
+    reader_endnotes = [] if is_blocked else [{**e, "applied": 0} for e in (result.get("readerEndnotes") or [])]
+    # inspection_report = 문화리스크 = 리바이저의 cultural 적용/보류 결정 리스트.
+    cultural_risk = [] if is_blocked else [d for d in revisor_decisions if d.get("reviewerType") == "cultural"]
+    # summary(text) = 번역가 overview + 검수자 3종 총평 + 최종 수정 총평(\n 묶음).
+    summary_text = "" if is_blocked else "\n".join([
+        f"번역가: {rationale_obj.get('overview', '')}",
+        "",
+        f"말투 검수자 : {review_summaries.get('voice', '')}",
+        f"자연스러움 검수자 : {review_summaries.get('naturalness', '')}",
+        f"문화권 리스크 검수자 : {review_summaries.get('cultural', '')}",
+        "",
+        f"최종 수정 : {revisor_summary}",
+    ])
+    response["readerEndnotes"] = reader_endnotes  # top-level도 applied 포함으로 동기화
     response["translationReport"] = {
-        "translationRationale": report_rationale,
-        "glossaryCandidates": [] if is_blocked else glossary_candidates,
-        "readerEndnotes": [] if is_blocked else result.get("readerEndnotes", []),
-        "culturalRiskResult": [] if is_blocked else [d for d in revisor_decisions if d.get("reviewerType") == "cultural"],
+        "summary": summary_text,
+        "glossaryCandidates": glossary_candidates,
+        "readerEndnotes": reader_endnotes,
+        "culturalRiskResult": cultural_risk,
     }
 
     if include_internal:
@@ -241,11 +245,10 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
                     "episodeId": episode_id,
                     "targetCountry": country,
                     "translatedText": final_translation,
-                    "annotationCan": response["readerEndnotes"],
-                    "inspectionReport": {
-                        "qaIssues": response["qaIssues"],
-                        "authorReviewCards": response["authorReviewCards"],
-                    },
+                    "summary": summary_text,                  # text
+                    "glossaryCan": glossary_candidates,       # json (applied 포함)
+                    "annotationCan": reader_endnotes,         # json (applied 포함)
+                    "inspectionReport": cultural_risk,        # json = culturalRiskResult
                 }
             )
             response["persisted"] = saved

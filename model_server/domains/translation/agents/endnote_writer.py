@@ -27,13 +27,11 @@ ENDNOTE_JSON_SCHEMA: dict[str, Any] = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["sourceSpan", "targetSpan", "category", "note", "confidence"],
+                "required": ["keyword", "koreanNote", "targetNote"],
                 "properties": {
-                    "sourceSpan": {"type": "string", "description": "각주 대상이 되는 한국어 원문 표현"},
-                    "targetSpan": {"type": "string", "description": "finalTranslation 안에서 그 표현에 해당하는 부분(없으면 빈 문자열)"},
-                    "category": {"type": "string", "description": "예: korean_cultural_reference, food, custom, place"},
-                    "note": {"type": "string", "description": "목표 독자 언어로 작성한, 장면 맥락에 녹인 독자용 각주 설명"},
-                    "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+                    "keyword": {"type": "string", "description": "각주 대상 한국 문화 키워드(한국어 표기)"},
+                    "koreanNote": {"type": "string", "description": "장면 맥락에 녹인 한국어 각주 설명(작가/검수자가 의미 확인용)"},
+                    "targetNote": {"type": "string", "description": "같은 내용을 대상 독자 언어로 쓴 각주"},
                 },
             },
         }
@@ -42,12 +40,14 @@ ENDNOTE_JSON_SCHEMA: dict[str, Any] = {
 
 _SYSTEM_PROMPT = (
     "You are a localization endnote writer for translated Korean web novels. "
-    "Given Korean cultural expressions detected in the source text and the final translation, "
-    "write short reader endnotes that explain each culture-specific term for a reader of the "
-    "target language. Weave the explanation into the scene context naturally instead of giving a "
-    "dry dictionary gloss. Never modify the translation itself. Only annotate genuinely "
-    "culture-specific Korean references; skip generic words. Write each note in the target "
-    "reader's language."
+    "Given Korean cultural expressions detected in the source text, write short reader endnotes "
+    "that explain each culture-specific term. For each item output three fields: `keyword` (the "
+    "Korean cultural term), `koreanNote` (a Korean-language explanation woven into the scene "
+    "context, so a Korean author/editor can verify the meaning), and `targetNote` (the SAME "
+    "explanation written in the target reader's language). Weave the explanation into the scene "
+    "naturally instead of a dry dictionary gloss. Only annotate genuinely culture-specific Korean "
+    "references; skip generic words. These endnotes are an end-of-text list, so do not reference "
+    "positions in the translation. Never modify the translation itself."
 )
 
 
@@ -72,7 +72,6 @@ class EndnoteWriter:
         source_text: str,
         final_translation: str,
         annotation_results: list[dict[str, Any]],
-        source_chunks: list[dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:
         items = _result_items(annotation_results)
         if not items:
@@ -90,9 +89,10 @@ class EndnoteWriter:
                 f"[KOREAN_CULTURAL_CANDIDATES]\n{candidates_block}",
                 f"[SOURCE_TEXT]\n{source_text}",
                 f"[FINAL_TRANSLATION]\n{final_translation}",
-                "[TASK]\nWrite one endnote per candidate that genuinely needs explanation for the "
-                "target reader. Set targetSpan to the matching phrase in FINAL_TRANSLATION when it "
-                "exists, otherwise an empty string. Return JSON only.",
+                "[TASK]\nWrite one endnote per candidate that genuinely needs a cultural "
+                "explanation. For each, output `keyword`, `koreanNote` (Korean explanation), and "
+                f"`targetNote` (the same content in {self.resources.target_language}). Skip "
+                "candidates that don't need a note. Return JSON only.",
             ]
         )
         client = get_openai_client()
@@ -125,11 +125,9 @@ class EndnoteWriter:
                 continue
             notes.append(
                 {
-                    "sourceSpan": keyword,
-                    "targetSpan": "",
-                    "category": str(item.get("category") or "korean_cultural_reference"),
-                    "note": context[:280] or f"Korean cultural reference: {keyword}",
-                    "confidence": "medium",
+                    "keyword": keyword,
+                    "koreanNote": context[:280] or f"한국 문화 표현: {keyword}",
+                    "targetNote": context[:280] or f"Korean cultural reference: {keyword}",
                 }
             )
         return notes
@@ -138,7 +136,7 @@ class EndnoteWriter:
 def build_reader_endnote_hook(writer: EndnoteWriter) -> Callable[[dict[str, Any]], list[dict[str, Any]]]:
     """v3 그래프 readerEndnoteWriterHook 용 클로저.
 
-    state 에서 sourceText/finalTranslation/annotationRetrievals/sourceChunks 를 꺼내
+    state 에서 sourceText/finalTranslation/annotationRetrievals 를 꺼내
     EndnoteWriter 로 각주를 작성한다.
     """
 
@@ -147,7 +145,6 @@ def build_reader_endnote_hook(writer: EndnoteWriter) -> Callable[[dict[str, Any]
             source_text=state.get("sourceText") or "",
             final_translation=state.get("finalTranslation") or "",
             annotation_results=state.get("annotationRetrievals") or [],
-            source_chunks=state.get("sourceChunks") or [],
         )
 
     return _hook

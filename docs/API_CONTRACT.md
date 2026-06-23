@@ -88,7 +88,7 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 | `episodeId` | string | | null | 회차 식별자 |
 | `workMemory` | object | | null | 승인 용어집 등 작품 메모리(dict) |
 | `includeInternal` | bool | | `false` | true면 응답에 `internal` 디버그 블록 포함 |
-| `saveTranslationResult` | bool | | `false` | true면 결과를 `translation_results`에 저장(rdb 백엔드일 때) |
+| `saveTranslationResult` | bool | | `true` | **기본 저장**(번역 완료 시 선제 적재). 실제 저장엔 `episodeId` 필요(없으면 graceful no-op) + rdb 백엔드. summary/glossary_can/annotation_can/inspection_report까지 함께 저장 |
 
 △ = `targetLocale`·`targetCountry` 중 최소 하나. 서비스가 normalize(둘 다 없으면 `400`).
 
@@ -102,15 +102,16 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 | `deliveryStatus` | string | 예: `deliverable` |
 | `userVisibleErrorCode` | string\|null | 사용자 표시용 에러코드 |
 | `message` | string | 보조 메시지 |
-| `translationRationale` | object | 번역 근거(중첩) |
-| `readerEndnotes` | array<object> | 독자용 문화 각주(없으면 `[]`) |
+| `translationRationale` | object | 번역 근거(중첩). 리포트 4요소 아님 — `inspect-chat` 검수 챗봇 컨텍스트로 넘기는 용도(웹이 보관 후 전달) |
+| `readerEndnotes` | array<object> | 독자용 문화 각주(없으면 `[]`). 각 항목 = `{keyword, koreanNote, targetNote, applied}` — 한국 문화 키워드 / 한국어 미주 / 대상언어 미주 / `applied`(0=미적용 기본, 웹 컨펌 시 1). **말미 목록 스타일**(번역문 위치 앵커링 없음, 스팬 필드 없음). `translationReport.readerEndnotes`도 동일 형태 |
+| `translationReport` | object | **웹 번역 리포트 4요소**. `{summary, glossaryCandidates, readerEndnotes, culturalRiskResult}` — `summary`(text, 5단: 번역가 overview + 말투/자연스러움/문화권 검수자 총평 + 최종수정 총평), `glossaryCandidates`(각 항목 `{source, suggested_target, category, reason, applied(0/1)}`), `readerEndnotes`(각 항목 `{keyword, koreanNote, targetNote, applied(0/1)}`), `culturalRiskResult`(문화리스크 = 리바이저 cultural 적용/보류 결정 `{reviewerType, problem, action(applied/deferred), reason, revisedSpan, ...}`). DB 컬럼 `summary/glossary_can/annotation_can/inspection_report`와 1:1. (`translationRationale`은 리포트가 아니라 **top-level**에 별도 — 검수 챗봇 컨텍스트용) |
 | `authorReviewCards` | array<object> | 작가 리뷰 카드(말투/자연스러움/문화) |
 | `qaIssues` | array<object> | QA 이슈 |
 | `metadata` | object | 빌드/모델 메타 |
 | `internal` | object\|null | `includeInternal=true`일 때만 |
 | `persisted` | object | `saveTranslationResult` 저장 시도 시에만(`{saved, translation_id}`) — DB 영속화 공통 참조 |
 
-요청에 `saveTranslationResult`(bool, 기본 false) + `episodeId`가 있으면 `translation_results`에 저장하고 `persisted`로 결과(특히 `translation_id`)를 반환한다. 이 `translation_id`를 inspect-chat의 `translationId`로 넘기면 챗 로그가 연결된다.
+요청에 `saveTranslationResult`(bool, **기본 true**) + `episodeId`가 있으면 `translation_results`에 저장(번역문 + summary·glossary_can·annotation_can·inspection_report)하고 `persisted`로 결과(특히 `translation_id`)를 반환한다. 이 `translation_id`를 inspect-chat의 `translationId`로 넘기면 챗 로그가 연결된다.
 
 **에러**: `422`(`sourceText` 누락/빈 값·타입 불일치 — Pydantic 검증), `400`(`targetLocale`·`targetCountry` 둘 다 없음 또는 로케일 정규화 실패 — 서비스 검증), `503`(엔진 미준비).
 

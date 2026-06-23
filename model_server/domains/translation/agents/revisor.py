@@ -1,8 +1,8 @@
 """리바이저(Revisor) 에이전트.
 
 draft 번역 + 리뷰어 findings(voice·naturalness·cultural·glossary)를 받아,
-취사선택해 최종 번역문을 만들고 각 finding의 적용/기각 결정을 함께 돌려준다.
-- voice·naturalness·cultural : 취사선택(기각 가능, 사유 기록)
+취사선택해 최종 번역문을 만들고 각 finding의 적용/보류 결정을 함께 돌려준다.
+- voice·naturalness·cultural : 취사선택(보류 가능, 사유 기록)
 - glossary                    : 항상 applied(거부 불가 — 승인 용어집 일관성 강제)
 
 반환 decisions[]는 culturalRiskResult·translationRationale·챗봇 핸드오프의 공통 원천.
@@ -24,9 +24,10 @@ REVISOR_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
     "properties": {
         "finalTranslation": {"type": "string", "description": "리뷰 결정을 반영한 최종 번역문 전체."},
+        "summary": {"type": "string", "description": "이번 수정의 방향성에 대한 2~3문장 짧은 평(한국어). 어떤 기조로 고쳤는지."},
         "decisions": {
             "type": "array",
-            "description": "각 finding에 대한 적용/기각 결정. finding 1건당 1개.",
+            "description": "각 finding에 대한 적용/보류 결정. finding 1건당 1개.",
             "items": {
                 "type": "object",
                 "additionalProperties": False,
@@ -35,21 +36,22 @@ REVISOR_SCHEMA: dict[str, Any] = {
                     "sourceSpan": {"type": "string", "description": "원래 finding의 한국어 원문 구간."},
                     "targetSpan": {"type": "string", "description": "원래 finding의 번역문 구간."},
                     "problem": {"type": "string", "description": "원래 지적 내용(한국어)."},
-                    "action": {"type": "string", "description": "applied | rejected (glossary는 항상 applied)."},
-                    "reason": {"type": "string", "description": "적용/기각 사유(한국어)."},
-                    "revisedSpan": {"type": "string", "description": "적용 시 바뀐 번역 구간, 기각이면 빈 문자열."},
+                    "action": {"type": "string", "description": "applied | deferred (glossary는 항상 applied)."},
+                    "reason": {"type": "string", "description": "적용/보류 사유(한국어)."},
+                    "revisedSpan": {"type": "string", "description": "적용 시 바뀐 번역 구간, 보류면 빈 문자열."},
                 },
                 "required": ["reviewerType", "sourceSpan", "targetSpan", "problem", "action", "reason", "revisedSpan"],
             },
         },
     },
-    "required": ["finalTranslation", "decisions"],
+    "required": ["finalTranslation", "summary", "decisions"],
 }
 
 
 @dataclass(slots=True)
 class RevisionResult:
     finalTranslation: str
+    summary: str = ""  # 수정 방향성 짧은 평(revisor_summary)
     decisions: list[dict[str, Any]] = field(default_factory=list)
 
 
@@ -139,4 +141,4 @@ class RevisorAgent:
                     "revisedSpan": str(row.get("revisedSpan") or ""),
                 }
             )
-        return RevisionResult(finalTranslation=final, decisions=decisions)
+        return RevisionResult(finalTranslation=final, summary=str(payload.get("summary") or ""), decisions=decisions)
