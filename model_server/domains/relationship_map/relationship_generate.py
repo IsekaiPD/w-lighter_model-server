@@ -60,6 +60,34 @@ def direction(value) -> str:
     return "one_way" if str(value or "").strip() == "one_way" else "both"
 
 
+def merge_text(existing: str, current: str, *, max_length: int) -> str:
+    existing = text(existing)
+    current = text(current)
+    if not existing:
+        return text(current, max_length)
+    if not current or current in existing:
+        return text(existing, max_length)
+    return text(f"{existing} / {current}", max_length)
+
+
+def merge_relation(existing: dict, current: dict) -> dict:
+    same_order = existing.get("source") == current.get("source") and existing.get("target") == current.get("target")
+    if existing.get("direction") == "both" or current.get("direction") == "both" or not same_order:
+        existing["direction"] = "both"
+
+    existing["relation"] = merge_text(existing.get("relation", ""), current.get("relation", ""), max_length=40)
+    existing["description"] = merge_text(existing.get("description", ""), current.get("description", ""), max_length=240)
+
+    if existing.get("style") == "neutral" and current.get("style") != "neutral":
+        existing["style"] = current.get("style", "neutral")
+
+    existing["importance"] = min(
+        importance(existing.get("importance")),
+        importance(current.get("importance")),
+    )
+    return existing
+
+
 def character_id(character: dict, index: int) -> str:
     raw_id = character.get("id")
     if raw_id is None or str(raw_id).strip() == "":
@@ -142,7 +170,9 @@ def normalize_relation_data(raw: dict, *, work_title: str, input_characters: lis
     if not isinstance(raw_relations, list):
         raw_relations = []
 
-    relations: list[dict] = []
+    relation_by_pair: dict[tuple[str, str], dict] = {}
+    relation_order: list[tuple[str, str]] = []
+
     for item in raw_relations:
         if not isinstance(item, dict):
             continue
@@ -155,17 +185,25 @@ def normalize_relation_data(raw: dict, *, work_title: str, input_characters: lis
         if style not in STYLE_COLORS:
             style = "neutral"
 
-        relations.append(
-            {
-                "source": source,
-                "target": target,
-                "relation": text(item.get("relation"), 40),
-                "description": text(item.get("description"), 240),
-                "direction": direction(item.get("direction")),
-                "style": style,
-                "importance": importance(item.get("importance")),
-            }
-        )
+        current_relation = {
+            "source": source,
+            "target": target,
+            "relation": text(item.get("relation"), 40),
+            "description": text(item.get("description"), 240),
+            "direction": direction(item.get("direction")),
+            "style": style,
+            "importance": importance(item.get("importance")),
+        }
+        pair_key = tuple(sorted((source, target)))
+
+        if pair_key not in relation_by_pair:
+            relation_by_pair[pair_key] = current_relation
+            relation_order.append(pair_key)
+            continue
+
+        relation_by_pair[pair_key] = merge_relation(relation_by_pair[pair_key], current_relation)
+
+    relations = [relation_by_pair[key] for key in relation_order]
 
     raw_groups = raw.get("groups") if isinstance(raw, dict) else []
     if not isinstance(raw_groups, list):

@@ -50,6 +50,68 @@ def point_near_node_edge(from_x, from_y, to_x, to_y, node_item, extra_gap=8):
     return from_x + dx * scale, from_y + dy * scale
 
 
+def relation_direction(value) -> str:
+    return "one_way" if str(value or "").strip() == "one_way" else "both"
+
+
+def merge_relation_text(existing, current, *, max_length: int) -> str:
+    existing_text = str(existing or "").strip()
+    current_text = str(current or "").strip()
+    if not existing_text:
+        return current_text[:max_length].rstrip()
+    if not current_text or current_text in existing_text:
+        return existing_text[:max_length].rstrip()
+    return f"{existing_text} / {current_text}"[:max_length].rstrip()
+
+
+def merge_duplicate_relations(relations: list[dict]) -> list[dict]:
+    relation_by_pair: dict[tuple[str, str], dict] = {}
+    relation_order: list[tuple[str, str]] = []
+
+    for relation in relations:
+        if not isinstance(relation, dict):
+            continue
+
+        source = str(relation.get("source") or "").strip()
+        target = str(relation.get("target") or "").strip()
+        if not source or not target or source == target:
+            continue
+
+        current = dict(relation)
+        current["source"] = source
+        current["target"] = target
+        current["direction"] = relation_direction(current.get("direction"))
+
+        pair_key = tuple(sorted((source, target)))
+        if pair_key not in relation_by_pair:
+            relation_by_pair[pair_key] = current
+            relation_order.append(pair_key)
+            continue
+
+        existing = relation_by_pair[pair_key]
+        same_order = existing.get("source") == source and existing.get("target") == target
+        if existing.get("direction") == "both" or current.get("direction") == "both" or not same_order:
+            existing["direction"] = "both"
+
+        existing["relation"] = merge_relation_text(existing.get("relation"), current.get("relation"), max_length=40)
+        existing["description"] = merge_relation_text(existing.get("description"), current.get("description"), max_length=240)
+
+        if existing.get("style") == "neutral" and current.get("style") in STYLE_COLORS and current.get("style") != "neutral":
+            existing["style"] = current.get("style")
+
+        try:
+            existing_importance = int(existing.get("importance", 3))
+        except (TypeError, ValueError):
+            existing_importance = 3
+        try:
+            current_importance = int(current.get("importance", 3))
+        except (TypeError, ValueError):
+            current_importance = 3
+        existing["importance"] = max(1, min(existing_importance, current_importance, 5))
+
+    return [relation_by_pair[key] for key in relation_order]
+
+
 def node_positions(characters: list[dict]) -> dict[str, tuple[float, float]]:
     if not characters:
         return {}
@@ -74,7 +136,7 @@ def build_relation_html(*, work_title: str, relation_data: dict) -> str:
     summary = esc(relation_data.get("summary", ""))
     main_character = esc(relation_data.get("main_character", ""))
     characters = relation_data.get("characters") or []
-    relations = relation_data.get("relations") or []
+    relations = merge_duplicate_relations(relation_data.get("relations") or [])
     groups = relation_data.get("groups") or []
     warnings = relation_data.get("warnings") or []
     positions = node_positions(characters)
@@ -101,7 +163,7 @@ def build_relation_html(*, work_title: str, relation_data: dict) -> str:
         x2, y2 = point_near_node_edge(raw_x2, raw_y2, raw_x1, raw_y1, target_item)
         style = relation.get("style") if relation.get("style") in STYLE_COLORS else "neutral"
         color = STYLE_COLORS[style]
-        direction = "one_way" if relation.get("direction") == "one_way" else "both"
+        direction = relation_direction(relation.get("direction"))
         marker = f' marker-end="url(#arrow-{style})"'
         if direction == "both":
             marker = f' marker-start="url(#arrow-{style})" marker-end="url(#arrow-{style})"'
@@ -131,7 +193,7 @@ def build_relation_html(*, work_title: str, relation_data: dict) -> str:
     for relation in relations:
         source = character_by_id.get(relation.get("source"), {}).get("name", relation.get("source"))
         target = character_by_id.get(relation.get("target"), {}).get("name", relation.get("target"))
-        arrow = "→" if relation.get("direction") == "one_way" else "↔"
+        arrow = "→" if relation_direction(relation.get("direction")) == "one_way" else "↔"
         relation_items.append(
             f'<div class="item"><div class="item-title">{esc(source)} {arrow} {esc(target)} '
             f'<span class="relation-type">({esc(relation.get("relation"))})</span></div>'

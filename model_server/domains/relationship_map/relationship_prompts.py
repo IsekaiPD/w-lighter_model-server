@@ -98,6 +98,8 @@ def build_relation_extract_prompt(*, work_title: str, characters: list[dict], li
         - characters는 제공된 캐릭터만 사용하고 최대 {limit}명이다.
         - 캐릭터 id는 반드시 입력에 제공된 char_ID 형식을 유지한다.
         - relations의 source/target은 characters의 id와 정확히 일치해야 한다.
+        - 같은 두 캐릭터 사이의 관계는 중복으로 만들지 않는다.
+        - A→B와 B→A가 모두 필요해 보이면 두 관계로 나누지 말고 하나의 관계로 합치고 direction=both로 작성한다.
         - direction은 both 또는 one_way 중 하나만 사용한다.
         - direction은 관계의 "존재 여부"가 아니라 "행동/감정/권력의 방향"을 기준으로 판단한다.
         - one_way는 source가 target에게 일방적으로 행동하거나 영향을 주는 관계다.
