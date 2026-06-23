@@ -521,6 +521,10 @@ def _html_report(*, title: str, mode_label: str, target_country: str, genre: str
         f"<li>{esc(item)}</li>"
         for item in _guide_action_checklist(target_country=target_country, sections=sections)
     )
+    boundary_note = (
+        "이 리포트는 작품을 바꾸는 컨설팅이 아니라, 작품을 현재 방향 그대로 두고 "
+        "어느 국가에서 어떻게 전달하면 좋은지 정리하는 현지화 리포트입니다."
+    )
     body_html = f"""
     <div class="guide-report">
       <div class="guide-cover">
@@ -529,8 +533,9 @@ def _html_report(*, title: str, mode_label: str, target_country: str, genre: str
         <div class="guide-cover-sub"><span>{esc(mode_label)}</span><span>{esc(genre or '장르 미입력')}</span><span>플랫폼 트렌드 참고</span></div>
       </div>
       <div class="guide-legacy-anchors">번역 방향 · 문화 주의사항 · 플랫폼 검토 항목</div>
+      <div class="guide-section"><p class="quiet-note">{esc(boundary_note)}</p></div>
       <div class="guide-section"><div class="guide-section-header"><span class="guide-section-title">핵심 판단</span></div><ul class="guide-list">{quality_items}</ul></div>
-      <div class="guide-section"><div class="guide-section-header"><span class="guide-section-title">바로 적용할 체크리스트</span></div><ul class="guide-list">{action_items}</ul></div>
+      <div class="guide-section"><div class="guide-section-header"><span class="guide-section-title">출시 전 전달 체크리스트</span></div><ul class="guide-list">{action_items}</ul></div>
       <div class="guide-section"><div class="guide-section-header"><span class="guide-section-title">선택 국가 요약</span></div><ul class="guide-list"><li>선택 국가: {esc(display_country)}</li><li>이 가이드는 선택한 국가를 기준으로 정리했습니다.</li><li>추천 후보는 내부 참고용으로만 유지했습니다.</li></ul></div>
       {''.join(section_html)}
     </div>

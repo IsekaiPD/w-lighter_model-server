@@ -11,6 +11,7 @@ from .agents.guide_writer import generate_llm_guide, llm_requested
 from .engine.policy_analysis import build_policy_attention_payload
 from .engine.recommendation import build_localization_advice
 from .retrieval.context_pack import build_context_pack_overlap_report, inspect_context_pack_source, resolve_context_market
+from .retrieval.tavily_market import build_live_market_evidence
 
 
 PIPELINE_MARKET_ALIASES = {
@@ -40,6 +41,9 @@ GUIDE_PUBLIC_KEYS = {
     "htmlReport",
     "llmGeneratedGuide",
     "message",
+    "reportMode",
+    "recommendedCountry",
+    "recommendedCountryDisplay",
 }
 
 RECOMMENDATION_PUBLIC_KEYS = {
@@ -143,6 +147,62 @@ def _has_requested_country(payload: dict[str, Any]) -> bool:
             or ""
         ).strip()
     )
+
+
+def _guide_report_mode(payload: dict[str, Any]) -> str:
+    if _has_synopsis(payload):
+        return "synopsis_deep_guide"
+    return "country_genre_guide"
+
+
+def _recommended_country_code(recommendation: dict[str, Any]) -> str | None:
+    raw = recommendation.get("recommendedCountry") or recommendation.get("recommended_country")
+    if not raw:
+        return None
+    text = str(raw).strip()
+    lower = text.lower()
+    if lower in {"jp", "japan", "일본"}:
+        return "JP"
+    if lower in {"cn", "china", "중국"}:
+        return "CN"
+    if lower in {"us", "usa", "english", "global english", "us/global english", "미국", "미국/글로벌 영어"}:
+        return "US"
+    if lower in {"th", "thailand", "태국"}:
+        return "TH"
+    return text
+
+
+def _payload_with_recommended_country(payload: dict[str, Any], recommendation: dict[str, Any]) -> dict[str, Any]:
+    code = _recommended_country_code(recommendation)
+    if not code:
+        return dict(payload)
+    enriched = dict(payload)
+    enriched.setdefault("targetCountry", code)
+    enriched.setdefault("country", code)
+    return enriched
+
+
+def _synopsis_recommendation_with_fallback(payload: dict[str, Any]) -> dict[str, Any]:
+    recommendation = generate_country_recommendation({**payload, "useLlm": True})
+    if _recommended_country_code(recommendation):
+        return recommendation
+    fallback = generate_country_recommendation({**payload, "useLlm": False})
+    if _recommended_country_code(fallback):
+        return {
+            **fallback,
+            "llmRecommendationFallback": {
+                "recommendationMethod": recommendation.get("recommendationMethod"),
+                "message": recommendation.get("message"),
+            },
+        }
+    return recommendation
+
+
+def _attach_live_market_evidence(payload: dict[str, Any], result: dict[str, Any], *, report_mode: str) -> dict[str, Any]:
+    evidence = build_live_market_evidence(payload, result, report_mode=report_mode)
+    if not evidence:
+        return result
+    return {**result, "liveMarketEvidence": evidence}
 
 
 def _include_context_pack(payload: dict[str, Any]) -> bool:
@@ -366,18 +426,37 @@ def generate_guide(payload: dict[str, Any]) -> dict[str, Any]:
         "on",
     }
 
+    report_mode = _guide_report_mode(payload)
     result = build_localization_advice(payload)
     if result.get("requiresSelection"):
         if _has_synopsis(payload) and not _has_requested_country(payload):
-            return _shape_recommendation_response(payload, generate_country_recommendation(payload))
-        if use_legacy:
+            recommendation = _synopsis_recommendation_with_fallback(payload)
+            guided_payload = _payload_with_recommended_country(payload, recommendation)
+            if not _has_requested_country(guided_payload):
+                return _shape_recommendation_response(payload, recommendation)
+            result = build_localization_advice(guided_payload)
+            result = {
+                **result,
+                "requiresSelection": False,
+                "reportMode": "synopsis_deep_guide",
+                "countryRecommendation": recommendation,
+                "recommendedCountry": recommendation.get("recommendedCountry"),
+                "recommendedCountryDisplay": recommendation.get("recommended_country_display")
+                or recommendation.get("recommendedCountryDisplay"),
+            }
+            payload = {**guided_payload, "useLlm": True}
+            report_mode = "synopsis_deep_guide"
+        elif use_legacy:
             return _shape_recommendation_response(payload, result)
-        return _shape_recommendation_response(
-            payload,
-            {**result, "generationMode": result.get("generationMode") or "recommendation_only"},
-        )
+        else:
+            return _shape_recommendation_response(
+                payload,
+                {**result, "generationMode": result.get("generationMode") or "recommendation_only"},
+            )
 
+    result = {**result, "reportMode": result.get("reportMode") or report_mode}
     enriched = _attach_context_pack_briefing(payload, result)
+    enriched = _attach_live_market_evidence(payload, enriched, report_mode=report_mode)
     enriched = {**enriched, **build_policy_attention_payload(payload, enriched)}
 
     deterministic_mode = "deterministic_rag_fallback" if use_legacy else "deterministic_guide"

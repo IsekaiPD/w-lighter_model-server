@@ -29,6 +29,6 @@ class GuideRequest(BaseModel):
 
 
 class GuideResponse(BaseModel):
-    model_config = {"extra": "allow"}  # 엔진 출력(모드별 ~39키)을 그대로 통과
+    model_config = {"extra": "allow"}  # htmlReport 중심 공개 응답 + 저장 결과 등 부가 키 허용
 
     generationMode: str | None = None

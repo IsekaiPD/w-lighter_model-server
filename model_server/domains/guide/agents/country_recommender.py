@@ -68,6 +68,12 @@ COUNTRY_RECOMMENDATION_SCHEMA: dict[str, Any] = {
     "required": ["storyProfile", "recommendedCountry", "confidence", "countryComparisons", "limitations"],
 }
 
+CREATIVE_BOUNDARY_RULES = [
+    "작품의 플롯, 결말, 캐릭터 성격, 핵심 설정, 장르 방향을 바꾸라고 제안하지 마세요.",
+    "국가 추천은 작품을 현재 방향 그대로 두고 어느 시장에서 먼저 전달/테스트하기 좋은지 판단하는 것입니다.",
+    "strengths와 risks는 창작 수정이 아니라 제목, 소개문, 태그, 표지 브리프, 정책 검토, 독자 기대치 전달 관점으로 작성하세요.",
+]
+
 
 def _text(value: Any) -> str:
     return str(value or "").strip()
@@ -498,6 +504,8 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
             "requirements": [
                 "countryComparisons에는 US, CN, JP, TH를 각각 한 번씩 넣으세요.",
                 "rank는 1~4를 중복 없이 사용하고, recommendedCountry는 rank 1과 일치해야 합니다.",
+                "작품 자체를 바꾸는 방향 제안이 아니라, 현재 시놉시스 기준 어느 국가에서 먼저 전달하기 좋은지 설명하세요.",
+                *CREATIVE_BOUNDARY_RULES,
                 "설명은 모두 한국어로 작성하세요.",
             ],
             "evidence": evidence,

@@ -47,6 +47,18 @@ GUIDE_JSON_SCHEMA: dict[str, Any] = {
     ],
 }
 
+CREATIVE_BOUNDARY_RULES = [
+    "작품의 플롯, 결말, 캐릭터 성격, 핵심 설정, 장르 방향을 바꾸라고 제안하지 마세요.",
+    "스토리 개선안, 플롯 수정안, 캐릭터 수정안, 시장 맞춤 리라이트처럼 보이는 표현을 쓰지 마세요.",
+    "작품 자체를 고치는 대신 제목, 소개문, 태그, 표지 브리프, 플랫폼 정책, 독자 기대치 전달 방식에 한정하세요.",
+    "'바꿔야 한다'보다 '전달할 때는', '소개문에서는', '태그에서는', '주의해서 설명하면 좋다'처럼 표현하세요.",
+]
+
+CREATIVE_BOUNDARY_NOTE = (
+    "이 리포트는 작품을 바꾸는 컨설팅이 아니라, 작품을 현재 방향 그대로 두고 "
+    "어느 국가에서 어떻게 전달하면 좋은지 정리하는 현지화 리포트입니다."
+)
+
 
 def _esc(value: Any) -> str:
     return html.escape("" if value is None else str(value), quote=True)
@@ -133,6 +145,9 @@ def _evidence_payload(payload: dict[str, Any], result: dict[str, Any]) -> dict[s
         },
         "policyAttentionCards": _compact(result.get("policyAttentionCards") or [], 9000),
         "policyLimitations": result.get("policyLimitations") or [],
+        "reportMode": result.get("reportMode") or ("synopsis_deep_guide" if payload.get("synopsis") else "country_genre_guide"),
+        "countryRecommendation": _compact(result.get("countryRecommendation") or {}, 9000),
+        "liveMarketEvidence": _compact(result.get("liveMarketEvidence") or {}, 12000),
     }
 
 
@@ -179,6 +194,81 @@ def render_market_snapshot_html(result: dict[str, Any]) -> str:
 """
 
 
+def render_country_recommendation_html(result: dict[str, Any]) -> str:
+    recommendation = result.get("countryRecommendation") or {}
+    if not recommendation:
+        return ""
+    display = (
+        recommendation.get("recommended_country_display")
+        or recommendation.get("recommendedCountryDisplay")
+        or result.get("recommendedCountryDisplay")
+        or result.get("displayCountry")
+        or result.get("targetCountryDisplay")
+        or result.get("targetCountry")
+        or "-"
+    )
+    confidence = recommendation.get("confidence") or "근거 기반 판단"
+    story_profile = recommendation.get("storyProfile") or {}
+    comparisons = sorted(
+        recommendation.get("countryComparisons") or [],
+        key=lambda item: int(item.get("rank") or 99),
+    )
+    cards = []
+    for item in comparisons[:4]:
+        score = max(0, min(100, int(float(item.get("relativeFitScore") or 0))))
+        strengths = "".join(f"<li>{_esc(text)}</li>" for text in (item.get("strengths") or [])[:3])
+        risks = "".join(f"<li>{_esc(text)}</li>" for text in (item.get("risks") or [])[:2])
+        cards.append(
+            f"""
+<article class="mini-card">
+  <div class="guide-section-header">
+    <strong>{_esc(item.get('displayCountry') or item.get('country'))}</strong>
+    <span class="badge ok">#{_esc(item.get('rank'))}</span>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label"><span>적합도</span><strong>{score}</strong></div>
+    <div class="chart-track"><span style="width:{score}%"></span></div>
+  </div>
+  <p class="quiet-note">{_esc(item.get('fitLevel') or '')}</p>
+  <h3>강점</h3><ul class="guide-list">{strengths or '<li>강점 근거 없음</li>'}</ul>
+  <h3>주의</h3><ul class="guide-list">{risks or '<li>주의 근거 없음</li>'}</ul>
+</article>
+"""
+        )
+    signals = "".join(f"<span class='chip soft'>{_esc(item)}</span>" for item in story_profile.get("coreSignals") or [])
+    return f"""
+<section class="section recommendation-section">
+  <p class="eyebrow">SYNOPSIS-BASED COUNTRY RECOMMENDATION</p>
+  <h2>추천 국가: {_esc(display)}</h2>
+  <p>{_esc(story_profile.get('analysisSummary') or '입력 시놉시스를 바탕으로 국가 적합도를 비교했습니다.')}</p>
+  <div class="chips">{signals or '<span class="chip soft">시놉시스 분석</span>'}</div>
+  <span class="badge ok">신뢰도: {_esc(confidence)}</span>
+  <div class="cards">{''.join(cards)}</div>
+</section>
+"""
+
+
+def render_live_market_evidence_html(result: dict[str, Any]) -> str:
+    evidence = result.get("liveMarketEvidence") or {}
+    if not evidence or not evidence.get("enabled"):
+        return ""
+    rows = []
+    for country, items in (evidence.get("countryEvidence") or {}).items():
+        links = "".join(
+            f"<li><a href=\"{_esc(item.get('url'))}\" target=\"_blank\" rel=\"noreferrer\">{_esc(item.get('title') or item.get('url'))}</a><p>{_esc(item.get('content'))}</p></li>"
+            for item in (items or [])[:3]
+        )
+        rows.append(f"<div class='mini-card'><h3>{_esc(country)}</h3><ul class='guide-list'>{links or '<li>검색 결과 없음</li>'}</ul></div>")
+    return f"""
+<section class="section live-market-section">
+  <p class="eyebrow">LIVE MARKET EVIDENCE</p>
+  <h2>실시간 웹 근거 참고</h2>
+  <p class="quiet-note">아래 근거는 Tavily 웹 검색으로 수집한 참고 자료이며, LLM 판단의 보조 근거로만 사용합니다.</p>
+  <div class="cards">{''.join(rows)}</div>
+</section>
+"""
+
+
 def render_llm_html(guide: dict[str, Any], result: dict[str, Any]) -> str:
     title = result.get("title") or "가이드"
     country = result.get("displayCountry") or result.get("targetCountryDisplay") or result.get("targetCountry") or result.get("country") or "대상국가"
@@ -206,27 +296,30 @@ def render_llm_html(guide: dict[str, Any], result: dict[str, Any]) -> str:
 
     body_html = f"""
 {render_market_snapshot_html(result)}
+{render_country_recommendation_html(result)}
+{render_live_market_evidence_html(result)}
 <section class="section summary-box">
   <h2>가이드 요약</h2>
   {''.join(f'<p>{_esc(item)}</p>' for item in guide.get('executiveSummary') or [])}
 </section>
 <section class="section">
-  <h2>바로 적용할 체크리스트</h2>
+  <h2>출시 전 전달 체크리스트</h2>
   <ul class="guide-list">{action_html}</ul>
 </section>
 <section class="section">
-  <h2>입력 해석</h2>
+  <h2>작품 입력 해석</h2>
   <div class="work-summary">
     <div><small>작품 제목</small><strong>{_esc(input_reading.get('workTitle') or title)}</strong></div>
     <div><small>장르 / 대상</small><strong>{_esc(input_reading.get('genre') or genre)} · {_esc(input_reading.get('targetCountry') or country)}</strong></div>
   </div>
+  <p class="quiet-note">{_esc(CREATIVE_BOUNDARY_NOTE)}</p>
   <p><b>핵심 포인트:</b> {_esc(core or '입력 시놉시스가 부족합니다.')}</p>
   {('<div class="quiet-note"><strong>가정</strong><ul>' + assumptions + '</ul></div>') if assumptions else ''}
 </section>
-<section class="section"><h2>시장 해석</h2><ul class="guide-list">{''.join(f'<li>{_esc(item)}</li>' for item in market_items)}</ul></section>
+<section class="section"><h2>시장 적합도 해석</h2><ul class="guide-list">{''.join(f'<li>{_esc(item)}</li>' for item in market_items)}</ul></section>
 <section class="section"><h2>문화 메모</h2><ul class="guide-list">{bullets('culturalNotes')}</ul></section>
 <section class="section"><h2>플랫폼 정책 체크</h2><ul class="guide-list">{bullets('platformPolicyChecks')}</ul></section>
-<section class="section"><h2>태그 가이드</h2><ul class="guide-list">{bullets('marketTagGuidance')}</ul></section>
+<section class="section"><h2>제목·소개문·태그 전달 가이드</h2><ul class="guide-list">{bullets('marketTagGuidance')}</ul></section>
 <section class="section"><h2>증거 설명</h2><ul class="guide-list">{bullets('evidenceExplanation')}</ul></section>
 <section class="section"><h2>한계</h2><ul class="guide-list">{bullets('limitations')}</ul></section>
 """
@@ -244,6 +337,12 @@ def generate_llm_guide(payload: dict[str, Any], result: dict[str, Any]) -> dict[
     user = {
         "task": "입력 근거를 바탕으로 한국어 가이드를 작성해 주세요.",
         "requirements": [
+            "reportMode가 synopsis_deep_guide이면 시놉시스 분석, 추천 국가, 추천 이유, 해당 국가 기준 현지화 전달 가이드를 하나의 심화 리포트로 작성하세요.",
+            "reportMode가 country_genre_guide이면 선택 국가와 장르, 사용자가 궁금해하는 파트를 중심으로 일반 현지화 가이드를 작성하세요.",
+            "countryRecommendation이 있으면 recommendedCountry를 별도 선택 단계로 남기지 말고, 추천 국가로 확정한 이유를 가이드 본문에 녹여 쓰세요.",
+            "liveMarketEvidence가 있으면 최신 웹 근거를 보조 근거로 활용하되, 출처 문장을 그대로 길게 복사하지 마세요.",
+            CREATIVE_BOUNDARY_NOTE,
+            *CREATIVE_BOUNDARY_RULES,
             "시놉시스, 장르, 대상국가, 문화 주의사항, 플랫폼 정책 점검을 포함하세요.",
             "입력 해석은 '이렇게 보인다' 형식으로 자연스럽게 작성하세요.",
             "내부 근거를 재서술하지 말고, 사용자에게 도움이 되는 해석만 쓰세요.",
