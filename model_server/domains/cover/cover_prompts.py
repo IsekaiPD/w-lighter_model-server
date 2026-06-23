@@ -79,6 +79,7 @@ COUNTRY_COVER_STYLE_PROMPTS = {
         Do not automatically add backgrounds, costumes, school elements, fantasy elements, or genre elements that are not present in the story request.
         Avoid overly cute proportions, oversized sparkling eyes, cartoonish simplification, fake letters, logos, watermarks, and tourist-landmark imagery.
         Let the story mood decide the lighting and colors; do not force bright or warm colors for dark, tragic, thriller, revenge, or serious stories.
+        If an engineer character appears, a subtle red shirt can be used as their outfit detail, without overriding the overall Thai-style cover composition.
         """
     ).strip(),
 }
