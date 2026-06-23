@@ -53,10 +53,9 @@ def _target_country(payload: dict[str, Any], result: dict[str, Any]) -> str | No
 
 def _guide_content(result: dict[str, Any]) -> str:
     """DB TEXT에 넣을 대표 가이드 본문. 화면 재사용을 위해 HTML 우선."""
-    for key in ("llmHtmlReport", "htmlReport", "guide_html"):
-        value = result.get(key)
-        if isinstance(value, str) and value.strip():
-            return value
+    value = result.get("htmlReport")
+    if isinstance(value, str) and value.strip():
+        return value
     return json.dumps(result, ensure_ascii=False, default=str)
 
 
@@ -76,7 +75,12 @@ def generate(payload: dict[str, Any]) -> dict[str, Any]:
 
     result = generate_guide(enriched_payload)
 
-    if work_id is not None and _should_save(payload):
+    # A country-comparison report has no single target country to persist.
+    if (
+        work_id is not None
+        and _should_save(payload)
+        and result.get("reportMode") != "synopsis_country_recommendation"
+    ):
         try:
             result["persistedGuide"] = db_repo.save_localization_guide(
                 work_id=int(work_id),

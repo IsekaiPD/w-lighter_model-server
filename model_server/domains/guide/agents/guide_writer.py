@@ -47,9 +47,42 @@ GUIDE_JSON_SCHEMA: dict[str, Any] = {
     ],
 }
 
+CREATIVE_BOUNDARY_RULES = [
+    "작품의 플롯, 결말, 캐릭터 성격, 핵심 설정, 장르 방향을 바꾸라고 제안하지 마세요.",
+    "스토리 개선안, 플롯 수정안, 캐릭터 수정안, 시장 맞춤 리라이트처럼 보이는 표현을 쓰지 마세요.",
+    "작품 자체를 고치는 대신 제목, 소개문, 태그, 표지 브리프, 플랫폼 정책, 독자 기대치 전달 방식에 한정하세요.",
+    "'바꿔야 한다'보다 '전달할 때는', '소개문에서는', '태그에서는', '주의해서 설명하면 좋다'처럼 표현하세요.",
+]
+
+CREATIVE_BOUNDARY_NOTE = (
+    "이 리포트는 작품을 바꾸는 컨설팅이 아니라, 작품을 현재 방향 그대로 두고 "
+    "어느 국가에서 어떻게 전달하면 좋은지 정리하는 현지화 리포트입니다."
+)
+
 
 def _esc(value: Any) -> str:
     return html.escape("" if value is None else str(value), quote=True)
+
+
+def _user_facing_text(value: Any) -> str:
+    text = "" if value is None else str(value)
+    replacements = {
+        "glossary": "작품 용어 기준",
+        "Glossary": "작품 용어 기준",
+        "컨텍스트 팩": "참고 자료",
+        "context pack": "참고 자료",
+        "Context Pack": "참고 자료",
+        "liveMarketEvidence": "최근 플랫폼 참고 자료",
+        "contextPackBriefing": "시장 참고 요약",
+        "policyAttention": "정책 확인 항목",
+    }
+    for before, after in replacements.items():
+        text = text.replace(before, after)
+    return text
+
+
+def _esc_user(value: Any) -> str:
+    return html.escape(_user_facing_text(value), quote=True)
 
 
 def _compact(value: Any, limit: int = 8000) -> Any:
@@ -133,6 +166,9 @@ def _evidence_payload(payload: dict[str, Any], result: dict[str, Any]) -> dict[s
         },
         "policyAttentionCards": _compact(result.get("policyAttentionCards") or [], 9000),
         "policyLimitations": result.get("policyLimitations") or [],
+        "reportMode": result.get("reportMode") or "country_genre_guide",
+        "countryRecommendation": _compact(result.get("countryRecommendation") or {}, 9000),
+        "liveMarketEvidence": _compact(result.get("liveMarketEvidence") or {}, 12000),
     }
 
 
@@ -168,13 +204,57 @@ def render_market_snapshot_html(result: dict[str, Any]) -> str:
     )
     return f"""
 <section class="section market-snapshot">
-  <h2>컨텍스트 팩 참고 데이터</h2>
+  <h2>작품과 맞닿는 시장 신호</h2>
   <div class="work-summary">
-    <div><small>레코드 수</small><strong>{_esc(record_count or '확인 불가')}</strong></div>
-    <div><small>플랫폼</small><strong>{_esc(len(platforms))}</strong></div>
+    <div><small>참고 항목</small><strong>{_esc(record_count or '확인 불가')}</strong></div>
+    <div><small>참고 플랫폼</small><strong>{_esc(len(platforms))}</strong></div>
   </div>
   <div class="chips">{platform_chips or '<span class="chip">플랫폼 정보 없음</span>'}</div>
   <ul class="guide-list">{headline_rows or '<li>표시할 신호가 없습니다.</li>'}</ul>
+</section>
+"""
+
+
+def render_live_market_evidence_html(result: dict[str, Any]) -> str:
+    evidence = result.get("liveMarketEvidence") or {}
+    items = evidence.get("items") or []
+    if not items:
+        return ""
+    category_labels = {
+        "platform_reference": "플랫폼 기준",
+        "genre_trend": "장르 흐름",
+        "title_synopsis_style": "제목·소개문 흐름",
+        "reader_hook": "독자 반응 포인트",
+    }
+    source_labels = {
+        "trusted": "주요 플랫폼",
+        "reference": "참고 자료",
+        "other": "웹 참고",
+    }
+    cards = []
+    for item in items[:6]:
+        category = str(item.get("category") or "")
+        label = category_labels.get(category, category.replace("_", " ") or "참고 자료")
+        source = item.get("source_type") or "reference"
+        cards.append(
+            f"""
+<article class="mini-card">
+  <div class="guide-section-header">
+    <strong>{_esc(label or 'market reference')}</strong>
+    <span class="badge ok">{_esc(source_labels.get(str(source), str(source)))}</span>
+  </div>
+  <h3>{_esc(item.get('domain') or '출처 미상')}</h3>
+  <a href="{_esc(item.get('url'))}" target="_blank" rel="noreferrer">출처 열기</a>
+  <small>{_esc(item.get('domain') or '')}</small>
+</article>
+"""
+        )
+    return f"""
+<section class="section live-market-section">
+  <p class="eyebrow">참고 출처</p>
+  <h2>최근 플랫폼 참고 자료</h2>
+  <p class="quiet-note">아래 링크는 본문 가이드를 작성할 때 확인한 공개 자료입니다. 원문 문장을 그대로 보여주기보다, 위의 해석과 체크리스트에 반영했습니다.</p>
+  <div class="cards">{''.join(cards)}</div>
 </section>
 """
 
@@ -185,15 +265,15 @@ def render_llm_html(guide: dict[str, Any], result: dict[str, Any]) -> str:
     genre = result.get("genre") or "장르 미입력"
 
     def bullets(key: str) -> str:
-        return "".join(f"<li>{_esc(item)}</li>" for item in guide.get(key) or [])
+        return "".join(f"<li>{_esc_user(item)}</li>" for item in guide.get(key) or [])
 
-    market_items = guide.get("marketInterpretation") or guide.get("writingDirection") or []
+    market_items = guide.get("marketInterpretation") or []
     input_reading = guide.get("inputReading") or {}
     core = " · ".join(str(item) for item in input_reading.get("coreAppeal") or [])
-    assumptions = "".join(f"<li>{_esc(item)}</li>" for item in input_reading.get("assumptions") or [])
+    assumptions = "".join(f"<li>{_esc_user(item)}</li>" for item in input_reading.get("assumptions") or [])
     action_items = [
         f"{country}용 제목/소개문에서 핵심 포인트({core or '작품 강점'})가 초반에 보이는지 확인합니다.",
-        "고유명사·호칭·스킬명은 작품 glossary에 먼저 고정한 뒤 번역에 반영합니다.",
+        "고유명사·호칭·스킬명은 작품 안에서 같은 방식으로 쓰이도록 기준을 정한 뒤 번역에 반영합니다.",
         "플랫폼 정책 체크와 문화 메모는 게시 전 검수 항목으로 분리합니다.",
     ]
     for key in ("marketTagGuidance", "platformPolicyChecks", "limitations"):
@@ -202,33 +282,36 @@ def render_llm_html(guide: dict[str, Any], result: dict[str, Any]) -> str:
             if text and text not in action_items:
                 action_items.append(text)
                 break
-    action_html = "".join(f"<li>{_esc(item)}</li>" for item in action_items[:5])
+    action_html = "".join(f"<li>{_esc_user(item)}</li>" for item in action_items[:5])
 
     body_html = f"""
-{render_market_snapshot_html(result)}
 <section class="section summary-box">
-  <h2>가이드 요약</h2>
-  {''.join(f'<p>{_esc(item)}</p>' for item in guide.get('executiveSummary') or [])}
+  <p class="eyebrow">핵심 결론</p>
+  <h2>핵심 전달 전략</h2>
+  {''.join(f'<p>{_esc_user(item)}</p>' for item in guide.get('executiveSummary') or [])}
 </section>
 <section class="section">
-  <h2>바로 적용할 체크리스트</h2>
-  <ul class="guide-list">{action_html}</ul>
-</section>
-<section class="section">
-  <h2>입력 해석</h2>
+  <h2>작품 입력 해석</h2>
   <div class="work-summary">
     <div><small>작품 제목</small><strong>{_esc(input_reading.get('workTitle') or title)}</strong></div>
     <div><small>장르 / 대상</small><strong>{_esc(input_reading.get('genre') or genre)} · {_esc(input_reading.get('targetCountry') or country)}</strong></div>
   </div>
+  <p class="quiet-note">{_esc(CREATIVE_BOUNDARY_NOTE)}</p>
   <p><b>핵심 포인트:</b> {_esc(core or '입력 시놉시스가 부족합니다.')}</p>
   {('<div class="quiet-note"><strong>가정</strong><ul>' + assumptions + '</ul></div>') if assumptions else ''}
 </section>
-<section class="section"><h2>시장 해석</h2><ul class="guide-list">{''.join(f'<li>{_esc(item)}</li>' for item in market_items)}</ul></section>
-<section class="section"><h2>문화 메모</h2><ul class="guide-list">{bullets('culturalNotes')}</ul></section>
-<section class="section"><h2>플랫폼 정책 체크</h2><ul class="guide-list">{bullets('platformPolicyChecks')}</ul></section>
-<section class="section"><h2>태그 가이드</h2><ul class="guide-list">{bullets('marketTagGuidance')}</ul></section>
-<section class="section"><h2>증거 설명</h2><ul class="guide-list">{bullets('evidenceExplanation')}</ul></section>
-<section class="section"><h2>한계</h2><ul class="guide-list">{bullets('limitations')}</ul></section>
+<section class="section"><h2>제목·소개문·태그 전달 가이드</h2><ul class="guide-list">{bullets('marketTagGuidance')}</ul></section>
+<section class="section"><h2>시장 적합도 해석</h2><ul class="guide-list">{''.join(f'<li>{_esc_user(item)}</li>' for item in market_items)}</ul></section>
+{render_market_snapshot_html(result)}
+<section class="section"><h2>번역·표현 주의점</h2><ul class="guide-list">{bullets('culturalNotes')}</ul></section>
+<section class="section"><h2>플랫폼 게시 전 체크</h2><ul class="guide-list">{bullets('platformPolicyChecks')}</ul></section>
+<section class="section">
+  <h2>출시 전 체크리스트</h2>
+  <ul class="guide-list">{action_html}</ul>
+</section>
+<section class="section"><h2>판단 근거</h2><ul class="guide-list">{bullets('evidenceExplanation')}</ul></section>
+<section class="section"><h2>확인 필요 사항</h2><ul class="guide-list">{bullets('limitations')}</ul></section>
+{render_live_market_evidence_html(result)}
 """
     return build_guide_html_document(title=f"{country} 현지화 가이드", body_html=body_html)
 
@@ -244,6 +327,15 @@ def generate_llm_guide(payload: dict[str, Any], result: dict[str, Any]) -> dict[
     user = {
         "task": "입력 근거를 바탕으로 한국어 가이드를 작성해 주세요.",
         "requirements": [
+            "reportMode가 country_genre_guide이면 선택 국가와 장르, 사용자가 궁금해하는 파트를 중심으로 일반 현지화 가이드를 작성하세요.",
+            "liveMarketEvidence가 있으면 최신 웹 근거를 보조 근거로 활용하되, 출처 문장을 그대로 길게 복사하지 마세요.",
+            "liveMarketEvidence는 최신 웹 참고자료이며 전체 시장 통계처럼 단정하지 마세요.",
+            "liveMarketEvidence의 원문이 일본어, 영어, 중국어, 태국어여도 그대로 복사하지 말고 한국어로 요약·해석하세요.",
+            "liveMarketEvidence, contextPackBriefing, policyAttention 같은 내부 필드명을 사용자에게 직접 쓰지 마세요.",
+            "glossary라는 내부 기능명을 쓰지 말고, 필요하면 '작품 용어 기준' 또는 '고유명사 기준'처럼 사용자에게 보이는 말로 바꾸세요.",
+            "liveMarketEvidence 안의 외국어 원문 제목·태그·문장을 그대로 출력하지 마세요.",
+            CREATIVE_BOUNDARY_NOTE,
+            *CREATIVE_BOUNDARY_RULES,
             "시놉시스, 장르, 대상국가, 문화 주의사항, 플랫폼 정책 점검을 포함하세요.",
             "입력 해석은 '이렇게 보인다' 형식으로 자연스럽게 작성하세요.",
             "내부 근거를 재서술하지 말고, 사용자에게 도움이 되는 해석만 쓰세요.",
@@ -272,11 +364,6 @@ def generate_llm_guide(payload: dict[str, Any], result: dict[str, Any]) -> dict[
     )
     guide = json.loads(response.output_text)
     html_report = render_llm_html(guide, result)
-    action_checklist = [
-        *(guide.get("marketTagGuidance") or [])[:1],
-        *(guide.get("platformPolicyChecks") or [])[:2],
-        *(guide.get("limitations") or [])[:1],
-    ]
     out = {
         "generationMode": "llm_with_rag",
         "llmGeneratedGuide": True,
@@ -289,11 +376,7 @@ def generate_llm_guide(payload: dict[str, Any], result: dict[str, Any]) -> dict[
             "policyCards": len(evidence_payload["policyAttentionCards"]),
             "countryDataMatchCount": len(evidence_payload["countryDataMatches"]),
         },
-        "personalizedGuide": guide,
-        "qualitySummary": guide.get("executiveSummary") or [],
-        "actionChecklist": action_checklist,
         "htmlReport": html_report,
-        "llmHtmlReport": html_report,
     }
     if _truthy_flag(payload.get("includeInternal") or payload.get("include_internal"), default=False):
         out["llmGuideEvidenceBytes"] = evidence_bytes

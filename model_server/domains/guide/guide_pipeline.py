@@ -10,7 +10,9 @@ from .agents.country_recommender import generate_country_recommendation
 from .agents.guide_writer import generate_llm_guide, llm_requested
 from .engine.policy_analysis import build_policy_attention_payload
 from .engine.recommendation import build_localization_advice
+from .infra.country_recommendation_html import render_country_recommendation_html
 from .retrieval.context_pack import build_context_pack_overlap_report, inspect_context_pack_source, resolve_context_market
+from .retrieval.tavily_market import build_live_market_evidence
 
 
 PIPELINE_MARKET_ALIASES = {
@@ -40,24 +42,25 @@ GUIDE_PUBLIC_KEYS = {
     "htmlReport",
     "llmGeneratedGuide",
     "message",
+    "reportMode",
+    "recommendedCountry",
+    "recommendedCountryDisplay",
 }
 
 RECOMMENDATION_PUBLIC_KEYS = {
     "mode",
+    "reportMode",
     "generationMode",
     "requiresSelection",
     "title",
+    "htmlReport",
     "genre",
     "synopsis",
     "message",
     "recommendedCountry",
-    "recommended_country",
     "recommendedCountryDisplay",
-    "recommended_country_display",
-    "recommendedCountries",
     "countryComparisons",
-    "availableOptions",
-    "available_countries",
+    "availableCountries",
     "limitations",
     "limitation_notice",
     "confidence",
@@ -132,17 +135,25 @@ def _has_synopsis(payload: dict[str, Any]) -> bool:
     return bool(str(payload.get("synopsis") or payload.get("desc") or "").strip())
 
 
-def _has_requested_country(payload: dict[str, Any]) -> bool:
-    return bool(
-        str(
-            payload.get("targetCountry")
-            or payload.get("target_country")
-            or payload.get("targetMarket")
-            or payload.get("target_market")
-            or payload.get("country")
-            or ""
-        ).strip()
-    )
+def _guide_report_mode(payload: dict[str, Any]) -> str:
+    if _has_synopsis(payload):
+        return "synopsis_country_recommendation"
+    return "country_genre_guide"
+
+
+def _attach_live_market_evidence(payload: dict[str, Any], result: dict[str, Any], *, report_mode: str) -> dict[str, Any]:
+    evidence = build_live_market_evidence(payload, result, report_mode=report_mode)
+    enriched = dict(result)
+    if evidence.get("liveMarketEvidence"):
+        enriched["liveMarketEvidence"] = evidence["liveMarketEvidence"]
+    enriched["liveMarketRequested"] = evidence.get("liveMarketRequested")
+    enriched["liveMarketEnabled"] = evidence.get("liveMarketEnabled")
+    enriched["liveMarketUsed"] = evidence.get("liveMarketUsed")
+    enriched["liveMarketCountry"] = evidence.get("liveMarketCountry")
+    enriched["liveMarketResultCount"] = evidence.get("liveMarketResultCount")
+    enriched["liveMarketInjectedCount"] = evidence.get("liveMarketInjectedCount")
+    enriched["liveMarketSkipReason"] = evidence.get("liveMarketSkipReason")
+    return enriched
 
 
 def _include_context_pack(payload: dict[str, Any]) -> bool:
@@ -158,11 +169,7 @@ def _include_internal(_payload: dict[str, Any]) -> bool:
 
 
 def _html_report(result: dict[str, Any]) -> Any:
-    for key in ("htmlReport", "llmHtmlReport", "guide_html", "personalizedGuide"):
-        value = result.get(key)
-        if value:
-            return value
-    return None
+    return result.get("htmlReport")
 
 
 def _shape_guide_response(_payload: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
@@ -171,7 +178,7 @@ def _shape_guide_response(_payload: dict[str, Any], result: dict[str, Any]) -> d
     if html_report:
         public["htmlReport"] = html_report
     public.setdefault("requiresSelection", bool(result.get("requiresSelection", False)))
-    public.setdefault("generationMode", result.get("generationMode") or result.get("generation_mode") or "deterministic_guide")
+    public.setdefault("generationMode", result.get("generationMode") or "deterministic_guide")
     return public
 
 
@@ -359,32 +366,34 @@ def _attach_context_pack_briefing(payload: dict[str, Any], result: dict[str, Any
 
 def generate_guide(payload: dict[str, Any]) -> dict[str, Any]:
     """Generate the online localization guide response used by /api/guide."""
-    use_legacy = str(payload.get("legacyGuide") or payload.get("legacy_guide") or "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    report_mode = _guide_report_mode(payload)
+
+    # Synopsis requests always return a country comparison. Country-specific
+    # synopsis deep guides are a later product enhancement, not an active mode.
+    if report_mode == "synopsis_country_recommendation":
+        recommendation = {**generate_country_recommendation(payload), "reportMode": report_mode}
+        return _shape_recommendation_response(
+            payload,
+            {**recommendation, "htmlReport": render_country_recommendation_html(recommendation)},
+        )
 
     result = build_localization_advice(payload)
     if result.get("requiresSelection"):
-        if _has_synopsis(payload) and not _has_requested_country(payload):
-            return _shape_recommendation_response(payload, generate_country_recommendation(payload))
-        if use_legacy:
-            return _shape_recommendation_response(payload, result)
         return _shape_recommendation_response(
             payload,
             {**result, "generationMode": result.get("generationMode") or "recommendation_only"},
         )
 
+    result = {**result, "reportMode": result.get("reportMode") or report_mode}
     enriched = _attach_context_pack_briefing(payload, result)
+    enriched = _attach_live_market_evidence(payload, enriched, report_mode=report_mode)
     enriched = {**enriched, **build_policy_attention_payload(payload, enriched)}
 
-    deterministic_mode = "deterministic_rag_fallback" if use_legacy else "deterministic_guide"
+    deterministic_mode = "deterministic_guide"
     if not llm_requested(payload):
         return _shape_guide_response(
             payload,
-            {**enriched, "generationMode": enriched.get("generationMode") or deterministic_mode},
+            {**enriched, "generationMode": deterministic_mode},
         )
 
     try:

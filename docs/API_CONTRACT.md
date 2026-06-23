@@ -41,6 +41,7 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 - 셋 중 하나라도 빠지면 **graceful no-op**(저장만 건너뜀, 본 응답은 정상). 예: `workId` 없음 → 저장 안 함, memory 백엔드 → 안 함.
 - 저장을 시도하면 응답에 **`persisted*` 키**가 붙는다(`{saved: bool, ...id}` 또는 실패 사유). best-effort라 저장 실패해도 본 산출물은 200으로 반환된다.
 - write 경계: **works/episodes(작품/회차)는 WEB(Django)이 생성**, 모델 서버는 AI 산출물(translation_results·characters·relation_maps·localization_guides·covers·chat_messages)만 write.
+- `glossary`는 현재 별도 HTTP CRUD 엔드포인트가 없다. MODEL 서버는 번역 시 `workId`+목표 국가로 승인 용어집을 hydrate해서 `workMemory.approvedGlossary`로 쓰는 **읽기 경계**만 공개 계약에 포함한다. 용어집 저장/수정 UI를 WEB에서 제공하려면 WEB이 DB를 직접 관리하거나, 별도 glossary API를 새 계약으로 추가해야 한다.
 
 | 엔드포인트 | 식별자 | save 플래그 | 응답 키 | 대상 테이블 |
 |---|---|---|---|---|
@@ -117,6 +118,37 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 
 ---
 
+### Translation WorkMemory / Glossary hydrate
+
+번역 품질 고정을 위한 승인 용어집은 `workMemory.approvedGlossary`로 엔진에 전달된다. 현재 공개 HTTP 계약은 **저장 API가 아니라 사용/주입 계약**이다.
+
+**사용 방식**
+
+1. 요청에 `workMemory`를 직접 넣으면 그 값이 최우선이다.
+2. `workMemory`가 없고 `workId` + `targetCountry`/`targetLocale`이 있으면 MODEL 서버가 내부 glossary repository에서 승인 용어집을 조회해 `workMemory`를 hydrate한다.
+3. repository backend는 `GLOSSARY_STORE_BACKEND` 설정을 따른다. `mysql`이면 MySQL `glossary` 테이블을 조회하고, 미설정/장애 시 memory repo로 graceful fallback한다.
+
+**저장 모델(내부 repository 기준)**
+
+| 필드 | 설명 |
+|---|---|
+| `glossary_id` | 용어집 행 ID |
+| `work_id` | 작품 ID. MySQL backend에서는 숫자형 `works.work_id` |
+| `target_country` | `JP`/`US`/`CN`/`TH` 등 2자리 국가 코드 |
+| `original_word` | 원문 용어. 대명사/지시어성 표현은 저장 거부 |
+| `translated_word` | 승인 번역어 |
+| `glossary_type` | `person`/`place`/`organization` |
+| `memo` | 선택 메모 |
+
+**현재 없는 것**
+
+- `POST /api/v1/glossary`, `GET /api/v1/glossary`, `DELETE /api/v1/glossary/{id}` 같은 공개 CRUD 엔드포인트는 아직 없다.
+- `captureGlossaryCandidates=true`는 graph 내부 hook이 있을 때만 후보 캡처를 호출하는 확장 지점이며, hook 미설치 상태에서는 `reason=no_capture_hook`으로 저장하지 않는다.
+
+즉 WEB(Django)이 “용어집 저장/수정 화면”을 가져가려면 현재 계약만으로는 부족하다. 선택지는 (A) WEB이 `glossary` 테이블을 직접 관리하고 MODEL은 hydrate-only로 유지하거나, (B) MODEL에 별도 glossary CRUD API를 추가해 이 문서에 신규 엔드포인트로 고정하는 방식이다.
+
+---
+
 ## POST /api/v1/translation/inspect-chat
 
 번역 검수 챗봇 — 질문에 대한 답변(+선택적 수정 제안).
@@ -150,6 +182,9 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 ## POST /api/v1/guide  ·  GET /api/v1/guide/_status
 
 작품 정보 → 현지화 가이드(시장 트렌드·컨텍스트팩·정책 유의사항). 공개 응답은 relationship-map처럼 프론트 표시용 HTML 중심으로 반환한다.
+시놉시스가 있으면 작품 분석과 국가별 적합도를 비교하는 **국가 추천 리포트**를 반환한다.
+시놉시스가 없으면 `targetCountry`/`genre`/관심 입력을 기준으로 국가·장르 일반 가이드를 생성한다.
+가이드는 작품의 플롯·결말·캐릭터·핵심 설정을 바꾸는 창작 컨설팅이 아니라, 작품을 현재 방향 그대로 두고 제목·소개문·태그·표지 브리프·정책 검토·독자 기대치 전달 방식을 정리하는 현지화 리포트다.
 
 **요청** (모두 선택, 엔진이 추가 키도 직접 사용 → `extra=allow`)
 
@@ -160,14 +195,18 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 | `targetMarket` | string | 시장 |
 | `titleElements` | array<string> | 제목 요소 |
 | `comparableSignals` | array<string> | 비교작 신호 |
-| `legacyGuide` / `includeContextPack` | bool | 토글 |
+| `includeContextPack` | bool | 컨텍스트 참고자료 사용 토글 |
+| `includeLiveMarket` | bool | Tavily 실시간 웹 근거 사용 여부. 기본은 서버 환경변수 `WLIGHTER_GUIDE_TAVILY`를 따른다 |
 | `workId` | int | 주면 작품 정보 보강 + 가이드 결과를 `localization_guides`에 저장(rdb일 때) |
 | `saveGuide` | bool | `workId`가 있을 때 저장 여부(기본 `true`) |
 
-**응답 200**: `htmlReport`(완성형 HTML) + 최소 표시/상태 메타(`mode`, `generationMode`, `requiresSelection`, `title`, `targetCountry`, `targetCountryDisplay`, `displayCountry`, `country`, `llmGeneratedGuide`, `message` 등).
+**응답 200**: 항상 `htmlReport`(완성형 HTML) + 최소 표시/상태 메타를 반환한다. 국가 추천 모드에는 `countryComparisons`, `availableCountries`, `recommendedCountry`, `recommendedCountryDisplay`, `confidence`, `limitations`가 추가되며, 공개 응답의 필드명은 camelCase만 사용한다.
 `htmlReport`는 relationship-map과 동일하게 `<!doctype html>` + `<head><style>...</style></head>` + `<body>`를 포함한 **CSS 내장 완성형 HTML 문서**다. WEB(Django)은 도메인별 CSS를 따로 주입하지 않고, 공통적으로 iframe `srcdoc` 방식 렌더링을 권장한다.
 `contextPackEvidence`, `contextPackBriefing`, `modelPromptPayload`, `evidenceUsed`, `qualitySummary`, `actionChecklist`, raw LLM error 등 내부 판단/디버그 필드는 공개 응답에 포함하지 않는다.
-국가 선택이 필요한 recommendation-only 응답은 `requiresSelection=true`와 추천/선택에 필요한 최소 필드만 반환한다.
+`reportMode`는 `synopsis_country_recommendation`(시놉시스 기반 국가 추천)과 `country_genre_guide`(국가+장르 일반 리포트)를 사용한다.
+
+`synopsis_country_recommendation`은 완결된 국가 비교 리포트이며 `requiresSelection=false`로 반환하고 저장하지 않는다.
+`generationMode`는 생성 경로만 나타내며 `recommendation_only`, `deterministic_guide`, `llm_with_rag` 중 하나다.
 `workId` 저장 시 `persistedGuide`(`{saved, guide_id}`) 추가 — DB 영속화 공통 참조.
 
 **`GET /_status` 200**: 도메인 상태(서비스 준비 여부 등).

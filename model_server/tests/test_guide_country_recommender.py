@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from model_server.domains.guide.agents.country_recommender import generate_country_recommendation
 from model_server.domains.guide.agents.guide_writer import _client_and_model
+from model_server.domains.guide.engine.recommendation import generate_localization_guide, recommend_country
 from model_server.domains.guide.guide_pipeline import generate_guide
 from model_server.domains.guide.infra.output_language_guard import (
     repair_user_facing_explanations,
@@ -17,48 +18,118 @@ from model_server.domains.guide.infra.output_language_guard import (
 
 
 class GuideCountryRecommenderTests(unittest.TestCase):
-    def test_synopsis_without_country_routes_to_recommendation(self) -> None:
+    def test_synopsis_without_country_returns_recommendation_and_requires_selection(self) -> None:
         payload = {"synopsis": "A heroine enters a magical academy.", "genre": "fantasy"}
         with patch(
-            "model_server.domains.guide.guide_pipeline.build_localization_advice",
-            return_value={"requiresSelection": True, "title": "base", "genre": "fantasy"},
-        ), patch(
             "model_server.domains.guide.guide_pipeline.generate_country_recommendation",
-            return_value={"mode": "synopsis_country_recommendation", "recommendedCountry": "JP"},
+            return_value={
+                "mode": "synopsis_country_recommendation",
+                "requiresSelection": False,
+                "recommendedCountry": "JP",
+                "recommendedCountryDisplay": "일본",
+            },
         ) as mocked_recommendation:
             result = generate_guide(payload)
 
+        self.assertFalse(result["requiresSelection"])
+        self.assertEqual(result["reportMode"], "synopsis_country_recommendation")
         self.assertEqual(result["recommendedCountry"], "JP")
         mocked_recommendation.assert_called_once()
 
-    def test_country_present_skips_recommendation_and_generates_guide(self) -> None:
+    def test_country_present_with_synopsis_still_returns_recommendation(self) -> None:
         payload = {"synopsis": "A heroine enters a magical academy.", "genre": "fantasy", "targetCountry": "JP"}
+        with patch(
+            "model_server.domains.guide.guide_pipeline.generate_country_recommendation",
+            return_value={
+                "mode": "synopsis_country_recommendation",
+                "requiresSelection": False,
+                "recommendedCountry": "JP",
+                "recommendedCountryDisplay": "일본",
+                "countryComparisons": [],
+            },
+        ) as mocked_recommendation:
+            result = generate_guide(payload)
+
+        self.assertFalse(result["requiresSelection"])
+        self.assertEqual(result["reportMode"], "synopsis_country_recommendation")
+        mocked_recommendation.assert_called_once_with(payload)
+
+    def test_legacy_recommendation_ignores_selected_country_when_synopsis_exists(self) -> None:
+        result = recommend_country(
+            {
+                "synopsis": "A heroine enters a magical academy.",
+                "genre": "fantasy",
+                "targetCountry": "JP",
+            }
+        )
+
+        self.assertFalse(result["requiresSelection"])
+        self.assertEqual(result["mode"], "synopsis_country_recommendation")
+        self.assertNotIn("targetCountry", result)
+
+        direct_guide = generate_localization_guide(
+            {
+                "synopsis": "A heroine enters a magical academy.",
+                "genre": "fantasy",
+                "targetCountry": "JP",
+            }
+        )
+        self.assertFalse(direct_guide["requiresSelection"])
+        self.assertEqual(direct_guide["mode"], "synopsis_country_recommendation")
+
+    def test_live_market_diagnostics_stay_out_of_public_response(self) -> None:
+        payload = {"genre": "fantasy", "targetCountry": "JP", "includeLiveMarket": True}
         with patch(
             "model_server.domains.guide.guide_pipeline.build_localization_advice",
             return_value={
-                "title": "작품",
+                "requiresSelection": False,
+                "title": "work",
                 "genre": "fantasy",
                 "targetCountry": "JP",
                 "country": "JP",
-                "displayCountry": "일본",
+                "displayCountry": "Japan",
+                "htmlReport": "<!doctype html><html><body>guide</body></html>",
+            },
+        ), patch(
+            "model_server.domains.guide.guide_pipeline._attach_context_pack_briefing",
+            side_effect=lambda _payload, result: dict(result),
+        ), patch(
+            "model_server.domains.guide.guide_pipeline.build_live_market_evidence",
+            return_value={
+                "liveMarketRequested": True,
+                "liveMarketEnabled": True,
+                "liveMarketUsed": True,
+                "liveMarketCountry": "JP",
+                "liveMarketResultCount": 4,
+                "liveMarketInjectedCount": 2,
+                "liveMarketSkipReason": None,
+                "liveMarketEvidence": {
+                    "country": "JP",
+                    "items": [
+                        {
+                            "category": "platform_reference",
+                            "source_type": "trusted",
+                            "domain": "kakuyomu.jp",
+                            "title": "Rules",
+                            "url": "https://kakuyomu.jp/help",
+                            "summary": "rules",
+                        }
+                    ],
+                },
             },
         ), patch(
             "model_server.domains.guide.guide_pipeline.build_policy_attention_payload",
             return_value={"policyAttentionCards": [], "policyLimitations": []},
         ), patch(
             "model_server.domains.guide.guide_pipeline.llm_requested",
-            return_value=True,
-        ), patch(
-            "model_server.domains.guide.guide_pipeline.generate_llm_guide",
-            return_value={"llmGeneratedGuide": True, "generationMode": "llm_with_rag"},
-        ) as mocked_llm, patch(
-            "model_server.domains.guide.guide_pipeline.generate_country_recommendation"
-        ) as mocked_recommendation:
+            return_value=False,
+        ):
             result = generate_guide(payload)
 
-        self.assertTrue(result["llmGeneratedGuide"])
-        mocked_llm.assert_called_once()
-        mocked_recommendation.assert_not_called()
+        self.assertEqual(result["htmlReport"], "<!doctype html><html><body>guide</body></html>")
+        self.assertNotIn("liveMarketEvidence", result)
+        self.assertNotIn("liveMarketResultCount", result)
+        self.assertNotIn("liveMarketSkipReason", result)
 
     def test_llm_failure_falls_back_to_manual_selection_without_random_choice(self) -> None:
         evidence = {
@@ -85,7 +156,7 @@ class GuideCountryRecommenderTests(unittest.TestCase):
 
         self.assertIsNone(result["recommendedCountry"])
         self.assertEqual(result["countryComparisons"], [])
-        self.assertIn("직접 선택", result["message"])
+        self.assertIn("추천 생성에 실패", result["message"])
         self.assertEqual(result["recommendationMethod"], "llm_country_comparison_failed")
 
     def test_user_facing_language_guard_repairs_to_korean(self) -> None:

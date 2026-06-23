@@ -23,12 +23,12 @@ class GuideRequest(BaseModel):
     targetMarket: str | None = Field(None, max_length=20)
     titleElements: list[str] | None = Field(None, max_length=20)
     comparableSignals: list[str] | None = Field(None, max_length=20)
-    legacyGuide: bool | None = None
     includeContextPack: bool | None = None
+    includeLiveMarket: bool | None = None
     saveGuide: bool | None = Field(True, description="workId가 있을 때 localization_guides에 저장")
 
 
 class GuideResponse(BaseModel):
-    model_config = {"extra": "allow"}  # 엔진 출력(모드별 ~39키)을 그대로 통과
+    model_config = {"extra": "allow"}  # htmlReport 중심 공개 응답 + 저장 결과 등 부가 키 허용
 
     generationMode: str | None = None

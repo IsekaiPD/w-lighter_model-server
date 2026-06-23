@@ -39,3 +39,6 @@ project_docs/
 # generated outputs
 generated/
 *.log
+
+# external/team reference copy; do not commit directly
+model_server/domains/guide_tavily/

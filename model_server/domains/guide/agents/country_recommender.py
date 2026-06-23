@@ -68,6 +68,12 @@ COUNTRY_RECOMMENDATION_SCHEMA: dict[str, Any] = {
     "required": ["storyProfile", "recommendedCountry", "confidence", "countryComparisons", "limitations"],
 }
 
+CREATIVE_BOUNDARY_RULES = [
+    "작품의 플롯, 결말, 캐릭터 성격, 핵심 설정, 장르 방향을 바꾸라고 제안하지 마세요.",
+    "국가 추천은 작품을 현재 방향 그대로 두고 어느 시장에서 먼저 전달/테스트하기 좋은지 판단하는 것입니다.",
+    "strengths와 risks는 창작 수정이 아니라 제목, 소개문, 태그, 표지 브리프, 정책 검토, 독자 기대치 전달 관점으로 작성하세요.",
+]
+
 
 def _text(value: Any) -> str:
     return str(value or "").strip()
@@ -280,7 +286,7 @@ def build_country_recommendation_evidence(payload: dict[str, Any]) -> dict[str, 
         },
         "countries": countries,
         "contextPackDiagnosticsByCountry": diagnostics,
-        "comparisonRule": "4개국 비교 후 사용자가 직접 선택할 수 있게 정리합니다.",
+        "comparisonRule": "시놉시스의 핵심 매력을 기준으로 4개국 적합도를 비교합니다.",
     }
 
 
@@ -364,11 +370,10 @@ def _canonicalize_result(
         )
     out = {
         "mode": "synopsis_country_recommendation",
-        "requiresSelection": True,
+        "requiresSelection": False,
         "title": "4개국 비교 추천",
         "recommendedCountry": recommended,
-        "recommended_country": COUNTRY_COMPARISON_TARGETS[[t["code"] for t in COUNTRY_COMPARISON_TARGETS].index(recommended)]["targetCountry"],
-        "recommended_country_display": _country_display(recommended),
+        "recommendedCountryDisplay": _country_display(recommended),
         "confidence": repaired["confidence"],
         "storyProfile": repaired["storyProfile"],
         "countryComparisons": comparisons,
@@ -376,8 +381,11 @@ def _canonicalize_result(
         "recommendationMethod": "llm_country_comparison" if model else "deterministic_country_comparison",
         "llmCountryRecommendationModel": model,
         "llmRecommendationEvidenceBytes": evidence_size,
-        "available_countries": [target["display"] for target in COUNTRY_COMPARISON_TARGETS],
-        "limitation_notice": "사용자 선택이 필요합니다.",
+        "availableCountries": [
+            {"country": target["code"], "targetCountry": target["targetCountry"], "displayCountry": target["display"]}
+            for target in COUNTRY_COMPARISON_TARGETS
+        ],
+        "limitation_notice": "4개국 비교 결과입니다.",
         "createdAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
     if internal_diagnostics:
@@ -449,24 +457,25 @@ def _manual_selection_fallback(
 ) -> dict[str, Any]:
     out = {
         "mode": "synopsis_country_recommendation",
-        "requiresSelection": True,
-        "title": "국가를 직접 선택해 주세요",
-        "message": "추천 생성에 실패했습니다. 일본, 중국, 미국/글로벌 영어, 태국 중 하나를 직접 선택하면 상세 가이드를 이어갈 수 있습니다.",
+        "requiresSelection": False,
+        "title": "국가 비교를 완료하지 못했습니다",
+        "message": "추천 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.",
         "genre": payload.get("genre") or "",
         "synopsis": payload.get("synopsis") or payload.get("desc") or "",
-        "available_countries": [target["display"] for target in COUNTRY_COMPARISON_TARGETS],
-        "recommended_country": None,
-        "recommended_country_display": None,
+        "availableCountries": [
+            {"country": target["code"], "targetCountry": target["targetCountry"], "displayCountry": target["display"]}
+            for target in COUNTRY_COMPARISON_TARGETS
+        ],
         "recommendedCountry": None,
         "countryComparisons": [],
         "limitations": [
             "추천 LLM 호출이 실패했습니다.",
-            "직접 국가를 선택하면 다음 단계로 진행할 수 있습니다.",
+            "국가별 비교 결과를 만들지 못했습니다.",
         ],
         "recommendationMethod": "llm_country_comparison_failed",
         "llmCountryRecommendationError": error,
         "llmRecommendationEvidenceBytes": evidence_size,
-        "limitation_notice": "직접 선택이 필요합니다.",
+        "limitation_notice": "추천 결과를 다시 생성해 주세요.",
         "createdAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
     if internal_diagnostics:
@@ -498,6 +507,8 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
             "requirements": [
                 "countryComparisons에는 US, CN, JP, TH를 각각 한 번씩 넣으세요.",
                 "rank는 1~4를 중복 없이 사용하고, recommendedCountry는 rank 1과 일치해야 합니다.",
+                "작품 자체를 바꾸는 방향 제안이 아니라, 현재 시놉시스 기준 어느 국가에서 먼저 전달하기 좋은지 설명하세요.",
+                *CREATIVE_BOUNDARY_RULES,
                 "설명은 모두 한국어로 작성하세요.",
             ],
             "evidence": evidence,
