@@ -72,7 +72,11 @@ def _prune_old_rows(session, model, filters: list[Any], order_column: Any, keep:
         session.delete(row)
 
 
-_PROFILE_LABEL_RE = re.compile(r"^\s*프로필\s*라벨\s*:\s*(.+?)\s*$", re.MULTILINE)
+_PROFILE_DETAIL_INLINE_RE = re.compile(
+    r"^\s*프로필\s*라벨\s*:\s*(?P<label>.*?)\s*세부\s*설정\s*:\s*(?P<detail>.*)\s*$",
+    re.DOTALL,
+)
+_PROFILE_LABEL_RE = re.compile(r"^\s*프로필\s*라벨\s*:\s*(?P<label>.+?)\s*$", re.MULTILINE)
 _DETAIL_PREFIX_RE = re.compile(r"^\s*세부\s*설정\s*:\s*", re.MULTILINE)
 
 
@@ -82,15 +86,35 @@ def split_profile_label(detail_setting: Any) -> tuple[str, str]:
     DB 컬럼 추가 없이 아래 고정 포맷을 사용한다.
     프로필 라벨: 전직 형사
     세부 설정: ...
+
+    이전 응답/저장값처럼 한 줄로 붙은 값도 같이 처리한다.
+    프로필 라벨: 전직 형사 세부 설정: ...
     """
     detail = _s(detail_setting)
     if not detail:
         return "", ""
+
+    inline_match = _PROFILE_DETAIL_INLINE_RE.match(detail)
+    if inline_match:
+        return inline_match.group("label").strip(), inline_match.group("detail").strip()
+
     match = _PROFILE_LABEL_RE.search(detail)
-    profile_label = match.group(1).strip() if match else ""
+    profile_label = match.group("label").strip() if match else ""
     cleaned = _PROFILE_LABEL_RE.sub("", detail).strip()
     cleaned = _DETAIL_PREFIX_RE.sub("", cleaned).strip()
     return profile_label, cleaned
+
+
+def format_profile_detail(profile_label: Any, detail_setting: Any) -> str:
+    """캐릭터 설정집 표시용 문자열을 만든다.
+
+    예: 실종 피해자 / 공식적으로는 죽은 사람으로 처리되었지만 실제로는 살아 있다.
+    """
+    label = _trunc(profile_label, 80)
+    detail = _s(detail_setting)
+    if label and detail:
+        return f"{label} / {detail}"
+    return label or detail
 
 
 def pack_profile_label(profile_label: Any, detail_setting: Any, *, max_len: int = 1000) -> str:
@@ -116,13 +140,13 @@ _GENDER_F = {"f", "female", "여", "여자", "여성", "girl", "woman"}
 
 
 def normalize_gender(value: Any) -> str:
-    """자유 텍스트 성별 → ERD CHECK(M/F/U). 미상/불명은 U."""
+    """자유 텍스트 성별 → 화면/DB 저장용 한글 성별값으로 정규화한다."""
     token = _s(value).lower()
     if token in _GENDER_M:
-        return "M"
+        return "남"
     if token in _GENDER_F:
-        return "F"
-    return "U"
+        return "여"
+    return "미상"
 
 
 def _map_character(raw: dict[str, Any]) -> dict[str, Any]:
@@ -181,8 +205,12 @@ def get_work(work_id: int) -> dict[str, Any] | None:
         if work is None:
             return None
         return {
-            "work_id": work.work_id, "user_id": work.user_id, "title": work.title,
-            "pen_name": work.pen_name, "genre": work.genre, "synopsis": work.synopsis,
+            "work_id": work.work_id,
+            "user_id": work.user_id,
+            "title": work.title,
+            "pen_name": work.pen_name,
+            "genre": work.genre,
+            "synopsis": work.synopsis,
         }
     finally:
         session.close()
@@ -266,6 +294,8 @@ def get_characters(work_id: int) -> list[dict[str, Any]]:
                     "profile_label": profile_label,
                     # 관계도/표지 프롬프트에는 라벨 줄을 제거한 세부 설정만 전달한다.
                     "detail_setting": cleaned_detail or r.detail_setting,
+                    # 캐릭터 설정집 화면 표시용.
+                    "detail_setting_display": format_profile_detail(profile_label, cleaned_detail),
                     # 디버깅/이관용 원본. 화면에서 필요 없으면 무시 가능.
                     "detail_setting_raw": r.detail_setting,
                 }
