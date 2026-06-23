@@ -212,26 +212,9 @@ def _country_records(data: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     return grouped
 
 
-def available_options(data: dict[str, Any]) -> dict[str, Any]:
-    collection_profiles = build_collection_profiles(data)
-    profiles = {country.country: country for country in build_country_profiles(collection_profiles)}
-    return {
-        "countries": [
-            {
-                "country": country,
-                "displayCountry": COUNTRY_DISPLAY_KO.get(country, country),
-                "topGenres": profiles.get(country).top_genres[:8] if profiles.get(country) else [],
-                "topTags": profiles.get(country).top_tags[:12] if profiles.get(country) else [],
-                "platforms": [f"{p.platform} / {p.collection}" for p in profiles.get(country).collections] if profiles.get(country) else [],
-            }
-            for country in ALLOWED_COUNTRY_ORDER
-        ],
-        "genres": ["Romance", "Romance Fantasy", "Fantasy", "LitRPG", "Isekai", "Action Fantasy", "BL", "Wuxia"],
-    }
-
 
 def _available_countries() -> list[dict[str, str]]:
-    return [{"country": country, "display": COUNTRY_DISPLAY_KO.get(country, country)} for country in ALLOWED_COUNTRY_ORDER]
+    return [{"country": country, "targetCountry": country, "displayCountry": COUNTRY_DISPLAY_KO.get(country, country)} for country in ALLOWED_COUNTRY_ORDER]
 
 
 def _recommendation_notice(*, synopsis_present: bool) -> str:
@@ -245,11 +228,11 @@ def _translation_profile(country: str, *, genre: str, synopsis_present: bool) ->
     localization_level = "balanced" if synopsis_present else "conservative"
     if country == "Japan":
         dialogue_style = '장면 톤을 살리는 자연스러운 구어체와 호칭 체계를 우선한다.'
-        proper_noun_policy = '고유명사는 원문 음차와 작품 glossary를 우선하고, 호칭은 일본 독자 기준으로 무리하게 바꾸지 않는다.'
+        proper_noun_policy = '고유명사는 작품 안에서 정한 표기 기준을 우선하고, 호칭은 일본 독자 기준으로 무리하게 바꾸지 않는다.'
         culture_policy = '한국 문화 요소는 현지 제도로 바꾸기보다 의미를 유지한 채 자연스럽게 풀어준다.'
     elif country == "China":
         dialogue_style = '관계와 긴장감을 살리는 간결한 구어체를 우선한다.'
-        proper_noun_policy = '고유명사는 병기 기준을 유지하고, 호칭·직책은 작품 glossary를 우선한다.'
+        proper_noun_policy = '고유명사는 병기 기준을 유지하고, 호칭·직책은 작품 안에서 정한 표기 기준을 우선한다.'
         culture_policy = '한국 문화 요소는 설명을 덧붙이되 현지 권력/제도로 치환하지 않는다.'
     elif country == "Thailand":
         dialogue_style = '대사 리듬과 감정선을 우선하는 자연스러운 구어체를 쓴다.'
@@ -257,7 +240,7 @@ def _translation_profile(country: str, *, genre: str, synopsis_present: bool) ->
         culture_policy = '한국 문화 요소는 과한 현지화 대신 맥락 설명 중심으로 다룬다.'
     else:
         dialogue_style = '웹소설 문체의 속도감과 캐릭터 말맛을 살리는 자연스러운 구어체를 우선한다.'
-        proper_noun_policy = '고유명사는 glossary 중심으로 고정하고, 필요할 때만 짧게 보충 설명한다.'
+        proper_noun_policy = '고유명사는 작품 안에서 같은 표기로 유지하고, 필요할 때만 짧게 보충 설명한다.'
         culture_policy = '한국 문화 요소는 삭제하거나 다른 문화로 치환하지 말고, 이해를 돕는 최소 설명만 덧붙인다.'
 
     return {
@@ -422,7 +405,7 @@ def _section_payload(country_profile: Any, *, target_country: str, genre: str, s
             "items": [
                 top_tag_line,
                 '이 키워드는 적용 지시가 아니라 대상 플랫폼에서 자주 보인 공개 태그/장르 표현입니다.',
-                '고유명사, 스킬명, 계급명, 호칭은 작품 단위 glossary로 고정하고 태그 표현과 충돌하지 않는지 확인합니다.',
+                '고유명사, 스킬명, 계급명, 호칭은 작품 안에서 같은 표기로 유지하고 태그 표현과 충돌하지 않는지 확인합니다.',
             ],
         },
         "content_rating_sensitivity": {
@@ -586,7 +569,7 @@ def _guide_action_checklist(*, target_country: str, sections: dict[str, Any]) ->
     target_label = _display_country_label(target_country)
     checklist = [
         f"{target_label}용 제목/소개문에서 장르 훅, 관계 축, 초반 갈등이 한눈에 보이는지 확인합니다.",
-        "고유명사·호칭·스킬명은 작품 glossary에 먼저 고정한 뒤 번역에 반영합니다.",
+        "고유명사·호칭·스킬명은 작품 안에서 같은 방식으로 쓰이도록 기준을 정한 뒤 번역에 반영합니다.",
         "연령등급, 폭력/성적 표현, 플랫폼 정책 리스크는 게시 전 별도 검수 항목으로 표시합니다.",
     ]
     for section_key in ("adaptation_checklist", "evidence_used"):
@@ -605,7 +588,6 @@ def recommend_country(payload: dict[str, Any], *, data_path: Path = DEFAULT_INPU
     synopsis = _text(payload.get("synopsis") or payload.get("desc"))
     requested_country = normalize_country(payload.get("targetCountry") or payload.get("country"))
     recommendations = rank_countries(data, genre=genre, synopsis=synopsis)
-    available_options_payload = available_options(data)
     limitation_notice = _recommendation_notice(synopsis_present=bool(synopsis))
 
     if not synopsis and not requested_country:
@@ -613,28 +595,24 @@ def recommend_country(payload: dict[str, Any], *, data_path: Path = DEFAULT_INPU
             "mode": "needs_country_and_genre_selection",
             "requiresSelection": True,
             "message": '시놉시스가 없어 국가 추천은 제공할 수 없습니다. 대상 국가를 직접 선택하면 번역 전 현지화 기준서를 만들 수 있습니다.',
-            "availableOptions": available_options_payload,
-            "available_countries": _available_countries(),
+            "availableCountries": _available_countries(),
             "limitation_notice": limitation_notice,
-            "recommendation_reasons": [],
-            "recommended_country": None,
+            "recommendedCountry": None,
             "recommendedCountries": [],
             "createdAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
         }
 
-    if synopsis and not requested_country:
+    if synopsis:
         top = recommendations[0] if recommendations else None
         return {
             "mode": "synopsis_country_recommendation",
-            "requiresSelection": True,
-            "title": '추천 국가를 먼저 확인해 주세요',
+            "requiresSelection": False,
+            "title": "4개국 비교 추천",
             "genre": genre,
             "synopsis": synopsis,
-            "availableOptions": available_options_payload,
-            "available_countries": _available_countries(),
-            "recommended_country": top.country if top else None,
-            "recommended_country_display": _display_country_label(top.country) if top else None,
-            "recommendation_reasons": top.reasons if top else [],
+            "availableCountries": _available_countries(),
+            "recommendedCountry": top.country if top else None,
+            "recommendedCountryDisplay": _display_country_label(top.country) if top else None,
             "recommendedCountries": _recommendation_payload(recommendations[:3]),
             "limitation_notice": limitation_notice,
             "createdAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -644,17 +622,16 @@ def recommend_country(payload: dict[str, Any], *, data_path: Path = DEFAULT_INPU
     top = recommendations[0] if recommendations else None
     selected_display = _display_country_label(selected_country)
     return {
-        "mode": "synopsis_country_recommendation" if synopsis else "country_genre_guide",
+        "mode": "country_genre_guide",
         "requiresSelection": False,
         "targetCountry": selected_country,
         "targetCountryDisplay": selected_display,
         "country": selected_country,
         "displayCountry": selected_display,
-        "recommended_country": top.country if top else None,
-        "recommended_country_display": _display_country_label(top.country) if top else None,
-        "recommendation_reasons": top.reasons if top else [],
+        "recommendedCountry": top.country if top else None,
+        "recommendedCountryDisplay": _display_country_label(top.country) if top else None,
         "recommendedCountries": _recommendation_payload(recommendations[:3]),
-        "available_countries": _available_countries(),
+        "availableCountries": _available_countries(),
         "limitation_notice": limitation_notice,
         "createdAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
@@ -665,6 +642,8 @@ def generate_localization_guide(payload: dict[str, Any], *, data_path: Path = DE
     genre = _text(payload.get("genre"))
     synopsis = _text(payload.get("synopsis") or payload.get("desc"))
     requested_country = normalize_country(payload.get("targetCountry") or payload.get("country"))
+    if synopsis:
+        return recommend_country(payload, data_path=data_path)
     if not requested_country:
         return recommend_country(payload, data_path=data_path)
 
@@ -675,13 +654,6 @@ def generate_localization_guide(payload: dict[str, Any], *, data_path: Path = DE
     profile = _country_profile(data, selected_country)
     evidence = _select_evidence(data, country=selected_country, genre=genre, synopsis=synopsis)
     synopsis_present = bool(synopsis)
-    generation_mode = (
-        "recommended_country_selected"
-        if synopsis_present and top and selected_country == top.country
-        else "manual_country_after_recommendation"
-        if synopsis_present
-        else "manual_country_without_synopsis"
-    )
     sections = _section_payload(
         profile,
         target_country=selected_country,
@@ -696,21 +668,9 @@ def generate_localization_guide(payload: dict[str, Any], *, data_path: Path = DE
         sections=sections,
         recommendations=recommendations,
     )
-    action_checklist = _guide_action_checklist(target_country=selected_country, sections=sections)
-    translation_profile = _translation_profile(selected_country, genre=genre, synopsis_present=synopsis_present)
     recommendation_notice = _recommendation_notice(synopsis_present=synopsis_present)
     recommended_country = top.country if synopsis_present and top else None
-    recommendation_reasons = top.reasons if synopsis_present and top else (
-        ['시놉시스가 없어 국가 추천을 제공하지 않았습니다.']
-        if not synopsis_present
-        else []
-    )
     display_title = f"{selected_display} 현지화 기준서"
-    summary_text = (
-        f"{selected_display} 중심으로 번역 전 현지화 기준을 정리했습니다."
-        if not synopsis_present
-        else f"대상 국가: {selected_display} 기준의 시놉시스 기반 1차 적합도 참고 현지화 기준서입니다."
-    )
     html_report = _html_report(
         title=display_title,
         mode_label='시놉시스 기반 추천 반영' if synopsis_present else '국가/장르 기반 기준서',
@@ -729,8 +689,7 @@ def generate_localization_guide(payload: dict[str, Any], *, data_path: Path = DE
     }
     result = {
         "mode": "country_genre_guide",
-        "generationMode": generation_mode,
-        "generation_mode": generation_mode,
+        "generationMode": "deterministic_guide",
         "requiresSelection": False,
         "title": display_title,
         "country": selected_country,
@@ -739,19 +698,12 @@ def generate_localization_guide(payload: dict[str, Any], *, data_path: Path = DE
         "targetCountryDisplay": selected_display,
         "genre": genre,
         "synopsis": synopsis,
-        "recommended_country": recommended_country,
-        "recommended_country_display": _display_country_label(recommended_country) if recommended_country else None,
-        "recommendation_reasons": recommendation_reasons,
+        "recommendedCountry": recommended_country,
+        "recommendedCountryDisplay": _display_country_label(recommended_country) if recommended_country else None,
         "limitation_notice": recommendation_notice,
-        "available_countries": _available_countries(),
-        "availableOptions": available_options(data),
+        "availableCountries": _available_countries(),
         "recommendedCountries": _recommendation_payload(recommendations[:3]) if synopsis_present else [],
-        "translation_profile": translation_profile,
-        "translationProfile": translation_profile,
-        "summary_text": summary_text,
-        "summaryText": summary_text,
         "qualitySummary": quality_summary,
-        "actionChecklist": action_checklist,
         "sections": sections,
         "evidenceUsed": [asdict(ev) for ev in evidence],
         "modelPromptPayload": _model_prompt_payload(
@@ -761,19 +713,9 @@ def generate_localization_guide(payload: dict[str, Any], *, data_path: Path = DE
             sections=sections,
             evidence=evidence,
         ),
-        "guide_html": html_report,
         "htmlReport": html_report,
         "createdAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
-    # Backward-compatible aliases for older UI/tests.
-    result["writingDirection"] = {
-        "genre_formula": sections["genre_trope_alignment"]["items"],
-        "chapter_structure": sections["title_synopsis_localization"]["items"],
-    }
-    result["cultureNotes"] = {"avoid": sections["content_rating_sensitivity"]["items"], "prefer": sections["adaptation_checklist"]["items"]}
-    result["platformRules"] = {"common_bans": sections["content_rating_sensitivity"]["items"], "platforms": []}
-    result["localizationTips"] = {"marketing_tags": sections["title_synopsis_localization"]["items"], "translation_quality": sections["terminology_glossary_risks"]["items"]}
-    result["tags"] = [genre, selected_country, '현지화', '플랫폼 트렌드']
     return result
 
 
@@ -785,7 +727,6 @@ def build_localization_advice(payload: dict[str, Any], *, data_path: Path = DEFA
 __all__ = [
     "EvidenceItem",
     "Recommendation",
-    "available_options",
     "build_localization_advice",
     "generate_localization_guide",
     "normalize_country",

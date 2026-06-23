@@ -146,7 +146,7 @@ class GuideResponseShapeTests(unittest.TestCase):
     def test_country_recommendation_response_strips_llm_diagnostics_publicly(self) -> None:
         recommendation = {
             "mode": "country_recommendation",
-            "requiresSelection": True,
+            "requiresSelection": False,
             "recommendedCountry": "JP",
             "recommendedCountries": [{"country": "JP"}],
             "llmRecommendationEvidenceBytes": 456,
@@ -156,7 +156,7 @@ class GuideResponseShapeTests(unittest.TestCase):
         with (
             patch(
                 "model_server.domains.guide.guide_pipeline.build_localization_advice",
-                return_value={"requiresSelection": True},
+                return_value={"requiresSelection": False},
             ),
             patch(
                 "model_server.domains.guide.guide_pipeline.generate_country_recommendation",
@@ -172,6 +172,30 @@ class GuideResponseShapeTests(unittest.TestCase):
         self.assertNotIn("llmCountryRecommendationError", public_result)
         self.assertNotIn("llmCountryRecommendationModel", internal_requested_result)
         self.assertNotIn("internal", internal_requested_result)
+
+    def test_synopsis_recommendation_exposes_html_but_not_internal_evidence(self) -> None:
+        recommendation = {
+            "mode": "synopsis_country_recommendation",
+            "requiresSelection": False,
+            "recommendedCountry": "JP",
+            "recommendedCountryDisplay": "일본",
+            "confidence": "중간",
+            "storyProfile": {"title": "작품", "genre": "판타지", "coreSignals": ["성장"], "analysisSummary": "요약"},
+            "countryComparisons": [],
+            "limitations": ["한계"],
+            "llmRecommendationEvidenceBytes": 456,
+        }
+        with patch(
+            "model_server.domains.guide.guide_pipeline.generate_country_recommendation",
+            return_value=recommendation,
+        ):
+            result = generate_guide({"title": "작품", "synopsis": "충분히 긴 시놉시스", "targetCountry": "JP"})
+
+        self.assertTrue(result["htmlReport"].lstrip().lower().startswith("<!doctype html>"))
+        self.assertFalse(result["requiresSelection"])
+        self.assertNotIn("llmRecommendationEvidenceBytes", result)
+        self.assertNotIn("recommended_country", result)
+        self.assertNotIn("available_countries", result)
 
 
 if __name__ == "__main__":

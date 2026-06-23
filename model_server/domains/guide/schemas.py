@@ -23,8 +23,8 @@ class GuideRequest(BaseModel):
     targetMarket: str | None = Field(None, max_length=20)
     titleElements: list[str] | None = Field(None, max_length=20)
     comparableSignals: list[str] | None = Field(None, max_length=20)
-    legacyGuide: bool | None = None
     includeContextPack: bool | None = None
+    includeLiveMarket: bool | None = None
     saveGuide: bool | None = Field(True, description="workId가 있을 때 localization_guides에 저장")
 
 

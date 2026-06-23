@@ -40,8 +40,10 @@ p,li { line-height:1.7; }
 .badge.ok { color:var(--ok); background:var(--soft); font-weight:800; margin-top:10px; }
 .muted-card { background:#fbf7fa; }
 .eyebrow { color:var(--accent); font-size:13px; font-weight:800; margin:0 0 8px; }
-.cards,.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
-.mini-card,.chart-card { padding:14px; border-radius:18px; background:#fff; border:1px solid var(--line); box-shadow:0 8px 20px rgba(124,45,138,.05); }
+.cards,.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); gap:14px; min-width:0; }
+.mini-card,.chart-card { padding:14px; border-radius:18px; background:#fff; border:1px solid var(--line); box-shadow:0 8px 20px rgba(124,45,138,.05); min-width:0; overflow:hidden; }
+.mini-card a,.mini-card h3,.mini-card small { max-width:100%; overflow-wrap:anywhere; word-break:break-word; }
+a { color:var(--ok); overflow-wrap:anywhere; word-break:break-word; }
 .chart-row { margin-top:10px; }
 .chart-label { display:flex; justify-content:space-between; gap:12px; color:var(--muted); font-size:13px; margin-bottom:5px; }
 .chart-track { height:9px; background:#f8e9f4; border-radius:999px; overflow:hidden; }
