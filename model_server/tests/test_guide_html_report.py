@@ -13,6 +13,11 @@ class GuideHtmlReportTests(unittest.TestCase):
             set(GUIDE_JSON_SCHEMA["properties"]),
             set(GUIDE_JSON_SCHEMA["required"]),
         )
+        self.assertIn("marketSignalSummary", GUIDE_JSON_SCHEMA["required"])
+        self.assertIn("platformCultureReview", GUIDE_JSON_SCHEMA["required"])
+        self.assertIn("releaseChecklist", GUIDE_JSON_SCHEMA["required"])
+        self.assertNotIn("evidenceExplanation", GUIDE_JSON_SCHEMA["properties"])
+        self.assertNotIn("limitations", GUIDE_JSON_SCHEMA["properties"])
 
     def test_deterministic_html_report_is_self_contained_document(self) -> None:
         html = _html_report(
@@ -34,7 +39,68 @@ class GuideHtmlReportTests(unittest.TestCase):
         self.assertIn("핵심 판단", html)
         self.assertIn("출시 전 전달 체크리스트", html)
         self.assertIn("작품을 현재 방향 그대로 두고", html)
-        self.assertIn("시장 해석", html)
+
+    def test_deterministic_html_report_hides_internal_market_noise(self) -> None:
+        html = _html_report(
+            title="작품",
+            mode_label="국가/장르 기반 기준서",
+            target_country="US",
+            genre="fantasy",
+            sections={
+                "genre_trope_alignment": {
+                    "title": "장르·태그 정리",
+                    "items": [
+                        "Wattpad/hot_fantasy 순위 1: Sample, 장르 적중 0, 시놉시스 적중 6",
+                        "ONGOING, WAIT_UNTIL_FREE, Original",
+                        "Fantasy (959)",
+                    ],
+                },
+                "title_synopsis_localization": {
+                    "title": "제목·소개문 정리",
+                    "items": ["US/global English 독자에게 소개문을 명확히 전달합니다."],
+                },
+                "terminology_glossary_risks": {
+                    "title": "고유명사 정리",
+                    "items": ["작품 glossary에 넣어 관리합니다."],
+                },
+                "evidence_used": {
+                    "title": "사용 근거",
+                    "items": ["사용 근거를 그대로 노출하지 않습니다."],
+                },
+                "platform_culture_review_result": {
+                    "title": "플랫폼·문화권 검토 결과",
+                    "items": ["미국 기준으로 게시 전 확인할 항목을 작품 입력에 맞춰 정리합니다."],
+                },
+                "market_signal_summary": {
+                    "title": "참고한 시장 신호 요약",
+                    "items": ["공개 플랫폼 자료는 표현 방향 참고로만 사용합니다."],
+                },
+                "release_readiness_checklist": {
+                    "title": "출시 전 확인할 것",
+                    "items": ["제목과 소개문에서 초반 갈등이 보이는지 확인합니다."],
+                },
+            },
+            recommendations=[],
+        )
+
+        for hidden in (
+            "(959)",
+            "ONGOING",
+            "WAIT_UNTIL_FREE",
+            "Original",
+            "Wattpad/hot_fantasy",
+            "장르 적중",
+            "시놉시스 적중",
+            "선택 국가 요약",
+            "사용 근거",
+            "glossary",
+            "US/global English",
+        ):
+            self.assertNotIn(hidden, html)
+        self.assertIn("표기 기준", html)
+        self.assertIn("플랫폼·문화권 검토 결과", html)
+        self.assertIn("참고한 시장 신호 요약", html)
+        self.assertIn("출시 전 확인할 것", html)
 
     def test_llm_html_report_is_self_contained_document(self) -> None:
         guide = {
@@ -47,11 +113,12 @@ class GuideHtmlReportTests(unittest.TestCase):
                 "assumptions": ["시놉시스 기반 추정"],
             },
             "marketInterpretation": ["glossary 기준을 확인합니다."],
+            "marketSignalSummary": ["공개 플랫폼 자료는 표현 방향 참고로만 사용합니다."],
             "culturalNotes": ["문화 메모"],
+            "platformCultureReview": ["시놉시스 기준으로 게시 전 확인할 항목을 정리했습니다."],
             "platformPolicyChecks": ["정책 체크"],
             "marketTagGuidance": ["태그 가이드"],
-            "evidenceExplanation": ["증거 설명"],
-            "limitations": ["한계"],
+            "releaseChecklist": ["제목과 소개문을 확인합니다.", "고유명사 표기를 확인합니다.", "정책 리스크를 확인합니다."],
         }
         result = {
             "title": "작품",
@@ -67,14 +134,15 @@ class GuideHtmlReportTests(unittest.TestCase):
         self.assertIn("<style>", html)
         self.assertIn("</style>", html)
         self.assertIn("핵심 전달 전략", html)
-        self.assertIn("출시 전 체크리스트", html)
+        self.assertIn("출시 전 확인할 것", html)
         self.assertIn("시장 적합도 해석", html)
+        self.assertIn("참고한 시장 신호 요약", html)
         self.assertIn("번역·표현 주의점", html)
+        self.assertIn("플랫폼·문화권 검토 결과", html)
         self.assertIn("플랫폼 게시 전 체크", html)
-        self.assertIn("판단 근거", html)
-        self.assertIn("확인 필요 사항", html)
+        self.assertNotIn("판단 근거", html)
+        self.assertNotIn("확인 필요 사항", html)
         self.assertIn("작품을 현재 방향 그대로 두고", html)
-        self.assertIn("작품과 맞닿는 시장 신호", html)
         self.assertIn("작품 용어 기준", html)
         self.assertNotIn("컨텍스트 팩", html)
         self.assertNotIn("glossary", html)
@@ -93,11 +161,12 @@ class GuideHtmlReportTests(unittest.TestCase):
                 "assumptions": [],
             },
             "marketInterpretation": [],
+            "marketSignalSummary": ["공개 플랫폼 자료는 표현 방향 참고로만 사용합니다."],
             "culturalNotes": [],
+            "platformCultureReview": ["게시 전 확인 항목만 정리합니다."],
             "platformPolicyChecks": [],
             "marketTagGuidance": [],
-            "evidenceExplanation": [],
-            "limitations": [],
+            "releaseChecklist": ["제목을 확인합니다.", "소개문을 확인합니다.", "태그를 확인합니다."],
         }
         result = {
             "title": "work",
@@ -120,20 +189,19 @@ class GuideHtmlReportTests(unittest.TestCase):
 
         html = render_llm_html(guide, result)
 
-        self.assertIn("최근 플랫폼 참고 자료", html)
-        self.assertIn("플랫폼 기준", html)
-        self.assertIn("주요 플랫폼", html)
-        self.assertIn("kakuyomu.jp", html)
-        self.assertIn("https://kakuyomu.jp/help", html)
+        self.assertNotIn("최근 플랫폼 참고 자료", html)
+        self.assertNotIn("플랫폼 기준", html)
+        self.assertNotIn("주요 플랫폼", html)
+        self.assertNotIn("kakuyomu.jp", html)
+        self.assertNotIn("https://kakuyomu.jp/help", html)
         self.assertIn(".mini-card a,.mini-card h3,.mini-card small", html)
-        self.assertIn("출처 열기", html)
-        self.assertIn("본문 가이드를 작성할 때 확인한 공개 자료", html)
+        self.assertNotIn("출처 열기", html)
+        self.assertNotIn("본문 가이드를 작성할 때 확인한 공개 자료", html)
         self.assertNotIn("LIVE MARKET EVIDENCE", html)
         self.assertNotIn("원문 스니펫", html)
         self.assertNotIn("Kakuyomu guide", html)
         self.assertNotIn("Platform rule summary", html)
         self.assertNotIn("countryEvidence", html)
-        self.assertLess(html.index("핵심 전달 전략"), html.index("최근 플랫폼 참고 자료"))
 
     def test_country_recommendation_is_a_self_contained_html_result(self) -> None:
         result = {

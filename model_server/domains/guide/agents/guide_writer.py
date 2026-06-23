@@ -4,6 +4,7 @@ import hashlib
 import html
 import json
 import os
+import re
 from datetime import datetime, timezone
 from typing import Any
 
@@ -29,21 +30,23 @@ GUIDE_JSON_SCHEMA: dict[str, Any] = {
             "required": ["workTitle", "genre", "targetCountry", "coreAppeal", "assumptions"],
         },
         "marketInterpretation": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 6},
+        "marketSignalSummary": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 5},
         "culturalNotes": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 6},
+        "platformCultureReview": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 6},
         "platformPolicyChecks": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 6},
         "marketTagGuidance": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 6},
-        "evidenceExplanation": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 6},
-        "limitations": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 5},
+        "releaseChecklist": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 6},
     },
     "required": [
         "executiveSummary",
         "inputReading",
         "marketInterpretation",
+        "marketSignalSummary",
         "culturalNotes",
+        "platformCultureReview",
         "platformPolicyChecks",
         "marketTagGuidance",
-        "evidenceExplanation",
-        "limitations",
+        "releaseChecklist",
     ],
 }
 
@@ -66,6 +69,8 @@ def _esc(value: Any) -> str:
 
 def _user_facing_text(value: Any) -> str:
     text = "" if value is None else str(value)
+    if text and not any("\uac00" <= ch <= "\ud7a3" for ch in text) and any(ch.isalpha() for ch in text):
+        return "한국어 안내가 필요합니다."
     replacements = {
         "glossary": "작품 용어 기준",
         "Glossary": "작품 용어 기준",
@@ -75,10 +80,31 @@ def _user_facing_text(value: Any) -> str:
         "liveMarketEvidence": "최근 플랫폼 참고 자료",
         "contextPackBriefing": "시장 참고 요약",
         "policyAttention": "정책 확인 항목",
+        "US/global English": "미국",
+        "Global": "전체",
+        "ONGOING": "",
+        "WAIT_UNTIL_FREE": "",
+        "WAIT_UNTIL_PAID": "",
+        "Original": "",
+        "ORIGINAL": "",
+        "fantasy": "판타지",
+        "Fantasy": "판타지",
+        "academy": "아카데미",
+        "Academy": "아카데미",
+        "growth": "성장",
+        "Growth": "성장",
+        "revenge": "복수",
+        "Revenge": "복수",
+        "LitRPG": "시스템 성장물",
+        "Progression": "성장형 판타지",
     }
     for before, after in replacements.items():
         text = text.replace(before, after)
-    return text
+    text = re.sub(r"\s*\(\d+(?:\.\d+)?\)", "", text)
+    text = re.sub(r"\b(?:Wattpad|KakaoPage|Kakao|Naver|Novelpia|Kakuyomu|Syosetu)/[A-Za-z0-9_\-]+[^,.;\n]*[,.;]?\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\b[A-Z][A-Z0-9_]{2,}\b\s*,?\s*", "", text)
+    text = re.sub(r"https?://\S+", "", text)
+    return re.sub(r"\s+", " ", text).strip(" ,")
 
 
 def _esc_user(value: Any) -> str:
@@ -268,6 +294,9 @@ def render_llm_html(guide: dict[str, Any], result: dict[str, Any]) -> str:
         return "".join(f"<li>{_esc_user(item)}</li>" for item in guide.get(key) or [])
 
     market_items = guide.get("marketInterpretation") or []
+    market_signal_items = guide.get("marketSignalSummary") or []
+    platform_review_items = guide.get("platformCultureReview") or []
+    release_check_items = guide.get("releaseChecklist") or []
     input_reading = guide.get("inputReading") or {}
     core = " · ".join(str(item) for item in input_reading.get("coreAppeal") or [])
     assumptions = "".join(f"<li>{_esc_user(item)}</li>" for item in input_reading.get("assumptions") or [])
@@ -276,7 +305,7 @@ def render_llm_html(guide: dict[str, Any], result: dict[str, Any]) -> str:
         "고유명사·호칭·스킬명은 작품 안에서 같은 방식으로 쓰이도록 기준을 정한 뒤 번역에 반영합니다.",
         "플랫폼 정책 체크와 문화 메모는 게시 전 검수 항목으로 분리합니다.",
     ]
-    for key in ("marketTagGuidance", "platformPolicyChecks", "limitations"):
+    for key in ("releaseChecklist", "marketTagGuidance", "platformPolicyChecks"):
         for item in guide.get(key) or []:
             text = str(item).strip()
             if text and text not in action_items:
@@ -294,7 +323,7 @@ def render_llm_html(guide: dict[str, Any], result: dict[str, Any]) -> str:
   <h2>작품 입력 해석</h2>
   <div class="work-summary">
     <div><small>작품 제목</small><strong>{_esc(input_reading.get('workTitle') or title)}</strong></div>
-    <div><small>장르 / 대상</small><strong>{_esc(input_reading.get('genre') or genre)} · {_esc(input_reading.get('targetCountry') or country)}</strong></div>
+    <div><small>장르 / 대상</small><strong>{_esc(input_reading.get('genre') or genre)} · {_esc(country)}</strong></div>
   </div>
   <p class="quiet-note">{_esc(CREATIVE_BOUNDARY_NOTE)}</p>
   <p><b>핵심 포인트:</b> {_esc(core or '입력 시놉시스가 부족합니다.')}</p>
@@ -302,16 +331,14 @@ def render_llm_html(guide: dict[str, Any], result: dict[str, Any]) -> str:
 </section>
 <section class="section"><h2>제목·소개문·태그 전달 가이드</h2><ul class="guide-list">{bullets('marketTagGuidance')}</ul></section>
 <section class="section"><h2>시장 적합도 해석</h2><ul class="guide-list">{''.join(f'<li>{_esc_user(item)}</li>' for item in market_items)}</ul></section>
-{render_market_snapshot_html(result)}
+<section class="section"><h2>참고한 시장 신호 요약</h2><ul class="guide-list">{''.join(f'<li>{_esc_user(item)}</li>' for item in market_signal_items)}</ul></section>
 <section class="section"><h2>번역·표현 주의점</h2><ul class="guide-list">{bullets('culturalNotes')}</ul></section>
+<section class="section"><h2>플랫폼·문화권 검토 결과</h2><ul class="guide-list">{''.join(f'<li>{_esc_user(item)}</li>' for item in platform_review_items)}</ul></section>
 <section class="section"><h2>플랫폼 게시 전 체크</h2><ul class="guide-list">{bullets('platformPolicyChecks')}</ul></section>
 <section class="section">
-  <h2>출시 전 체크리스트</h2>
-  <ul class="guide-list">{action_html}</ul>
+  <h2>출시 전 확인할 것</h2>
+  <ul class="guide-list">{''.join(f'<li>{_esc_user(item)}</li>' for item in release_check_items) or action_html}</ul>
 </section>
-<section class="section"><h2>판단 근거</h2><ul class="guide-list">{bullets('evidenceExplanation')}</ul></section>
-<section class="section"><h2>확인 필요 사항</h2><ul class="guide-list">{bullets('limitations')}</ul></section>
-{render_live_market_evidence_html(result)}
 """
     return build_guide_html_document(title=f"{country} 현지화 가이드", body_html=body_html)
 
@@ -337,6 +364,10 @@ def generate_llm_guide(payload: dict[str, Any], result: dict[str, Any]) -> dict[
             CREATIVE_BOUNDARY_NOTE,
             *CREATIVE_BOUNDARY_RULES,
             "시놉시스, 장르, 대상국가, 문화 주의사항, 플랫폼 정책 점검을 포함하세요.",
+            "marketSignalSummary에는 순위, 카운트, URL, 원문 제목을 쓰지 말고 사용자가 이해할 수 있는 시장 신호 해석만 쓰세요.",
+            "platformCultureReview에는 검토 기준만 나열하지 말고 이 작품 입력을 기준으로 실제로 무엇을 확인했는지 쓰세요.",
+            "releaseChecklist에는 내부 판단 근거가 아니라 출시 전 사용자가 확인할 수 있는 행동 항목만 쓰세요.",
+            "evidenceExplanation, limitations, 사용 근거, 판단 근거 같은 제목이나 표현은 출력하지 마세요.",
             "입력 해석은 '이렇게 보인다' 형식으로 자연스럽게 작성하세요.",
             "내부 근거를 재서술하지 말고, 사용자에게 도움이 되는 해석만 쓰세요.",
             "불필요한 영어 문장을 쓰지 마세요.",

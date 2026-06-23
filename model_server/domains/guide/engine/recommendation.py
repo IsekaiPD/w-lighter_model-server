@@ -109,6 +109,112 @@ SYNOPSIS_MOTIF_LABELS = {
     "bl": 'BL/관계성 축',
 }
 
+NON_GENRE_PUBLIC_TAGS = {
+    "ONGOING",
+    "WAIT_UNTIL_FREE",
+    "WAIT_UNTIL_PAID",
+    "COMPLETED",
+    "COMPLETE",
+    "ORIGINAL",
+    "EXCLUSIVE",
+    "FREE",
+    "PAID",
+    "HOT",
+    "NEW",
+}
+
+PUBLIC_LABEL_TRANSLATIONS = {
+    "fantasy": "판타지",
+    "high fantasy": "하이 판타지",
+    "low fantasy": "로우 판타지",
+    "action fantasy": "액션 판타지",
+    "romance fantasy": "로맨스 판타지",
+    "romantasy": "로맨스 판타지",
+    "romance": "로맨스",
+    "adventure": "모험",
+    "action": "액션",
+    "magic": "마법",
+    "litrpg": "시스템 성장물",
+    "gamelit": "게임 판타지",
+    "progression": "성장형 판타지",
+    "system": "시스템",
+    "skill": "스킬",
+    "isekai": "이세계",
+    "academy": "아카데미",
+    "growth": "성장",
+    "revenge": "복수",
+}
+
+PUBLIC_SECTION_KEYS = (
+    "genre_trope_alignment",
+    "title_synopsis_localization",
+    "terminology_glossary_risks",
+    "platform_culture_review_result",
+    "market_signal_summary",
+    "release_readiness_checklist",
+)
+
+
+def _strip_public_noise(value: Any) -> str:
+    text = str(value if value is not None else "")
+    text = re.sub(r"\s*\(\d+(?:\.\d+)?\)", "", text)
+    text = re.sub(r"\b(?:Wattpad|KakaoPage|Kakao|Naver|Novelpia|Kakuyomu|Syosetu)/[A-Za-z0-9_\-]+[^,.;\n]*[,.;]?\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\b(?:ONGOING|WAIT_UNTIL_FREE|WAIT_UNTIL_PAID|ORIGINAL|COMPLETED|COMPLETE)\b\s*,?\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\uc7a5\ub974 \uc801\uc911\s*\d+\s*,?\s*", "", text)
+    text = re.sub(r"\uc2dc\ub189\uc2dc\uc2a4 \uc801\uc911\s*\d+\s*,?\s*", "", text)
+    text = re.sub(r"\uc21c\uc704\s*\d+\s*:?\s*", "", text)
+    text = text.replace("`", "")
+    text = text.replace("US/global English", "\ubbf8\uad6d")
+    text = text.replace("Global", "\uc804\uccb4")
+    text = text.replace("\uc791\ud488 glossary", "\uc791\ud488 \ud45c\uae30 \uae30\uc900")
+    text = text.replace("glossary", "\ud45c\uae30 \uae30\uc900")
+    text = text.replace("Glossary", "\ud45c\uae30 \uae30\uc900")
+    text = re.sub(r",\s*(?=[,.:;]|$)", "", text)
+    return re.sub(r"\s+", " ", text).strip(" ,")
+
+
+def _is_public_tag_label(label: Any) -> bool:
+    text = str(label or "").strip()
+    if not text:
+        return False
+    normalized = re.sub(r"[^A-Za-z0-9]+", "_", text).strip("_").upper()
+    if normalized in NON_GENRE_PUBLIC_TAGS or "WAIT_UNTIL" in normalized:
+        return False
+    return True
+
+
+def _public_label(label: Any) -> str:
+    text = _strip_public_noise(label)
+    key = re.sub(r"\s+", " ", text.strip().lower())
+    return PUBLIC_LABEL_TRANSLATIONS.get(key, text)
+
+
+def _public_label_list(rows: list[tuple[Any, Any]], *, limit: int) -> list[str]:
+    labels: list[str] = []
+    for label, _count in rows:
+        clean = _public_label(label)
+        if not _is_public_tag_label(clean):
+            continue
+        if clean not in labels:
+            labels.append(clean)
+        if len(labels) >= limit:
+            break
+    return labels
+
+
+def _clean_public_items(items: list[Any], *, limit: int = 6) -> list[str]:
+    clean: list[str] = []
+    for item in items:
+        text = _strip_public_noise(item)
+        if not text:
+            continue
+        if text not in clean:
+            clean.append(text)
+        if len(clean) >= limit:
+            break
+    return clean
+
+
 @dataclass(frozen=True)
 class EvidenceItem:
     platform: str
@@ -357,21 +463,41 @@ def _select_evidence(data: dict[str, Any], *, country: str, genre: str | None, s
 
 
 def _section_payload(country_profile: Any, *, target_country: str, genre: str, synopsis: str, recommendations: list[Recommendation], evidence: list[EvidenceItem]) -> dict[str, Any]:
-    top_genres = country_profile.top_genres[:8] if country_profile else []
-    top_tags = country_profile.top_tags[:14] if country_profile else []
+    raw_top_genres = country_profile.top_genres[:8] if country_profile else []
+    raw_top_tags = country_profile.top_tags[:14] if country_profile else []
+    top_genres = _public_label_list(raw_top_genres, limit=5)
+    top_tags = _public_label_list(raw_top_tags, limit=8)
     signals = country_profile.localization_signals if country_profile else []
     guidance = country_profile.adaptation_guidance if country_profile else []
     cautions = country_profile.caution_points if country_profile else []
     synopsis_mode = bool(synopsis.strip())
     best_reasons = recommendations[0].reasons if recommendations else []
-    genre_label = genre or '미지정'  # '미지정' (py3.10 f-string 백슬래시 제약 회피)
-    _top_genre_join = ', '.join(f'{g}({c})' for g, c in top_genres[:5])
+    genre_label = _public_label(genre) if genre else '미지정'  # '미지정' (py3.10 f-string 백슬래시 제약 회피)
+    _top_genre_join = ', '.join(top_genres[:5])
     top_genres_label = _top_genre_join or '근거 부족'
     synopsis_note = _synopsis_input_note(synopsis)
     inferred_motifs = _synopsis_motifs(synopsis)
-    top_tag_line = f"순위권에서 자주 보인 키워드: {', '.join(f'{t}({c})' for t, c in top_tags[:8])}" if top_tags else '순위권 키워드 근거가 충분하지 않습니다.'
+    top_tag_line = f"공개 플랫폼 자료에서 참고할 만한 태그 표현: {', '.join(top_tags[:8])}" if top_tags else '태그 참고 근거가 충분하지 않습니다.'
     target_label = _display_country_label(target_country)
     recommendation_note = _recommendation_notice(synopsis_present=synopsis_mode)
+    localized_cautions = _clean_public_items([_localize_caution_item(item) for item in cautions[:5]], limit=5)
+    localized_guidance = _clean_public_items([_localize_guidance_item(item) for item in guidance[:6]], limit=5)
+    market_signal_items = [
+        f"{target_label} 공개 플랫폼 자료는 흥행 예측이 아니라 제목·소개문·태그 표현을 점검하는 참고 신호로만 사용했습니다.",
+        f"장르 참고 표현은 {top_genres_label} 범위에서만 확인하고, 작품의 장르 방향을 바꾸라는 의미로 쓰지 않았습니다.",
+        f"시놉시스에서 읽힌 신호는 {', '.join(inferred_motifs)}이며, 소개문 후보를 점검하는 보조 기준으로만 사용합니다." if inferred_motifs else "시놉시스 근거가 부족하므로 시장 신호는 장르 일반 기대치 수준에서만 참고합니다.",
+    ]
+    if top_tags:
+        market_signal_items.append(f"태그는 {', '.join(top_tags[:5])} 같은 공개 표현을 참고하되, 상태 태그나 노출용 메타 태그는 장르처럼 쓰지 않습니다.")
+    platform_review_items = [
+        f"{target_label} 기준으로 연령등급, 폭력/성적 표현, 플랫폼별 제한 표현을 게시 전 확인 대상으로 분리했습니다.",
+        "현재 입력만으로 위반을 단정하지 않고, 본문 수위와 플랫폼별 최신 정책을 대조할 항목으로 표시합니다.",
+    ] + localized_cautions
+    release_items = [
+        f"{target_label}용 제목·소개문·태그에서 장르 훅, 관계 축, 초반 갈등이 한눈에 보이는지 확인합니다.",
+        "고유명사·호칭·스킬명은 작품 안에서 같은 표기로 유지되도록 표기 기준을 먼저 정합니다.",
+        "공개 플랫폼 자료의 문장이나 제목을 그대로 옮기지 않고, 작품의 기존 방향을 유지한 표현 후보로만 반영합니다.",
+    ] + localized_guidance
     return {
         "market_trend_fit": {
             "title": '현지화 기준서 요약',
@@ -431,6 +557,18 @@ def _section_payload(country_profile: Any, *, target_country: str, genre: str, s
                 for ev in evidence[:8]
             ] or best_reasons or ["직접 선택한 근거가 없습니다."],
         },
+        "platform_culture_review_result": {
+            "title": '플랫폼·문화권 검토 결과',
+            "items": platform_review_items,
+        },
+        "market_signal_summary": {
+            "title": '참고한 시장 신호 요약',
+            "items": market_signal_items,
+        },
+        "release_readiness_checklist": {
+            "title": '출시 전 확인할 것',
+            "items": release_items,
+        },
     }
 
 
@@ -482,11 +620,15 @@ def _model_prompt_payload(*, original: dict[str, Any], target_country: str, reco
 
 def _html_report(*, title: str, mode_label: str, target_country: str, genre: str, sections: dict[str, Any], recommendations: list[Recommendation]) -> str:
     def esc(value: Any) -> str:
-        return html.escape(str(value if value is not None else ""))
+        return html.escape(_strip_public_noise(value))
 
     section_html = []
-    for key, section in sections.items():
-        items = "".join(f"<li>{esc(item)}</li>" for item in section.get("items", []))
+    for key in PUBLIC_SECTION_KEYS:
+        section = sections.get(key) or {}
+        clean_items = [_strip_public_noise(item) for item in section.get("items", [])]
+        items = "".join(f"<li>{esc(item)}</li>" for item in clean_items if item)
+        if not items:
+            continue
         section_html.append(
             f"<div class='guide-section'><div class='guide-section-header'><span class='guide-section-title'>{esc(section.get('title', key))}</span></div><ul class='guide-list'>{items}</ul></div>"
         )
@@ -519,7 +661,6 @@ def _html_report(*, title: str, mode_label: str, target_country: str, genre: str
       <div class="guide-section"><p class="quiet-note">{esc(boundary_note)}</p></div>
       <div class="guide-section"><div class="guide-section-header"><span class="guide-section-title">핵심 판단</span></div><ul class="guide-list">{quality_items}</ul></div>
       <div class="guide-section"><div class="guide-section-header"><span class="guide-section-title">출시 전 전달 체크리스트</span></div><ul class="guide-list">{action_items}</ul></div>
-      <div class="guide-section"><div class="guide-section-header"><span class="guide-section-title">선택 국가 요약</span></div><ul class="guide-list"><li>선택 국가: {esc(display_country)}</li><li>이 가이드는 선택한 국가를 기준으로 정리했습니다.</li><li>추천 후보는 내부 참고용으로만 유지했습니다.</li></ul></div>
       {''.join(section_html)}
     </div>
     """
@@ -559,7 +700,7 @@ def _guide_quality_summary(*, target_country: str, genre: str, sections: dict[st
         section = sections.get(section_key) or {}
         section_items = section.get("items") or []
         if section_items:
-            items.append(str(section_items[0]))
+            items.append(_strip_public_noise(section_items[0]))
     return items[:5]
 
 
@@ -572,13 +713,12 @@ def _guide_action_checklist(*, target_country: str, sections: dict[str, Any]) ->
         "고유명사·호칭·스킬명은 작품 안에서 같은 방식으로 쓰이도록 기준을 정한 뒤 번역에 반영합니다.",
         "연령등급, 폭력/성적 표현, 플랫폼 정책 리스크는 게시 전 별도 검수 항목으로 표시합니다.",
     ]
-    for section_key in ("adaptation_checklist", "evidence_used"):
-        section = sections.get(section_key) or {}
-        for item in section.get("items") or []:
-            text = str(item).strip()
-            if text and text not in checklist:
-                checklist.append(text)
-                break
+    section = sections.get("release_readiness_checklist") or sections.get("title_synopsis_localization") or {}
+    for item in section.get("items") or []:
+        text = _strip_public_noise(item)
+        if text and text not in checklist:
+            checklist.append(text)
+            break
     return checklist[:5]
 
 
