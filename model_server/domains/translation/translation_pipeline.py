@@ -228,7 +228,8 @@ class TranslationPipeline:
                     "promptPreview": combined,
                 },
             )
-            return direct.final_translation, direct.metadata
+            # 첫 번역가의 overview(번역가 노트)를 metadata에 실어 그래프→summary로 전달.
+            return direct.final_translation, {**direct.metadata, "draftOverview": (direct.draft or {}).get("overview", "")}
 
         return build_v3_graph_literary_package(
             source_text,

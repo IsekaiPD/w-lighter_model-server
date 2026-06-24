@@ -14,8 +14,6 @@ from .engine.literary_package import (
     GlossaryEntry,
     IdiomNote,
     RAGPackets,
-    TranslationRationale,
-    TranslationRationaleItem,
     V3LiteraryPackageResult,
     WorkMemory,
     analyze_source_references,
@@ -25,7 +23,6 @@ from .engine.literary_package import (
     build_v3_literary_package,
     detect_idiom_notes,
     run_translation_loop,
-    write_translation_rationale,
 )
 from .glossary import (
     GLOSSARY_CATEGORIES,
@@ -71,8 +68,6 @@ __all__ = [
     "RAGPackets",
     "TranslationMode",
     "TranslationPipeline",
-    "TranslationRationale",
-    "TranslationRationaleItem",
     "DirectTranslationResult",
     "V3LiteraryPackageResult",
     "WorkMemory",
@@ -97,5 +92,4 @@ __all__ = [
     "normalize_target_country",
     "normalize_target_fields",
     "normalize_target_locale",
-    "write_translation_rationale",
 ]

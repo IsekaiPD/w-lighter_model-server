@@ -106,7 +106,8 @@ class DirectTranslator:
         memory_context: str = "",
     ) -> DirectTranslationResult:
         initial_metadata = initial_result.metadata
-        retry_attempted = self._should_retry_translation_safety(initial_metadata)
+        # 첫 번역가 자동 재번역은 기본 off(config.translation_safety_retry_enabled). 방침: 1패스만.
+        retry_attempted = bool(self.config.translation_safety_retry_enabled) and self._should_retry_translation_safety(initial_metadata)
         retry_result: DirectTranslationResult | None = None
         final_result = initial_result
         if retry_attempted:

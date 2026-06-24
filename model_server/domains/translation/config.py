@@ -33,6 +33,11 @@ DEFAULT_QDRANT_URL = os.getenv("QDRANT_URL", "").strip() or None
 # 올리면 각주 보수적, 내리면 적극적. env로 배포별 조절.
 DEFAULT_ANNOTATION_SCORE_THRESHOLD = float(os.getenv("WLIGHTER_ANNOTATION_SCORE_THRESHOLD", "0.55"))
 
+# 첫 번역가(DirectTranslator)의 내부 자동 재번역(소스카피/locale fail 시 strict 재시도). **기본 off.**
+# 방침: 첫 번역가는 1패스만 — 숨은 재번역은 흐름에서 확인 불가. 잔류는 check_korean_residue가 수리.
+# env가 아니라 코드(config)에서만 관리하는 노브. 옛 동작 복원이 필요하면 아래 기본값을 True로.
+DEFAULT_TRANSLATION_SAFETY_RETRY = False
+
 
 def validate_translation_model(model: str, *, field_name: str = "model") -> str:
     normalized = str(model or "").strip()
@@ -69,6 +74,7 @@ class PipelineConfig:
     chunk_strategy: str = "sentence"
     qdrant_path: str = "qdrant_local"
     qdrant_url: str | None = DEFAULT_QDRANT_URL
+    translation_safety_retry_enabled: bool = DEFAULT_TRANSLATION_SAFETY_RETRY
 
     def __post_init__(self) -> None:
         self.allowed_models = tuple(str(model).strip() for model in (self.allowed_models or ALLOWED_TRANSLATION_MODELS))

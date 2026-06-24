@@ -68,31 +68,6 @@ def _payload_value(payload: dict[str, Any], *keys: str, default: Any = None) -> 
     return default
 
 
-def _delivery_block_message(delivery_status: str) -> str:
-    if delivery_status == "blocked_translation_safety":
-        return "Translation safety validation failed. Please try again."
-    if delivery_status == "blocked_translation_integrity":
-        return "Translation target-language integrity validation failed. Please try again."
-    return ""
-
-
-def _normalize_delivery(
-    *, final_translation: str, delivery_status: str, user_visible_error_code: str | None, metadata: dict[str, Any]
-) -> tuple[str, str, str | None, dict[str, Any]]:
-    md = dict(metadata or {})
-    ft, ds, ec = final_translation, delivery_status, user_visible_error_code
-    if ds == "deliverable" and not ft.strip():
-        ft, ds, ec = "", "blocked_translation_integrity", "translation_integrity_failed"
-    if ds == "blocked_translation_safety":
-        ft, ec = "", "translation_safety_failed"
-    elif ds == "blocked_translation_integrity":
-        ft, ec = "", "translation_integrity_failed"
-    if ds != "deliverable":
-        md["delivery_status"] = ds
-        md["user_visible_error_code"] = ec
-    return ft, ds, ec, md
-
-
 _BLOCK_MESSAGES = {
     "non_korean_source": "현재 한국어 원문만 지원하고 있어요. 한국어로 작성된 원문을 입력해 주세요.",
 }
@@ -105,19 +80,14 @@ def _blocked_response(*, country: str, locale: str, block_reason: str) -> dict[s
         "locale": locale,
         "pipeline": "v3_literary_package",
         "finalTranslation": message,
-        "deliveryStatus": "deliverable",
-        "userVisibleErrorCode": None,
-        "message": "",
-        "translationRationale": {},
         "readerEndnotes": [],
         "authorReviewCards": [],
-        "qaIssues": [],
         "metadata": {"blockReason": block_reason},
         "translationReport": {
-            "translationRationale": {},
+            "summary": "",
             "glossaryCandidates": [],
             "readerEndnotes": [],
-            "culturalRiskResult": [],
+            "inspectionReport": [],
         },
     }
 
@@ -166,41 +136,26 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
     )
 
     final_translation = result.get("finalTranslation", "")
-    delivery_status = result.get("deliveryStatus", "deliverable")
-    user_visible_error_code = (result.get("internal") or {}).get("userVisibleErrorCode")
-    final_translation, delivery_status, user_visible_error_code, metadata = _normalize_delivery(
-        final_translation=final_translation,
-        delivery_status=delivery_status,
-        user_visible_error_code=user_visible_error_code,
-        metadata={
-            "mode": TranslationMode.V3_LITERARY_PACKAGE.value,
-            "pipeline": result.get("pipeline"),
-            "delivery_status": delivery_status,
-            "qa_issue_count": len(result.get("qaIssues") or []),
-            "reader_endnote_count": len(result.get("readerEndnotes") or []),
-            "work_memory_source": work_memory_source,
-            "work_memory_fallback_reason": work_memory_fallback,
-        },
-    )
+    metadata = {
+        "mode": TranslationMode.V3_LITERARY_PACKAGE.value,
+        "pipeline": result.get("pipeline"),
+        "reader_endnote_count": len(result.get("readerEndnotes") or []),
+        "work_memory_source": work_memory_source,
+        "work_memory_fallback_reason": work_memory_fallback,
+    }
 
     internal = dict(result.get("internal") or {})
-    internal["userVisibleErrorCode"] = user_visible_error_code
     internal["workMemorySource"] = work_memory_source
 
-    is_blocked = delivery_status.startswith("blocked_translation_")
+    # deliveryStatus/blocked 폐지 — final_integrity_check 제거로 항상 deliver. 빈 입력 차단은 _blocked_response(상류).
     include_internal = bool(payload.get("includeInternal") or payload.get("debugCaptureModelOutputs"))
     response: dict[str, Any] = {
         "country": country,
         "locale": locale,
         "pipeline": result.get("pipeline"),
         "finalTranslation": final_translation,
-        "deliveryStatus": delivery_status,
-        "userVisibleErrorCode": user_visible_error_code,
-        "message": _delivery_block_message(delivery_status),
-        "translationRationale": {} if is_blocked else result.get("translationRationale", {}),
-        "readerEndnotes": [] if is_blocked else result.get("readerEndnotes", []),
-        "authorReviewCards": [] if is_blocked else result.get("authorReviewCards", []),
-        "qaIssues": [] if is_blocked else result.get("qaIssues", []),
+        "readerEndnotes": result.get("readerEndnotes", []),
+        "authorReviewCards": result.get("authorReviewCards", []),
         "metadata": metadata,
     }
     # 화면설계서 번역 리포트 — 웹 4요소(summary·glossary_can·annotation_can·inspection_report) 실데이터 기반.
@@ -208,15 +163,17 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
     revisor_decisions = list(internal_data.get("revisorDecisions") or [])
     review_summaries = internal_data.get("reviewSummaries") or {}
     revisor_summary = str(internal_data.get("revisorSummary") or "")
-    rationale_obj = dict(result.get("translationRationale") or {})
+    # 번역가 overview = 첫 번역가(DirectTranslator)가 낸 실데이터(번역가 노트). internal로 전달됨.
+    draft_overview = str(internal_data.get("draftOverview") or "")
     # 각 용어 후보/주석에 UI 체크 상태용 applied 키(기본 0) 부여. 웹이 컨펌하면 1로 갱신.
-    glossary_candidates = [] if is_blocked else [{**c, "applied": 0} for c in (internal_data.get("glossaryCandidates") or [])]
-    reader_endnotes = [] if is_blocked else [{**e, "applied": 0} for e in (result.get("readerEndnotes") or [])]
-    # inspection_report = 문화리스크 = 리바이저의 cultural 적용/보류 결정 리스트.
-    cultural_risk = [] if is_blocked else [d for d in revisor_decisions if d.get("reviewerType") == "cultural"]
+    glossary_candidates = [{**c, "applied": 0} for c in (internal_data.get("glossaryCandidates") or [])]
+    reader_endnotes = [{**e, "applied": 0} for e in (result.get("readerEndnotes") or [])]
+    # inspectionReport = 리바이저 전체 적용/보류 결정(voice·naturalness·cultural·glossary).
+    # 웹은 reviewerType=='cultural'만 필터해 "문화리스크"로 표시, 챗봇은 전체를 소비.
+    inspection_report = list(revisor_decisions)
     # summary(text) = 번역가 overview + 검수자 3종 총평 + 최종 수정 총평(\n 묶음).
-    summary_text = "" if is_blocked else "\n".join([
-        f"번역가: {rationale_obj.get('overview', '')}",
+    summary_text = "\n".join([
+        f"번역가: {draft_overview}",
         "",
         f"말투 검수자 : {review_summaries.get('voice', '')}",
         f"자연스러움 검수자 : {review_summaries.get('naturalness', '')}",
@@ -229,7 +186,7 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
         "summary": summary_text,
         "glossaryCandidates": glossary_candidates,
         "readerEndnotes": reader_endnotes,
-        "culturalRiskResult": cultural_risk,
+        "inspectionReport": inspection_report,
     }
 
     if include_internal:
@@ -248,7 +205,7 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
                     "summary": summary_text,                  # text
                     "glossaryCan": glossary_candidates,       # json (applied 포함)
                     "annotationCan": reader_endnotes,         # json (applied 포함)
-                    "inspectionReport": cultural_risk,        # json = culturalRiskResult
+                    "inspectionReport": inspection_report,    # json = 전체 리바이저 decisions (웹은 cultural 필터)
                 }
             )
             response["persisted"] = saved
@@ -298,7 +255,7 @@ def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
         source_text=source_text,
         draft_translation=draft.get("translation", ""),
         reviewed_translation=reviewed,
-        translation_rationale=str(workflow.get("translationRationale") or draft.get("rationale") or ""),
+        translation_rationale="",  # translationRationale 폐지 — 챗봇에 넘길 내용은 추후 재정의(팀원 협의).
         used_references=[],
         inspection_report=workflow.get("qaIssues") or {},
         reader_endnotes=workflow.get("readerEndnotes") or [],

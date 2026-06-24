@@ -18,46 +18,14 @@ TRANSLATOR_JSON_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
     "properties": {
         "translation": {"type": "string"},
-        "strategy": {"type": "string"},
-        "rationale": {
+        "overview": {
             "type": "string",
-            "description": "한국어 설명만 허용. 대상 언어가 무엇이든 번역 이유와 전략 설명은 반드시 한국어로 작성한다.",
-        },
-        "reference_ids": {"type": "array", "items": {"type": "string"}},
-        "translation_decisions": {
-            "type": "array",
-            "description": "원문 표현, RAG 근거, 번역 표현, 변경 이유를 연결한 의사결정 목록.",
-            "items": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "source_span": {"type": "string"},
-                    "reference_id": {"type": "string"},
-                    "reference_expression": {"type": "string"},
-                    "translated_span": {"type": "string"},
-                    "decision_type": {"type": "string"},
-                    "reason": {
-                        "type": "string",
-                        "description": "한국어 설명만 허용. 왜 이렇게 바꿨는지 한국어로 작성한다.",
-                    },
-                },
-                "required": [
-                    "source_span",
-                    "reference_id",
-                    "reference_expression",
-                    "translated_span",
-                    "decision_type",
-                    "reason",
-                ],
-            },
+            "description": "한국어 설명만 허용. 번역가가 이 장면을 어떻게/왜 그렇게 번역했는지에 대한 짧은 총평(번역가 노트).",
         },
     },
     "required": [
         "translation",
-        "strategy",
-        "rationale",
-        "reference_ids",
-        "translation_decisions",
+        "overview",
     ],
 }
 
@@ -65,10 +33,7 @@ TRANSLATOR_JSON_SCHEMA: dict[str, Any] = {
 @dataclass(slots=True)
 class TranslationDraft:
     translation: str
-    strategy: str
-    rationale: str
-    reference_ids: list[str]
-    translation_decisions: list[dict[str, str]]
+    overview: str
     raw_response: dict[str, Any]
     prompt_debug: dict[str, Any]
 
@@ -127,7 +92,6 @@ class Translator:
         strict_locale_retry: bool = False,
         retry_attempt: int = 0,
     ) -> TranslationDraft:
-        reference_ids = [str(row.item.get("source_id") or row.item.get("id") or "") for row in retrievals if (row.item.get("source_id") or row.item.get("id"))]
         if self.config.mock:
             payload = translation_payload(self.config, self.resources, source_text, retrievals)
             prompt = self._build_prompt(
@@ -145,10 +109,7 @@ class Translator:
             )
             return TranslationDraft(
                 translation=payload["translation"],
-                strategy=payload["strategy"],
-                rationale=payload["rationale"],
-                reference_ids=payload["reference_ids"],
-                translation_decisions=payload["translation_decisions"],
+                overview=payload["overview"],
                 raw_response=payload["raw_response"],
                 prompt_debug=prompt_debug,
             )
@@ -185,9 +146,7 @@ class Translator:
             },
         )
         payload = json.loads(response.output_text)
-        payload["rationale"] = koreanize_text(payload["rationale"], model=self.config.review_model)
-        for decision in payload.get("translation_decisions", []):
-            decision["reason"] = koreanize_text(decision.get("reason", ""), model=self.config.review_model)
+        payload["overview"] = koreanize_text(payload["overview"], model=self.config.review_model)
         prompt_debug = self._build_prompt_debug(
             prompt=prompt,
             route_source="retry" if strict_locale_retry else "override" if self.config.model_override_used else "profile",
@@ -196,10 +155,7 @@ class Translator:
         )
         return TranslationDraft(
             translation=payload["translation"],
-            strategy=payload["strategy"],
-            rationale=payload["rationale"],
-            reference_ids=payload["reference_ids"],
-            translation_decisions=payload["translation_decisions"],
+            overview=payload["overview"],
             raw_response=payload,
             prompt_debug=prompt_debug,
         )
