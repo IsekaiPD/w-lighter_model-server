@@ -10,7 +10,7 @@ from ..engine.policy_analysis import build_policy_attention_report
 from ..engine.recommendation import DEFAULT_INPUT, load_trend_data, rank_countries
 from ..infra.output_language_guard import repair_user_facing_explanations, sanitize_deterministic_explanations, validate_user_facing_language
 from ..retrieval.context_pack import build_context_pack_overlap_report, inspect_context_pack_source
-from .guide_writer import _client_and_model, llm_requested
+from .guide_writer import _client_and_model
 
 COUNTRY_COMPARISON_TARGETS = [
     {"code": "JP", "targetCountry": "Japan", "market": "japan", "display": "일본"},
@@ -70,9 +70,61 @@ COUNTRY_RECOMMENDATION_SCHEMA: dict[str, Any] = {
     "required": ["storyProfile", "recommendedCountry", "confidence", "countryComparisons", "limitations"],
 }
 
+
+COUNTRY_EVIDENCE_ANALYSIS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "storyProfile": {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "title": {"type": "string"},
+                "genre": {"type": "string"},
+                "coreSignals": {"type": "array", "items": {"type": "string"}, "minItems": 4, "maxItems": 10},
+                "analysisSummary": {"type": "string"},
+            },
+            "required": ["title", "genre", "coreSignals", "analysisSummary"],
+        },
+        "countryAnalyses": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "country": {"type": "string", "enum": ["US", "CN", "JP", "TH"]},
+                    "fitLevel": {"type": "string"},
+                    "strengths": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 4},
+                    "risks": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 4},
+                    "evidenceSummary": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 5},
+                    "localizationDifficulty": {"type": "string"},
+                },
+                "required": [
+                    "country",
+                    "fitLevel",
+                    "strengths",
+                    "risks",
+                    "evidenceSummary",
+                    "localizationDifficulty",
+                ],
+            },
+        },
+        "limitations": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 5},
+    },
+    "required": ["storyProfile", "countryAnalyses", "limitations"],
+}
+
 CREATIVE_BOUNDARY_RULES = [
     "작품의 플롯, 결말, 캐릭터 성격, 핵심 설정, 장르 방향을 바꾸라고 제안하지 마세요.",
     "국가 추천은 작품을 현재 방향 그대로 두고 어느 시장에서 먼저 전달/테스트하기 좋은지 판단하는 것입니다.",
+    "strengths와 risks는 창작 수정이 아니라 제목, 소개문, 태그, 표지 브리프, 정책 검토, 독자 기대치 전달 관점으로 작성하세요.",
+]
+
+EVIDENCE_ANALYSIS_BOUNDARY_RULES = [
+    "작품의 플롯, 결말, 캐릭터 성격, 핵심 설정, 장르 방향을 바꾸라고 제안하지 마세요.",
+    "국가별 카드는 추천이 아니라 관측 신호와 현지화 검토 지점을 설명하는 용도입니다.",
     "strengths와 risks는 창작 수정이 아니라 제목, 소개문, 태그, 표지 브리프, 정책 검토, 독자 기대치 전달 관점으로 작성하세요.",
 ]
 
@@ -628,6 +680,131 @@ def _ground_ungrounded_country_cards(
     return out
 
 
+
+def _validate_evidence_analysis_result(result: dict[str, Any]) -> None:
+    analyses = result.get("countryAnalyses") or []
+    countries = [item.get("country") for item in analyses]
+    if sorted(countries) != ["CN", "JP", "TH", "US"]:
+        raise ValueError("countryAnalyses must contain US, CN, JP, TH exactly once")
+
+
+def _dedupe_texts(values: list[Any], *, limit: int) -> list[str]:
+    out: list[str] = []
+    for value in values:
+        text = str(value or "").strip()
+        if not text or text in out:
+            continue
+        out.append(text)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _canonicalize_insufficient_llm_result(
+    result: dict[str, Any],
+    *,
+    evidence_size: int,
+    evidence: dict[str, Any],
+    model: str,
+    internal_diagnostics: dict[str, Any] | None = None,
+    request_hash: str | None = None,
+) -> dict[str, Any]:
+    """Keep LLM prose quality while enforcing a no-rank/no-score result in code."""
+    _validate_evidence_analysis_result(result)
+    repaired = repair_user_facing_explanations(result)
+    validation = validate_user_facing_language(repaired)
+    if not validation["ok"]:
+        repaired = repair_user_facing_explanations(repaired)
+    _validate_evidence_analysis_result(repaired)
+
+    analyses = {str(item.get("country") or ""): item for item in repaired.get("countryAnalyses") or []}
+    countries = _country_evidence_by_code(evidence)
+    diagnostics = _diagnostics_by_country(evidence)
+    comparisons: list[dict[str, Any]] = []
+
+    for target in COUNTRY_COMPARISON_TARGETS:
+        code = target["code"]
+        model_item = analyses.get(code) or {}
+        country = countries.get(code) or {}
+        matched = [str(item) for item in country.get("matchedSignals") or [] if str(item).strip()]
+        inferred = [str(item) for item in country.get("inferredSignals") or [] if str(item).strip()]
+        policy_count = _policy_risk_count(country)
+        source_count = int((diagnostics.get(code) or {}).get("contextPackSourceRecordCount") or 0)
+
+        fixed_evidence = [
+            f"직접 매칭 신호: {len(matched)}개" + (f" ({', '.join(matched[:6])})" if matched else ""),
+            f"정규화·추정 신호: {len(inferred)}개" + (f" ({', '.join(inferred[:6])})" if inferred else ""),
+            f"참고 컨텍스트 원천: {source_count}건",
+            "데이터 용도: 공개 관측 신호 확인 — 국가 추천·성과 예측 근거로 사용하지 않음",
+        ]
+        risks = _dedupe_texts(
+            [
+                *(list(model_item.get("risks") or [])[:2]),
+                "현재 보유 데이터는 시장 성과나 독자 선호를 비교하는 자료가 아니므로 국가 추천으로 확대 해석할 수 없습니다.",
+                f"별도 정책 검토 후보는 {policy_count}개이며, 이 개수는 국가 적합도 판단에 사용하지 않습니다.",
+            ],
+            limit=4,
+        )
+        observed_note = (
+            f"현재 직접 관측된 입력 신호는 {', '.join(matched[:6])}입니다."
+            if matched
+            else "현재 공개 관측 자료에서 직접 일치한 입력 신호는 확인되지 않았습니다."
+        )
+        comparisons.append(
+            {
+                "country": code,
+                "displayCountry": target["display"],
+                "targetCountry": target["targetCountry"],
+                "rank": None,
+                "relativeFitScore": None,
+                "fitLevel": "직접 관측 신호 확인" if matched else "직접 근거 부족",
+                "strengths": _dedupe_texts([observed_note, *(model_item.get("strengths") or [])], limit=4),
+                "risks": risks,
+                "evidenceSummary": fixed_evidence,
+                "localizationDifficulty": str(model_item.get("localizationDifficulty") or "별도 검토 필요"),
+            }
+        )
+
+    profile = dict(repaired.get("storyProfile") or {})
+    profile["title"] = evidence.get("story", {}).get("title") or profile.get("title") or "입력 작품"
+    limitations = _dedupe_texts(
+        [
+            *(repaired.get("limitations") or []),
+            "현재 데이터는 국가별 공개 플랫폼 관측 자료이며 시장 적합도 판단, 성과 예측, 개별 작품 추천 용도로 사용할 수 없습니다.",
+            "국가별 표본 수와 플랫폼 랭킹 기준이 달라 국가 간 점수 비교를 만들지 않았습니다.",
+            "정책 점검 후보 수는 보유 규칙의 양에 영향을 받으므로 국가 추천 점수에 반영하지 않았습니다.",
+            "사용자가 국가를 직접 선택하면 해당 국가의 제목·소개문·태그·정책 검토용 상세 가이드는 생성할 수 있습니다.",
+        ],
+        limit=7,
+    )
+    out = {
+        "mode": "synopsis_country_recommendation",
+        "requiresSelection": True,
+        "recommendationStatus": "insufficient_evidence",
+        "title": "국가 추천 보류",
+        "message": "현재 보유 근거로는 4개국의 시장 적합도를 신뢰성 있게 비교할 수 없어 추천은 보류하되, 작품과 국가별 관측 근거는 LLM으로 분석했습니다.",
+        "recommendedCountry": None,
+        "recommendedCountryDisplay": None,
+        "confidence": "판단 보류",
+        "storyProfile": profile,
+        "countryComparisons": comparisons,
+        "limitations": limitations,
+        "recommendationMethod": "llm_evidence_analysis",
+        "llmCountryRecommendationModel": model,
+        "llmRecommendationEvidenceBytes": evidence_size,
+        "availableCountries": [
+            {"country": target["code"], "targetCountry": target["targetCountry"], "displayCountry": target["display"]}
+            for target in COUNTRY_COMPARISON_TARGETS
+        ],
+        "limitation_notice": "국가 순위와 점수는 생성하지 않았으며, 작품 분석과 국가별 근거 설명은 LLM이 생성했습니다.",
+        "createdAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    }
+    if internal_diagnostics:
+        out.update(internal_diagnostics)
+    if request_hash:
+        out["llmRecommendationRequestHash"] = request_hash
+    return out
+
 def _canonicalize_result(
     result: dict[str, Any],
     *,
@@ -859,47 +1036,72 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
     evidence_size = _evidence_size(evidence)
     internal_diagnostics = _aggregate_context_pack_diagnostics(evidence, payload) if _include_internal(payload) else None
     grounded_codes = _grounded_country_codes(evidence)
-    if _data_limits_forbid_recommendation(evidence) or len(grounded_codes) < len(COUNTRY_COMPARISON_TARGETS):
-        return _insufficient_evidence_result(
-            payload,
-            evidence,
-            evidence_size=evidence_size,
-            internal_diagnostics=internal_diagnostics,
-        )
-    if not _has_synopsis(payload) and not llm_requested(payload):
-        return _canonicalize_result(
-            _deterministic_comparison(payload, evidence),
-            evidence_size=evidence_size,
-            evidence=evidence,
-            internal_diagnostics=internal_diagnostics,
-        )
+    recommendation_allowed = (
+        not _data_limits_forbid_recommendation(evidence)
+        and len(grounded_codes) == len(COUNTRY_COMPARISON_TARGETS)
+    )
 
     try:
         client, model = _client_and_model(payload)
-        system = (
-            "당신은 한국어로 국가 추천을 설명하는 도우미다. "
-            "반드시 한국어 JSON 객체만 출력하고, 4개국 비교 결과를 균형 있게 제시한다. "
-            "제공된 evidence에 없는 시장 선호, 독자 반응, 유사작 성과, 플랫폼 실적을 확인된 사실처럼 쓰면 안 됩니다."
-        )
-        user = {
-            "task": "일본, 중국, 미국/글로벌 영어, 태국 중 적합한 국가를 비교 추천해 주세요.",
-            "requirements": [
-                "countryComparisons에는 US, CN, JP, TH를 각각 한 번씩 넣으세요.",
-                "rank는 1~4를 중복 없이 사용하고, recommendedCountry는 rank 1과 일치해야 합니다.",
-                "relativeFitScore는 제공된 직접 관측 근거만으로 산정한 상대 검토 점수이며 시장 성공 확률처럼 표현하지 마세요.",
-                "정책 점검 후보 수와 컨텍스트 원천 레코드 수는 relativeFitScore에 반영하지 마세요.",
-                "rank 1은 rank 2보다, rank 2는 rank 3보다, rank 3은 rank 4보다 높은 점수를 주세요.",
-                "작품 자체를 바꾸는 방향 제안이 아니라, 현재 시놉시스 기준 어느 국가에서 먼저 전달하기 좋은지 설명하세요.",
-                "각 국가의 strengths에는 왜 그 국가가 맞거나 덜 맞는지 입력 장르, 시놉시스 신호, 플랫폼/정책 근거 중 최소 2가지를 연결해 구체적으로 쓰세요.",
-                "각 국가의 evidenceSummary에는 점수의 근거가 된 신호를 요약하고, '근거를 확인했습니다'처럼 비어 있는 문장만 쓰지 마세요.",
-                "직접 매칭이 없는 국가는 장점이나 적합 국가로 표현하지 마세요.",
-                "국가별 독자 선호, 시장 규모, 플랫폼 성과, 유사작 흥행은 evidence에 없으면 언급하지 마세요.",
-                "추론이 필요한 문장은 '입력 시놉시스 기준으로는', '예비적으로는', '추가 확인이 필요합니다'처럼 추론임을 표시하세요.",
-                *CREATIVE_BOUNDARY_RULES,
-                "설명은 모두 한국어로 작성하세요.",
-            ],
-            "evidence": evidence,
-        }
+
+        if recommendation_allowed:
+            system = (
+                "당신은 한국어로 국가 추천을 설명하는 도우미다. "
+                "반드시 한국어 JSON 객체만 출력하고, 4개국 비교 결과를 균형 있게 제시한다. "
+                "제공된 evidence에 없는 시장 선호, 독자 반응, 유사작 성과, 플랫폼 실적을 확인된 사실처럼 쓰면 안 됩니다."
+            )
+            user = {
+                "task": "일본, 중국, 미국/글로벌 영어, 태국 중 적합한 국가를 비교 추천해 주세요.",
+                "requirements": [
+                    "countryComparisons에는 US, CN, JP, TH를 각각 한 번씩 넣으세요.",
+                    "rank는 1~4를 중복 없이 사용하고, recommendedCountry는 rank 1과 일치해야 합니다.",
+                    "relativeFitScore는 제공된 직접 관측 근거만으로 산정한 상대 검토 점수이며 시장 성공 확률처럼 표현하지 마세요.",
+                    "정책 점검 후보 수와 컨텍스트 원천 레코드 수는 relativeFitScore에 반영하지 마세요.",
+                    "rank 1은 rank 2보다, rank 2는 rank 3보다, rank 3은 rank 4보다 높은 점수를 주세요.",
+                    "작품 자체를 바꾸는 방향 제안이 아니라, 현재 시놉시스 기준 어느 국가에서 먼저 전달하기 좋은지 설명하세요.",
+                    "각 국가의 strengths에는 왜 그 국가가 맞거나 덜 맞는지 입력 장르, 시놉시스 신호, 플랫폼/정책 근거 중 최소 2가지를 연결해 구체적으로 쓰세요.",
+                    "각 국가의 evidenceSummary에는 점수의 근거가 된 신호를 구체적으로 요약하세요.",
+                    "직접 매칭이 없는 국가는 장점이나 적합 국가로 표현하지 마세요.",
+                    "국가별 독자 선호, 시장 규모, 플랫폼 성과, 유사작 흥행은 evidence에 없으면 언급하지 마세요.",
+                    "추론이 필요한 문장은 추론임을 명시하세요.",
+                    *CREATIVE_BOUNDARY_RULES,
+                    "설명은 모두 한국어로 작성하세요.",
+                ],
+                "evidence": evidence,
+            }
+            schema_name = "llm_country_recommendation"
+            schema = COUNTRY_RECOMMENDATION_SCHEMA
+        else:
+            system = (
+                "당신은 한국 웹소설 시놉시스를 깊이 읽고 국가별 공개 관측 근거를 설명하는 분석가다. "
+                "반드시 한국어 JSON 객체만 출력한다. 현재 자료로는 국가 추천이 허용되지 않으므로 "
+                "국가 순위, 점수, 우선 추천, 성공 가능성은 절대 만들지 않는다. "
+                "대신 전체 시놉시스를 분석해 작품의 장르 결, 관계 구조, 갈등, 정서, 문화적 요소를 구체적으로 정리하고, "
+                "각 국가 카드에서는 evidence에 실제로 포함된 관측 신호와 정책 확인 지점만 설명한다."
+            )
+            user = {
+                "task": "추천을 보류한 상태에서 작품 분석과 4개국의 관측 근거 설명을 고품질로 작성해 주세요.",
+                "recommendationAllowed": False,
+                "requirements": [
+                    "storyProfile.title은 입력 제목을 유지하세요.",
+                    "storyProfile.genre는 입력의 한 단어만 복사하지 말고 전체 시놉시스를 읽어 3~6개의 복합 장르를 자연스러운 한국어 한 줄로 정리하세요.",
+                    "storyProfile.coreSignals에는 구체적인 핵심 신호를 6~10개 작성하세요. 관계 구조, 핵심 미스터리, 정서적 상처, 한국적 문화 요소를 우선하세요.",
+                    "storyProfile.analysisSummary는 작품의 주인공, 핵심 갈등, 감정선, 차별점을 연결한 충분히 구체적인 요약으로 작성하세요.",
+                    "countryAnalyses에는 US, CN, JP, TH를 각각 한 번씩 넣으세요.",
+                    "국가별 strengths는 evidence의 matchedSignals와 시놉시스의 실제 요소를 연결해 설명하되 독자 선호나 흥행을 단정하지 마세요.",
+                    "국가별 risks는 정책 후보와 전달 시 확인할 표현을 설명하되 작품의 플롯이나 캐릭터를 바꾸라고 제안하지 마세요.",
+                    "evidenceSummary에는 evidence에서 확인 가능한 신호만 쓰고, 시장 규모·독자 반응·유사작 성과를 만들어내지 마세요.",
+                    "어떤 국가에도 순위, 점수, 추천 우선권을 부여하지 마세요.",
+                    "정책 후보 개수와 컨텍스트 원천 개수를 국가 적합도의 근거로 해석하지 마세요.",
+                    *EVIDENCE_ANALYSIS_BOUNDARY_RULES,
+                    "설명은 반복 문구를 줄이고 국가별 차이가 드러나도록 작성하세요.",
+                    "설명은 모두 한국어로 작성하세요.",
+                ],
+                "evidence": evidence,
+            }
+            schema_name = "llm_country_evidence_analysis"
+            schema = COUNTRY_EVIDENCE_ANALYSIS_SCHEMA
+
         request_hash = _stable_hash({"system": system, "user": user})
         response = client.responses.create(
             model=model,
@@ -910,14 +1112,23 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
             text={
                 "format": {
                     "type": "json_schema",
-                    "name": "llm_country_recommendation",
-                    "schema": COUNTRY_RECOMMENDATION_SCHEMA,
+                    "name": schema_name,
+                    "schema": schema,
                     "strict": True,
                 }
             },
         )
         result = json.loads(response.output_text)
-        return _canonicalize_result(
+        if recommendation_allowed:
+            return _canonicalize_result(
+                result,
+                evidence_size=evidence_size,
+                evidence=evidence,
+                model=model,
+                internal_diagnostics=internal_diagnostics,
+                request_hash=request_hash,
+            )
+        return _canonicalize_insufficient_llm_result(
             result,
             evidence_size=evidence_size,
             evidence=evidence,
