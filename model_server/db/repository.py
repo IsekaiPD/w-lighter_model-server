@@ -118,11 +118,21 @@ _GENDER_F = {"f", "female", "여", "여자", "여성", "girl", "woman"}
 
 
 def normalize_gender(value: Any) -> str:
-    """자유 텍스트 성별 → 화면/DB 저장용 한글 성별값으로 정규화한다."""
+    """자유 텍스트 성별 → DB 저장용 코드값(M/F/U)으로 정규화한다."""
     token = _s(value).lower()
     if token in _GENDER_M:
-        return "남"
+        return "M"
     if token in _GENDER_F:
+        return "F"
+    return "U"
+
+
+def display_gender(value: Any) -> str:
+    """DB 성별 코드값(M/F/U) → 화면/API 응답용 한글 표시값."""
+    token = _s(value).upper()
+    if token == "M":
+        return "남"
+    if token == "F":
         return "여"
     return "미상"
 
@@ -264,7 +274,7 @@ def get_characters(work_id: int) -> list[dict[str, Any]]:
                     "character_id": r.character_id,
                     "work_id": r.work_id,
                     "char_name": r.char_name,
-                    "gender": r.gender,
+                    "gender": display_gender(r.gender),
                     "age": r.age,
                     "role": r.role,
                     "profile_label": profile_label,

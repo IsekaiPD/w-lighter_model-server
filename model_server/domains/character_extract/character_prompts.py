@@ -29,7 +29,7 @@ def build_character_extract_prompt(*, work_title: str, genre: str, synopsis: str
               "age": "선택, 10자 이내",
               "role": "선택, 10자 이내",
               "profile_label": "선택, 80자 이내",
-              "gender": "선택, 10자 이내",
+              "gender": "필수, M/F/U 중 하나",
               "relationships": "선택, 500자 이내",
               "appearance": "선택, 300자 이내",
               "detail_setting": "선택, 1000자 이내"
@@ -44,7 +44,11 @@ def build_character_extract_prompt(*, work_title: str, genre: str, synopsis: str
         - profile_label: 관계도 카드 하단에 표시할 짧은 라벨이다.
           원문에 명확히 드러난 직업, 신분, 작위, 공식 직책, 계급이 있으면 작성한다.
           관계나 작품 내 역할만으로 라벨을 만들지 말고, 명확한 근거가 없으면 빈 문자열로 둔다.
-        - gender: 남성, 여성, 미상, 기타 중 하나로 작성한다.
+        - gender: 성별 코드. 반드시 M, F, U 중 하나로만 작성한다.
+          M: 남성으로 판단되는 경우.
+          F: 여성으로 판단되는 경우.
+          U: 원문 근거가 부족하거나 판단 불가한 경우.
+          왕자, 공주, 황태자, 공작가 영애, 기사단장 같은 직위·신분·작위·직책은 gender에 넣지 말고 profile_label에 넣는다.
         - relationships: 다른 주요 인물과의 관계를 요약한다.
         - appearance: 외형 정보를 요약한다.
         - detail_setting: 성격, 말투, 배경 서사, 목표, 갈등을 요약한다.
