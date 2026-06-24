@@ -102,92 +102,64 @@ def _dedupe_entries(values: Any) -> list[str]:
 
 
 def render_country_recommendation_html(result: dict[str, Any]) -> str:
-    """Render a source-grounded synopsis country comparison without duplicating work analysis."""
+    """Render a four-country synopsis analysis from validated structured data."""
     profile = result.get("storyProfile") or {}
     title = profile.get("title") or result.get("title") or "입력 작품"
     genre = profile.get("genre") or result.get("genre") or "장르 미입력"
-    status = str(result.get("recommendationStatus") or "")
-    insufficient = status == "insufficient_evidence" or not result.get("recommendedCountry")
-    recommendation = (
-        "추천 보류"
-        if insufficient
-        else result.get("recommendedCountryDisplay") or result.get("recommendedCountry") or "추천 결과 없음"
-    )
     signals = _dedupe_entries(profile.get("coreSignals") or [])
     analysis_summary = str(profile.get("analysisSummary") or "입력 시놉시스의 핵심 구조를 분석했습니다.")
+    country_order = {"US": 0, "CN": 1, "JP": 2, "TH": 3}
+    comparisons = sorted(
+        result.get("countryAnalyses") or result.get("countryComparisons") or [],
+        key=lambda item: country_order.get(str(item.get("country") or ""), 99),
+    )
 
-    def _sort_key(item: dict[str, Any]) -> tuple[int, str]:
-        try:
-            rank = int(item.get("rank"))
-        except (TypeError, ValueError):
-            rank = 99
-        return rank, str(item.get("country") or "")
-
-    comparisons = sorted(result.get("countryComparisons") or [], key=_sort_key)
     cards: list[str] = []
     for item in comparisons:
         country = item.get("displayCountry") or item.get("country") or "국가"
-        rank = item.get("rank")
+        fit_level = item.get("fitLevel") or "추가 확인 필요"
         evidence_level = item.get("evidenceLevel") or "확인 필요"
-        ranking_label = (
-            f"#{_esc(rank)} · 우선 검토" if not insufficient and rank else f"근거 수준 · {_esc(evidence_level)}"
-        )
         source_html = _source_items(item.get("liveEvidence"))
         cards.append(
             f'''<article class="wl-guide-card">
-  <span class="wl-guide-risk-level">{ranking_label}</span>
-  <h3>{_esc(country)}</h3><p>{_esc(item.get('fitLevel') or '근거 확인')}</p>
-  <h4>작품과 연결되는 지점</h4>{_items(item.get('strengths'))}
+  <span class="wl-guide-risk-level">{_esc(fit_level)}</span>
+  <h3>{_esc(country)}</h3><p>근거 수준 · {_esc(evidence_level)}</p>
+  <h4>잘 맞는 요소</h4>{_items(item.get('strengths'))}
   <div class="wl-guide-rationale"><h4>근거 요약</h4>{_items(item.get('evidenceSummary'))}</div>
   {f'<h4>확인한 공개 출처</h4>{source_html}' if source_html else ''}
-  <h4>현지화·정책 확인점</h4>{_items(item.get('risks'))}
+  <h4>주의할 요소</h4>{_items(item.get('risks'))}
+  <h4>현지화 난이도</h4><p>{_esc(item.get('localizationDifficulty') or '추가 확인 필요')}</p>
 </article>'''
         )
 
-    if insufficient:
-        comparison_title = "국가별 근거 상태"
-        comparison_lead = COMPARISON_WITHHELD_MESSAGE
-        guide_title = "추천이 보류된 이유"
-        guide_text = COMPARISON_WITHHELD_MESSAGE
-        result_type = "근거 수집 후 직접 선택"
-        meta_label = "추천 상태"
-        footer = "작품 분석은 LLM이 생성했고, 국가별 설명은 표시된 공개 출처 범위에서만 작성했습니다."
-    else:
-        comparison_title = "국가 우선순위 비교"
-        comparison_lead = "순위는 최신 공개 플랫폼·정책 자료와 작품 신호를 연결한 검토 순서이며 흥행 확률이 아닙니다."
-        guide_title = "추천 결과 읽는 법"
-        guide_text = result.get("message") or f"{recommendation}을 먼저 검토할 수 있습니다. 각 카드의 실제 출처와 현지화 부담을 함께 확인하세요."
-        result_type = "최신 공개 근거 비교"
-        meta_label = "우선 검토"
-        footer = COMPARISON_REFERENCE_FOOTER
-
     limitations = _dedupe_entries(result.get("limitations") or [])
     if not limitations:
-        limitations = ["검색 결과는 전체 시장 통계가 아니며 실제 출시 전 최신 공식 정책을 확인해야 합니다."]
+        limitations = [UNGROUNDED_MARKET_LIMITATION]
     signal_html = "".join(f'<span class="wl-guide-signal">{_esc(signal)}</span>' for signal in signals)
+    message = result.get("message") or "현재 시놉시스를 기준으로 4개국의 적합 요소와 주의 요소를 각각 정리했습니다."
 
     body = f'''<main class="wl-guide-page">
   <section class="wl-guide-hero">
-    <div class="wl-guide-eyebrow">Synopsis country recommendation</div>
+    <div class="wl-guide-eyebrow">Synopsis country analysis</div>
     <h1>{_esc(title)}</h1>
+    <p>{_esc(message)}</p>
     <div class="wl-guide-meta-grid">
       <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">장르</span><strong class="wl-guide-meta-value">{_esc(genre)}</strong></div>
-      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">{_esc(meta_label)}</span><strong class="wl-guide-meta-value">{_esc(recommendation)}</strong></div>
-      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">판단 신뢰도</span><strong class="wl-guide-meta-value">{_esc(result.get('confidence') or '근거 확인')}</strong></div>
-      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">결과 유형</span><strong class="wl-guide-meta-value">{_esc(result_type)}</strong></div>
+      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">분석 범위</span><strong class="wl-guide-meta-value">미국 · 중국 · 일본 · 태국</strong></div>
+      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">분석 방식</span><strong class="wl-guide-meta-value">국가별 독립 분석</strong></div>
+      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">결과 성격</span><strong class="wl-guide-meta-value">현지화 참고 자료</strong></div>
     </div>
   </section>
   <div class="wl-guide-layout"><div>
     <section class="wl-guide-section"><h2><span class="wl-guide-icon">📌</span>작품 분석</h2><p class="wl-guide-lead">{_esc(analysis_summary)}</p>{f'<div class="wl-guide-signal-wrap">{signal_html}</div>' if signal_html else ''}</section>
-    <section class="wl-guide-section"><h2><span class="wl-guide-icon">🌏</span>{_esc(comparison_title)}</h2><p class="wl-guide-lead">{_esc(comparison_lead)}</p><div class="wl-guide-card-grid">{''.join(cards) or '<p class="wl-guide-lead">표시할 국가별 공개 근거가 없습니다.</p>'}</div></section>
+    <section class="wl-guide-section"><h2><span class="wl-guide-icon">🌏</span>국가별 현지화 적합성 분석</h2><p class="wl-guide-lead">점수나 순위를 표시하지 않고, 각 국가에서 확인되는 적합 요소와 주의 요소를 독립적으로 정리했습니다.</p><div class="wl-guide-card-grid">{''.join(cards) or '<p class="wl-guide-lead">표시할 국가별 분석 결과가 없습니다.</p>'}</div></section>
   </div><aside>
-    <section class="wl-guide-section"><h2><span class="wl-guide-icon">🧭</span>{_esc(guide_title)}</h2><p class="wl-guide-lead">{_esc(guide_text)}</p></section>
+    <section class="wl-guide-section"><h2><span class="wl-guide-icon">🧭</span>결과 읽는 법</h2><p class="wl-guide-lead">각 카드의 판단은 다른 국가와의 우열이 아니라 해당 국가에서 작품을 전달할 때 확인되는 신호와 부담을 의미합니다.</p></section>
     <section class="wl-guide-section"><h2><span class="wl-guide-icon">⚠️</span>근거와 한계</h2>{_items(limitations)}</section>
   </aside></div>
-  <footer class="wl-guide-footer">{_esc(footer)}</footer>
+  <footer class="wl-guide-footer">{_esc(COMPARISON_REFERENCE_FOOTER)}</footer>
 </main>'''
-    return f'''<!doctype html><html lang="ko"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>{_esc(title)} 국가 추천</title><style>{COUNTRY_RECOMMENDATION_CSS}</style></head><body>{body}</body></html>'''
-
+    return f'''<!doctype html><html lang="ko"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>{_esc(title)} 4개국 현지화 분석</title><style>{COUNTRY_RECOMMENDATION_CSS}</style></head><body>{body}</body></html>'''
 
 
 __all__ = [

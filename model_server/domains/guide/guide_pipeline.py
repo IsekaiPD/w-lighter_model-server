@@ -63,6 +63,7 @@ RECOMMENDATION_PUBLIC_KEYS = {
     "recommendedCountry",
     "recommendedCountryDisplay",
     "countryComparisons",
+    "countryAnalyses",
     "availableCountries",
     "limitations",
     "limitation_notice",
@@ -381,10 +382,13 @@ def generate_guide(payload: dict[str, Any]) -> dict[str, Any]:
     """Generate the online localization guide response used by /api/guide."""
     report_mode = _guide_report_mode(payload)
 
-    # Synopsis requests always return a country comparison. Country-specific
+    # Synopsis requests always return a four-country analysis. Country-specific
     # synopsis deep guides are a later product enhancement, not an active mode.
     if report_mode == "synopsis_country_recommendation":
         recommendation = {**generate_country_recommendation(payload), "reportMode": report_mode}
+        recommendation["countryAnalyses"] = recommendation.get("countryAnalyses") or []
+        # Temporary response compatibility for existing consumers.
+        recommendation["countryComparisons"] = recommendation["countryAnalyses"]
         # The public response layer owns the final report. Always render from
         # structured data here so lower-layer mocks or stale htmlReport values
         # cannot become the public artifact.

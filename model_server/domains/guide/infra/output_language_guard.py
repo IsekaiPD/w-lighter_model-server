@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from .country_recommendation_html import UNGROUNDED_MARKET_LIMITATION
+UNGROUNDED_MARKET_LIMITATION = (
+    "현재 확보된 자료만으로는 국가별 독자 선호, 플랫폼 실적 등 "
+    "실제 시장 성과를 직접 확인할 수 없어 해당 내용을 확정적으로 판단하지 않았습니다."
+)
 
 ALLOWED_ORIGINAL_FIELD_NAMES = {
     "workTitle",
@@ -107,7 +110,7 @@ def _safe_korean_fallback(key: str | None, value: str) -> str:
     if key in fallback:
         return fallback[key]
     if "limit" in (key or "").lower():
-        return "제한 사항이 있습니다."
+        return UNGROUNDED_MARKET_LIMITATION
     if "risk" in (key or "").lower():
         return "주의가 필요합니다."
     if "strength" in (key or "").lower():

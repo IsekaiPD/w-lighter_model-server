@@ -133,7 +133,7 @@ class CountryRecommendationSafetyTests(unittest.TestCase):
             "limitations": ["검색 결과는 전체 시장 통계가 아닙니다."],
         }
 
-    def test_synopsis_path_calls_two_llm_passes_and_holds_when_live_evidence_is_limited(self) -> None:
+    def test_synopsis_path_calls_two_llm_passes_and_marks_each_country_when_live_evidence_is_limited(self) -> None:
         story_profile = self._story_profile()
         country_analysis = {
             "storyProfile": story_profile,
@@ -183,23 +183,30 @@ class CountryRecommendationSafetyTests(unittest.TestCase):
             )
 
         self.assertEqual(len(fake_client.responses.calls), 2)
-        self.assertEqual(result["recommendationStatus"], "insufficient_evidence")
-        self.assertEqual(result["recommendationMethod"], "llm_tavily_evidence_analysis")
+        self.assertEqual(result["recommendationStatus"], "analyzed")
+        self.assertEqual(result["recommendationMethod"], "llm_tavily_country_analysis")
         self.assertTrue(result["liveMarketUsed"])
         self.assertIsNone(result["recommendedCountry"])
         self.assertNotIn("searchTermsByCountry", result["storyProfile"])
-        self.assertTrue(all(item["rank"] is None for item in result["countryComparisons"]))
-        self.assertTrue(all("relativeFitScore" not in item for item in result["countryComparisons"]))
+        self.assertEqual(len(result["countryAnalyses"]), 4)
+        self.assertEqual(result["countryAnalyses"], result["countryComparisons"])
+        self.assertTrue(all(item["rank"] is None for item in result["countryAnalyses"]))
+        self.assertTrue(all(item["assessment"] == "viable_with_cautions" for item in result["countryAnalyses"]))
+        self.assertTrue(all("relativeFitScore" not in item for item in result["countryAnalyses"]))
 
         html = render_country_recommendation_html(result)
         self.assertEqual(html.count(story_profile["analysisSummary"]), 1)
         self.assertIn("https://royalroad.com/sample-us", html)
-        self.assertIn("국가별 근거 상태", html)
-        self.assertIn("현재 자료로는 국가 간 시장 적합도를 비교할 수 없어 순위와 점수를 만들지 않았습니다.", html)
+        self.assertIn("국가별 현지화 적합성 분석", html)
+        self.assertIn("잘 맞는 요소", html)
+        self.assertIn("주의할 요소", html)
+        self.assertIn("현지화 난이도", html)
+        self.assertNotIn("추천 보류", html)
+        self.assertNotIn("국가 우선순위 비교", html)
         self.assertNotIn("우선순위 88", html)
         self.assertNotIn("참고 컨텍스트 원천", html)
 
-    def test_sufficient_tavily_evidence_returns_rank_without_numeric_score(self) -> None:
+    def test_sufficient_tavily_evidence_returns_four_country_analyses_without_rank_or_score(self) -> None:
         story_profile = self._story_profile()
         comparison = {
             "storyProfile": story_profile,
@@ -247,13 +254,21 @@ class CountryRecommendationSafetyTests(unittest.TestCase):
             )
 
         self.assertEqual(len(fake_client.responses.calls), 2)
-        self.assertEqual(result["recommendationStatus"], "recommended")
-        self.assertEqual(result["recommendationMethod"], "llm_tavily_country_comparison")
-        self.assertEqual(result["recommendedCountry"], "JP")
-        self.assertTrue(all("relativeFitScore" not in item for item in result["countryComparisons"]))
+        self.assertEqual(result["recommendationStatus"], "analyzed")
+        self.assertEqual(result["recommendationMethod"], "llm_tavily_country_analysis")
+        self.assertIsNone(result["recommendedCountry"])
+        self.assertEqual(len(result["countryAnalyses"]), 4)
+        self.assertEqual(result["countryAnalyses"], result["countryComparisons"])
+        self.assertTrue(all(item["rank"] is None for item in result["countryAnalyses"]))
+        self.assertTrue(all(item["assessment"] == "viable_with_cautions" for item in result["countryAnalyses"]))
+        self.assertTrue(all("relativeFitScore" not in item for item in result["countryAnalyses"]))
         html = render_country_recommendation_html(result)
-        self.assertIn("#1 · 우선 검토", html)
-        self.assertNotIn("우선순위 88", html)
+        self.assertIn("국가별 현지화 적합성 분석", html)
+        self.assertIn("잘 맞는 요소", html)
+        self.assertIn("주의할 요소", html)
+        self.assertIn("현지화 난이도", html)
+        self.assertNotIn("#1", html)
+        self.assertNotIn("우선 검토", html)
         self.assertNotIn("relativeFitScore", html)
         self.assertEqual(html.count(story_profile["analysisSummary"]), 1)
 

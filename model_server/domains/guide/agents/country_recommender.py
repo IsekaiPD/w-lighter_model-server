@@ -657,6 +657,47 @@ def _country_evidence_by_code(evidence: dict[str, Any] | None) -> dict[str, dict
 
 
 
+def _normalize_country_analysis_model_result(result: dict[str, Any]) -> dict[str, Any]:
+    """Normalize legacy rank/recommendation fixtures into the four-country analysis schema.
+
+    The current model contract is countryAnalyses. countryComparisons is accepted
+    only as an input compatibility shape and is never treated as the internal
+    canonical representation.
+    """
+    if result.get("countryAnalyses"):
+        return result
+
+    legacy = result.get("countryComparisons") or []
+    if not legacy:
+        return result
+
+    analyses: list[dict[str, Any]] = []
+    legacy_ranking_terms = ("추천", "우선", "순위", "상위", "비교")
+    for item in legacy:
+        legacy_fit_level = str(item.get("fitLevel") or "").strip()
+        neutral_fit_level = (
+            "적합 요소와 주의 요소 확인"
+            if any(term in legacy_fit_level for term in legacy_ranking_terms)
+            else (legacy_fit_level or "추가 확인 필요")
+        )
+        analyses.append(
+            {
+                "country": item.get("country"),
+                "fitLevel": neutral_fit_level,
+                "strengths": list(item.get("strengths") or ["작품 신호와 공개 자료의 연결 여부를 추가 확인해야 합니다."])[:2],
+                "risks": list(item.get("risks") or ["현지화 과정에서 문화적 전달 방식과 플랫폼 정책을 확인해야 합니다."])[:2],
+                "evidenceSummary": list(item.get("evidenceSummary") or ["기존 비교 결과를 국가별 독립 분석 형식으로 변환했습니다."])[:3],
+                "localizationDifficulty": item.get("localizationDifficulty") or "추가 확인 필요",
+            }
+        )
+
+    return {
+        "storyProfile": result.get("storyProfile") or {},
+        "countryAnalyses": analyses,
+        "limitations": list(result.get("limitations") or [UNGROUNDED_MARKET_LIMITATION]),
+    }
+
+
 def _validate_evidence_analysis_result(result: dict[str, Any]) -> None:
     analyses = result.get("countryAnalyses") or []
     countries = [item.get("country") for item in analyses]
@@ -699,7 +740,7 @@ def _has_market_claim(values: list[Any]) -> bool:
     return any(term.lower() in text for term in UNGROUNDED_MARKET_CLAIM_TERMS)
 
 
-def _canonicalize_insufficient_llm_result(
+def _canonicalize_country_analysis_result(
     result: dict[str, Any],
     *,
     evidence_size: int,
@@ -708,14 +749,15 @@ def _canonicalize_insufficient_llm_result(
     internal_diagnostics: dict[str, Any] | None = None,
     request_hash: str | None = None,
 ) -> dict[str, Any]:
-    """Keep the LLM analysis, but expose only source-grounded country notes without ranking."""
+    """Expose four independent, source-grounded country analyses without ranking or a winner."""
+    result = _normalize_country_analysis_model_result(result)
     _validate_evidence_analysis_result(result)
     repaired = repair_user_facing_explanations(result)
     _validate_evidence_analysis_result(repaired)
 
     analyses = {str(item.get("country") or ""): item for item in repaired.get("countryAnalyses") or []}
     countries = _country_evidence_by_code(evidence)
-    comparisons: list[dict[str, Any]] = []
+    country_analyses: list[dict[str, Any]] = []
 
     for target in COUNTRY_COMPARISON_TARGETS:
         code = target["code"]
@@ -753,12 +795,17 @@ def _canonicalize_insufficient_llm_result(
         if not risks:
             risks = ["국가를 선택한 뒤 최신 플랫폼 정책과 문화적 전달 방식을 별도로 확인해야 합니다."]
 
-        comparisons.append(
+        country_analyses.append(
             {
                 "country": code,
                 "displayCountry": target["display"],
                 "targetCountry": target["targetCountry"],
                 "rank": None,
+                "assessment": (
+                    "insufficient_evidence"
+                    if not sources
+                    else "viable_with_cautions"
+                ),
                 "fitLevel": fit_level,
                 "evidenceLevel": evidence_level,
                 "strengths": strengths,
@@ -772,42 +819,45 @@ def _canonicalize_insufficient_llm_result(
     live = evidence.get("liveMarket") or {}
     skip_reason = str(live.get("skipReason") or "")
     if skip_reason == "missing_api_key":
-        message = "Tavily API 키가 없어 4개국 최신 공개 근거를 수집하지 못했습니다. 작품 분석만 생성하고 추천은 보류했습니다."
+        message = "Tavily API 키가 없어 최신 공개 근거를 수집하지 못했습니다. 작품 분석과 보유 자료를 기준으로 4개국의 확인점을 정리했습니다."
     elif skip_reason == "disabled":
-        message = "실시간 시장 근거 수집이 비활성화되어 국가 추천을 보류했습니다."
+        message = "실시간 시장 근거 수집이 비활성화되어 보유 자료를 기준으로 4개국의 적합 요소와 주의 요소를 정리했습니다."
     elif not live.get("used"):
-        message = "4개국을 비교할 신뢰 가능한 최신 공개 근거를 확보하지 못해 추천을 보류했습니다."
+        message = "신뢰 가능한 최신 공개 근거가 제한적이므로 국가별 판단 범위와 추가 확인점을 함께 표시했습니다."
     else:
-        message = "국가별 공개 근거는 일부 확보했지만 4개국을 같은 기준으로 비교하기에는 부족해 추천을 보류했습니다."
+        message = "현재 시놉시스와 국가별 공개 관측 자료를 바탕으로 4개국의 적합 요소와 주의 요소를 각각 분석했습니다."
 
     limitations = _dedupe_texts(
         [
             *(live.get("limitations") or []),
             *(repaired.get("limitations") or []),
-            "추천을 보류한 경우 국가별 설명은 확보된 출처 범위만 나타냅니다.",
+            UNGROUNDED_MARKET_LIMITATION,
         ],
         limit=4,
     )
     out = {
-        "mode": "synopsis_country_recommendation",
-        "requiresSelection": True,
-        "recommendationStatus": "insufficient_evidence",
-        "title": "국가 추천 보류",
+        "mode": "synopsis_country_analysis",
+        "requiresSelection": False,
+        "analysisStatus": "completed",
+        "recommendationStatus": "analyzed",
+        "title": "4개국 현지화 적합성 분석",
         "message": message,
         "recommendedCountry": None,
         "recommendedCountryDisplay": None,
-        "confidence": "판단 보류",
+        "confidence": "국가별 근거 수준 참조",
         "storyProfile": _public_story_profile(evidence.get("storyProfile") or repaired.get("storyProfile") or {}),
-        "countryComparisons": comparisons,
+        "countryAnalyses": country_analyses,
+        # Temporary public compatibility alias. Internal code uses countryAnalyses.
+        "countryComparisons": country_analyses,
         "limitations": limitations,
-        "recommendationMethod": "llm_tavily_evidence_analysis",
+        "recommendationMethod": "llm_tavily_country_analysis",
         "llmCountryRecommendationModel": model,
         "llmRecommendationEvidenceBytes": evidence_size,
         "availableCountries": [
             {"country": target["code"], "targetCountry": target["targetCountry"], "displayCountry": target["display"]}
             for target in COUNTRY_COMPARISON_TARGETS
         ],
-        "limitation_notice": COMPARISON_WITHHELD_MESSAGE,
+        "limitation_notice": "국가별 분석은 현재 시놉시스와 확인 가능한 공개 자료를 기준으로 한 참고 결과입니다.",
         "createdAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
         **_live_meta(evidence),
     }
@@ -946,8 +996,9 @@ def _manual_selection_fallback(
     request_hash: str | None = None,
 ) -> dict[str, Any]:
     out = {
-        "mode": "synopsis_country_recommendation",
-        "requiresSelection": True,
+        "mode": "synopsis_country_analysis",
+        "requiresSelection": False,
+        "analysisStatus": "generation_failed",
         "recommendationStatus": "generation_failed",
         "title": "국가 비교를 완료하지 못했습니다",
         "message": "추천 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.",
@@ -958,6 +1009,7 @@ def _manual_selection_fallback(
             for target in COUNTRY_COMPARISON_TARGETS
         ],
         "recommendedCountry": None,
+        "countryAnalyses": [],
         "countryComparisons": [],
         "limitations": [
             "추천 LLM 호출이 실패했습니다.",
@@ -1063,6 +1115,7 @@ def _live_meta(evidence: dict[str, Any]) -> dict[str, Any]:
 
 
 def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
+    """Analyze all four target countries without exposing scores, ranks, or a single winner."""
     request_hash: str | None = None
     evidence_size = 0
     internal_diagnostics: dict[str, Any] | None = None
@@ -1077,58 +1130,31 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
         )
         evidence_size = _evidence_size(evidence)
         internal_diagnostics = _aggregate_context_pack_diagnostics(evidence, payload) if _include_internal(payload) else None
-        recommendation_allowed = bool((evidence.get("liveMarket") or {}).get("recommendationAllowed"))
 
-        if recommendation_allowed:
-            system = (
-                "당신은 한국 웹소설의 해외 전달 우선순위를 분석하는 편집자다. "
-                "반드시 한국어 JSON 객체만 출력한다. Tavily에서 수집된 실제 공개 출처와 작품 프로필만 사용하고, "
-                "시장 규모·흥행 확률·독자 선호를 근거 없이 단정하지 않는다."
-            )
-            user = {
-                "task": "일본, 중국, 미국/글로벌 영어, 태국의 최신 공개 근거를 비교해 우선 검토 순서를 작성해 주세요.",
-                "storyProfile": story_profile,
-                "requirements": [
-                    "storyProfile은 제공된 값을 그대로 유지하세요.",
-                    "countryComparisons에는 US, CN, JP, TH를 각각 한 번씩 넣으세요.",
-                    "rank는 1~4를 중복 없이 사용하고 recommendedCountry는 rank 1과 일치해야 합니다.",
-                    "숫자 점수나 성공 확률은 만들지 마세요. rank는 화면의 우선 검토 순서에만 사용합니다.",
-                    "각 국가의 strengths는 liveMarketEvidence의 실제 출처 내용과 작품 신호를 연결한 근거 기반 추론으로 작성하세요.",
-                    "각 국가의 risks는 현지화 부담과 작품에 실제로 관련된 policyRiskSummary만 사용하세요.",
-                    "출처가 약한 국가는 그 한계를 fitLevel과 evidenceSummary에 명시하세요.",
-                    "정적 context pack은 보조 관측 신호일 뿐이며 국가 간 성과 비교 근거로 사용하지 마세요.",
-                    *CREATIVE_BOUNDARY_RULES,
-                    "설명은 모두 한국어로 작성하세요.",
-                ],
-                "evidence": evidence,
-            }
-            schema_name = "llm_tavily_country_recommendation"
-            schema = COUNTRY_RECOMMENDATION_SCHEMA
-        else:
-            system = (
-                "당신은 한국 웹소설과 국가별 공개 웹 근거를 정리하는 분석가다. "
-                "반드시 한국어 JSON 객체만 출력한다. 비교 가능한 근거가 부족하므로 국가 순위나 추천은 만들지 않는다. "
-                "작품 분석은 제공된 storyProfile을 그대로 사용하고, 국가별 설명은 Tavily 출처가 확인된 범위에서만 간결하게 작성한다."
-            )
-            user = {
-                "task": "추천 보류 상태에서 국가별로 확보된 실제 웹 근거와 추가 확인점을 간결하게 정리해 주세요.",
-                "storyProfile": story_profile,
-                "recommendationAllowed": False,
-                "requirements": [
-                    "storyProfile은 제공된 값을 그대로 유지하세요.",
-                    "countryAnalyses에는 US, CN, JP, TH를 각각 한 번씩 넣으세요.",
-                    "Tavily 출처가 없는 국가는 근거를 만들어내지 말고 검색 근거 부족이라고 쓰세요.",
-                    "숫자 점수, 순위, 우선 추천, 성공 가능성은 만들지 마세요.",
-                    "정책 항목은 policyRiskSummary에 남은 작품 관련 항목만 설명하세요.",
-                    "반복 경고를 줄이고 국가별 strengths와 risks를 각각 최대 2개의 핵심 문장으로 요약하세요.",
-                    *EVIDENCE_ANALYSIS_BOUNDARY_RULES,
-                    "설명은 모두 한국어로 작성하세요.",
-                ],
-                "evidence": evidence,
-            }
-            schema_name = "llm_tavily_evidence_analysis"
-            schema = COUNTRY_EVIDENCE_ANALYSIS_SCHEMA
-
+        system = (
+            "당신은 한국 웹소설의 해외 현지화 적합성을 분석하는 편집자다. "
+            "반드시 한국어 JSON 객체만 출력한다. 하나의 국가를 추천하거나 순위를 만들지 말고, "
+            "미국/글로벌 영어, 중국, 일본, 태국을 각각 독립적으로 분석한다. "
+            "Tavily에서 수집된 실제 공개 출처와 작품 프로필만 사용하며 시장 규모, 흥행 확률, 독자 선호를 근거 없이 단정하지 않는다."
+        )
+        user = {
+            "task": "현재 시놉시스를 기준으로 4개국 각각의 적합 요소, 주의 요소, 근거 범위와 현지화 난이도를 분석해 주세요.",
+            "storyProfile": story_profile,
+            "requirements": [
+                "storyProfile은 제공된 값을 그대로 유지하세요.",
+                "countryAnalyses에는 US, CN, JP, TH를 각각 한 번씩 넣으세요.",
+                "국가 간 순위, 우승 국가, 추천 국가, 숫자 점수, 성공 확률을 만들지 마세요.",
+                "fitLevel은 적합 신호가 뚜렷함, 가능성이 있으나 주의 필요, 적합 신호가 제한적임, 자료 부족으로 판단 보류 중 하나의 취지로 작성하세요.",
+                "각 국가의 strengths는 작품 신호와 실제 공개 근거가 연결되는 지점을 최대 2개로 작성하세요.",
+                "각 국가의 risks는 현지화 부담, 문화적 전달 문제, 작품과 관련된 정책 확인점을 최대 2개로 작성하세요.",
+                "Tavily 출처가 없는 국가는 시장 근거를 만들어내지 말고 자료 부족과 추가 확인 필요를 명시하세요.",
+                "evidenceSummary에는 어떤 종류의 공개 자료를 확인했는지와 근거의 한계를 함께 적으세요.",
+                "정적 context pack은 보조 관측 신호이며 실제 국가별 성과나 독자 선호의 증거로 표현하지 마세요.",
+                *EVIDENCE_ANALYSIS_BOUNDARY_RULES,
+                "설명은 모두 한국어로 작성하세요.",
+            ],
+            "evidence": evidence,
+        }
         request_hash = _stable_hash({"profileRequestHash": profile_request_hash, "system": system, "user": user})
         response = client.responses.create(
             model=model,
@@ -1139,25 +1165,15 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
             text={
                 "format": {
                     "type": "json_schema",
-                    "name": schema_name,
-                    "schema": schema,
+                    "name": "llm_tavily_country_analysis",
+                    "schema": COUNTRY_EVIDENCE_ANALYSIS_SCHEMA,
                     "strict": True,
                 }
             },
         )
         result = json.loads(response.output_text)
-        # The first LLM pass is the single source of truth for the work analysis.
         result["storyProfile"] = story_profile
-        if recommendation_allowed:
-            return _canonicalize_result(
-                result,
-                evidence_size=evidence_size,
-                evidence=evidence,
-                model=model,
-                internal_diagnostics=internal_diagnostics,
-                request_hash=request_hash,
-            )
-        return _canonicalize_insufficient_llm_result(
+        return _canonicalize_country_analysis_result(
             result,
             evidence_size=evidence_size,
             evidence=evidence,

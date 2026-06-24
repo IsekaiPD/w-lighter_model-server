@@ -220,7 +220,7 @@ class GuideHtmlReportTests(unittest.TestCase):
 
         self.assertTrue(html.lstrip().lower().startswith("<!doctype html>"))
         self.assertIn('class="wl-guide-page"', html)
-        self.assertIn("국가 우선순위 비교", html)
+        self.assertIn("국가별 현지화 적합성 분석", html)
         self.assertIn("이 결과는 입력 신호와 공개 관측 자료의 겹침을 비교한 참고 결과입니다.", html)
         self.assertIn("추천은 선택 전 비교 결과입니다.", html)
 
@@ -267,12 +267,16 @@ class GuideHtmlReportTests(unittest.TestCase):
 
         html = render_country_recommendation_html(result)
 
-        self.assertIn("추천 보류", html)
-        self.assertIn("국가별 근거 상태", html)
+        self.assertIn("국가별 현지화 적합성 분석", html)
+        self.assertIn("잘 맞는 요소", html)
+        self.assertIn("주의할 요소", html)
+        self.assertIn("현지화 난이도", html)
+        self.assertNotIn("추천 보류", html)
+        self.assertNotIn("국가 우선순위 비교", html)
         self.assertNotIn("우선순위 88", html)
         self.assertNotIn("우선순위 76", html)
         self.assertEqual(html.count("직접 매칭이 0개라 점수는 예비 참고입니다."), 1)
-        self.assertIn("현재 자료로는 국가 간 시장 적합도를 비교할 수 없어 순위와 점수를 만들지 않았습니다.", html)
+        self.assertIn("이 결과는 입력 신호와 공개 관측 자료의 겹침을 비교한 참고 결과입니다.", html)
         self.assertNotIn("이 결과는 국가 추천이 아니라 현재 보유 자료에서 확인 가능한 관측 신호를 정리한 것입니다.", html)
 
 
