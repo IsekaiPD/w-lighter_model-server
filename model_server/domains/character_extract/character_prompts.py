@@ -105,4 +105,3 @@ def build_character_extract_prompt(*, work_title: str, genre: str, synopsis: str
         - 반드시 JSON만 반환하고, 설명 문장은 붙이지 않는다.
         """
     ).strip()
-PY
