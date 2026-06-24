@@ -221,8 +221,59 @@ class GuideHtmlReportTests(unittest.TestCase):
         self.assertTrue(html.lstrip().lower().startswith("<!doctype html>"))
         self.assertIn('class="wl-guide-page"', html)
         self.assertIn("국가 우선순위 비교", html)
-        self.assertIn("작품 특성과 국가별 전달 환경을 비교한 결과입니다.", html)
+        self.assertIn("이 결과는 입력 신호와 공개 관측 자료의 겹침을 비교한 참고 결과입니다.", html)
         self.assertIn("추천은 선택 전 비교 결과입니다.", html)
+
+    def test_country_recommendation_collapses_weak_repetition(self) -> None:
+        result = {
+            "recommendedCountry": "US",
+            "recommendedCountryDisplay": "미국/글로벌 영어",
+            "recommendationStatus": "insufficient_evidence",
+            "confidence": "낮음",
+            "storyProfile": {
+                "title": "오뚜기 스프",
+                "genre": "현대 로맨스",
+                "coreSignals": ["작가물", "혐관 로맨스"],
+                "analysisSummary": "입력 자체는 작품 시놉시스보다 짧은 작품명에 가깝습니다.",
+            },
+            "countryComparisons": [
+                {
+                    "country": "US",
+                    "displayCountry": "미국/글로벌 영어",
+                    "rank": 1,
+                    "relativeFitScore": 88,
+                    "fitLevel": "근거 부족 예비 우선",
+                    "strengths": ["입력 장르와 공개 태그를 확인해야 합니다."],
+                    "risks": ["직접 매칭 근거가 없습니다."],
+                    "evidenceSummary": ["참고 컨텍스트 원천은 많지만 직접 매칭은 없습니다."],
+                },
+                {
+                    "country": "JP",
+                    "displayCountry": "일본",
+                    "rank": 2,
+                    "relativeFitScore": 76,
+                    "fitLevel": "근거 부족 비교 대상",
+                    "strengths": ["소개문과 태그를 다시 확인해야 합니다."],
+                    "risks": ["직접 매칭 근거가 없습니다."],
+                    "evidenceSummary": ["참고 컨텍스트 원천은 많지만 직접 매칭은 없습니다."],
+                },
+            ],
+            "limitations": [
+                "직접 매칭이 0개라 점수는 예비 참고입니다.",
+                "직접 매칭이 0개라 점수는 예비 참고입니다.",
+                "각 국가 카드는 확인할 지점을 중심으로 읽어야 합니다.",
+            ],
+        }
+
+        html = render_country_recommendation_html(result)
+
+        self.assertIn("추천 보류", html)
+        self.assertIn("국가별 근거 상태", html)
+        self.assertNotIn("우선순위 88", html)
+        self.assertNotIn("우선순위 76", html)
+        self.assertEqual(html.count("직접 매칭이 0개라 점수는 예비 참고입니다."), 1)
+        self.assertIn("현재 자료로는 국가 간 시장 적합도를 비교할 수 없어 순위와 점수를 만들지 않았습니다.", html)
+        self.assertIn("이 결과는 국가 추천이 아니라 현재 보유 자료에서 확인 가능한 관측 신호를 정리한 것입니다.", html)
 
 
 if __name__ == "__main__":

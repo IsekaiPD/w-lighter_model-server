@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,6 +39,27 @@ MARKET_CANONICAL = {
     "thailand_observation_context_ko.json": "thailand",
 }
 
+GENRE_SIGNAL_ALIASES: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
+    (("romance", "로맨스", "로판", "연애", "로맨틱", "멜로", "혐관"), ("로맨스",)),
+    (("comedy", "코미디", "러브코미디", "로코"), ("코미디",)),
+    (("drama", "드라마", "휴먼", "멜로", "치유"), ("드라마",)),
+    (("fantasy", "판타지", "이세계", "전생", "회귀"), ("판타지",)),
+    (("action", "액션", "전투", "헌터"), ("액션",)),
+    (("bl", "boys love", "보이즈러브", "남성 간 로맨스", "오메가버스"), ("BL",)),
+)
+
+SYNOPSIS_HINTS: tuple[tuple[tuple[str, ...], str], ...] = (
+    (("romance", "love", "marriage", "로맨스", "사랑", "연애", "결혼", "약혼", "재회", "전애인", "혐관", "계약연애"), "로맨스"),
+    (("comedy", "코미디", "유쾌", "웃음", "로맨틱 코미디", "로코"), "코미디"),
+    (("drama", "드라마", "상처", "치유", "트라우마", "휴먼", "감정 서사"), "드라마"),
+    (("fantasy", "판타지", "마법", "이세계", "회귀", "전생", "빙의", "환생"), "판타지"),
+    (("action", "액션", "전투", "전쟁", "생존", "헌터", "던전"), "액션"),
+    (("school", "학교", "학원", "아카데미"), "학원"),
+    (("bl", "boys love", "보이즈러브", "남성 간 로맨스", "오메가버스"), "BL"),
+    (("r18", "18+", "성인물", "성인 로맨스"), "성인"),
+    (("r15", "15+", "청소년"), "청소년"),
+)
+
 
 def resolve_context_market(target_market: str | None) -> str | None:
     raw = str(target_market or "").strip()
@@ -54,6 +76,7 @@ def inspect_context_pack_source(target_market: str | None) -> dict[str, Any]:
             "resolvedTargetMarket": None,
             "contextPackSourceFound": False,
             "contextPackSourceRecordCount": 0,
+            "contextPackUseLimits": [],
             "contextPackSkipReason": "unsupported_market",
         }
 
@@ -63,6 +86,7 @@ def inspect_context_pack_source(target_market: str | None) -> dict[str, Any]:
             "resolvedTargetMarket": resolved,
             "contextPackSourceFound": False,
             "contextPackSourceRecordCount": 0,
+            "contextPackUseLimits": [],
             "contextPackSkipReason": "source_not_found",
         }
 
@@ -73,6 +97,7 @@ def inspect_context_pack_source(target_market: str | None) -> dict[str, Any]:
             "resolvedTargetMarket": resolved,
             "contextPackSourceFound": False,
             "contextPackSourceRecordCount": 0,
+            "contextPackUseLimits": [],
             "contextPackSkipReason": "source_not_found",
         }
 
@@ -81,6 +106,7 @@ def inspect_context_pack_source(target_market: str | None) -> dict[str, Any]:
         "resolvedTargetMarket": resolved,
         "contextPackSourceFound": True,
         "contextPackSourceRecordCount": record_count,
+        "contextPackUseLimits": pack.get("use_limits") or [],
         "contextPackSkipReason": None if record_count else "no_source_records",
     }
 
@@ -189,36 +215,58 @@ def _label_category(label_ko: str) -> str:
     return str(item.get("category") or "other") if item else "other"
 
 
+def _split_genre_elements(genre: str) -> list[str]:
+    parts = [part.strip() for part in re.split(r"[\n,/;|·]+", str(genre or "")) if part.strip()]
+    signals: list[str] = []
+    for part in parts:
+        signals.append(part)
+        lowered = part.lower()
+        for aliases, normalized in GENRE_SIGNAL_ALIASES:
+            if any(alias.lower() in lowered for alias in aliases):
+                signals.extend(normalized)
+    return _dedupe(signals)
+
+
 def _input_elements(work: WorkInput) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for item in work.title_elements:
         rows.append({"element": item, "source": "title", "source_label": "제목"})
-    if work.genre:
-        rows.append({"element": work.genre, "source": "genre", "source_label": "장르"})
+    for item in _split_genre_elements(work.genre):
+        rows.append({"element": item, "source": "genre", "source_label": "장르"})
     for item in work.comparable_signals:
         rows.append({"element": item, "source": "comparable", "source_label": "비교 신호"})
     for item in work.declared_signals:
         rows.append({"element": item, "source": "declared", "source_label": "사용자 신호"})
-    if work.synopsis:
-        rows.append({"element": work.synopsis[:80], "source": "synopsis", "source_label": "시놉시스"})
+    for item in _synopsis_hint_elements(work.synopsis):
+        rows.append({"element": item, "source": "synopsis", "source_label": "시놉시스"})
 
     deduped: list[dict[str, str]] = []
-    seen: set[str] = set()
+    seen: set[tuple[str, str]] = set()
     for row in rows:
-        if row["element"] in seen:
+        key = (row["source"], row["element"].lower())
+        if key in seen:
             continue
-        seen.add(row["element"])
+        seen.add(key)
         deduped.append(row)
     return deduped
 
 
+def _signal_in_label(element: str, label: str) -> bool:
+    signal = str(element or "").strip()
+    target = str(label or "").strip()
+    if not signal or not target:
+        return False
+    if signal.isascii() and len(signal) <= 3:
+        return bool(re.search(rf"(?<![A-Za-z0-9]){re.escape(signal)}(?![A-Za-z0-9])", target, flags=re.IGNORECASE))
+    return signal.lower() in target.lower()
+
+
 def _match_from_labels(element: str, labels: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    text = element.lower()
     matches: list[dict[str, Any]] = []
     for item in labels:
         label_ko = str(item.get("label_ko") or "")
         label_original = str(item.get("label_original") or "")
-        if text in label_ko.lower() or text in label_original.lower():
+        if _signal_in_label(element, label_ko) or _signal_in_label(element, label_original):
             matches.append(item)
     return matches
 
@@ -240,22 +288,12 @@ def _candidate_observations(candidates: list[str], labels: list[dict[str, Any]])
 
 
 def _synopsis_hint_elements(synopsis: str) -> list[str]:
-    text = synopsis.lower()
+    text = str(synopsis or "").lower()
     if not text:
         return []
-    hints = []
-    for needle, label in [
-        ("romance", "로맨스"),
-        ("fantasy", "판타지"),
-        ("action", "액션"),
-        ("adventure", "모험"),
-        ("school", "학원"),
-        ("harem", "하렘"),
-        ("r18", "성인"),
-        ("18+", "성인"),
-        ("r15", "청소년"),
-    ]:
-        if needle in text:
+    hints: list[str] = []
+    for needles, label in SYNOPSIS_HINTS:
+        if any(needle.lower() in text for needle in needles):
             hints.append(label)
     return _dedupe(hints)
 

@@ -35,6 +35,7 @@ GUIDE_PUBLIC_KEYS = {
     "mode",
     "generationMode",
     "requiresSelection",
+    "recommendationStatus",
     "title",
     "targetCountry",
     "targetCountryDisplay",
@@ -53,6 +54,7 @@ RECOMMENDATION_PUBLIC_KEYS = {
     "reportMode",
     "generationMode",
     "requiresSelection",
+    "recommendationStatus",
     "title",
     "htmlReport",
     "genre",
@@ -184,7 +186,12 @@ def _shape_guide_response(_payload: dict[str, Any], result: dict[str, Any]) -> d
 
 
 def _shape_recommendation_response(_payload: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
-    public = {key: result[key] for key in RECOMMENDATION_PUBLIC_KEYS if key in result and result[key] is not None}
+    nullable_public_keys = {"recommendedCountry", "recommendedCountryDisplay"}
+    public = {
+        key: result[key]
+        for key in RECOMMENDATION_PUBLIC_KEYS
+        if key in result and (result[key] is not None or key in nullable_public_keys)
+    }
     public.setdefault("requiresSelection", bool(result.get("requiresSelection", True)))
     public.setdefault("generationMode", result.get("generationMode") or "recommendation_only")
     return public

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import datetime
 from typing import Any
 
@@ -184,14 +185,14 @@ def _recommendation_support_by_code(payload: dict[str, Any]) -> dict[str, dict[s
 
 
 def _score_from_support(target: dict[str, Any], support: dict[str, Any]) -> int:
+    """Build an overlap-only score. Policy card volume must never change country fit."""
     matched = len(target.get("matchedSignals") or [])
     platform = len(target.get("platformEvidence") or [])
-    risk = int((target.get("policyRiskSummary") or {}).get("riskCount") or 0)
     normalized = float(support.get("normalizedScore") or 0)
-    if normalized > 0:
-        rank_penalty = max(0, int(support.get("rankIndex") or 1) - 1) * 4
-        return max(18, min(95, int(round(34 + normalized * 56 + matched * 5 + min(platform, 5) * 2 - risk * 2 - rank_penalty))))
-    return max(10, min(45, 24 + matched * 8 + min(platform, 5) * 2 - risk * 2))
+    if normalized <= 0 and matched <= 0 and platform <= 0:
+        return 0
+    rank_penalty = max(0, int(support.get("rankIndex") or 1) - 1) * 3
+    return max(1, min(95, int(round(30 + normalized * 50 + matched * 5 + min(platform, 5) * 2 - rank_penalty))))
 
 
 def _country_strengths(target: dict[str, Any], support: dict[str, Any]) -> list[str]:
@@ -269,7 +270,11 @@ def _top_evidence_by_country(payload: dict[str, Any], *, limit: int = 5) -> dict
                 "declared_signals": payload.get("declaredSignals") or payload.get("declared_signals") or payload.get("signals") or [],
             }
         )
-        rows = report.get("evidence", {}).get("direct_signal_rows") or []
+        rows = [
+            row
+            for row in (report.get("evidence", {}).get("direct_signal_rows") or [])
+            if row.get("match_status") == "direct"
+        ]
         out[target["code"]] = [
             {
                 "signal": row.get("work_signal"),
@@ -288,7 +293,9 @@ def _context_match_summary(payload: dict[str, Any], target: dict[str, str], *, i
         return {
             "contextRecordCount": 0,
             "matchedSignals": [],
+            "inferredSignals": [],
             "matchedEvidence": [],
+            "dataUseLimits": source.get("contextPackUseLimits") or [],
             "diagnostics": {
                 "country": target["code"],
                 "contextPackRequested": False,
@@ -318,7 +325,8 @@ def _context_match_summary(payload: dict[str, Any], target: dict[str, str], *, i
     )
     evidence = report["evidence"]
     rows = evidence.get("direct_signal_rows") or []
-    matched_rows = [row for row in rows if row.get("direct_observation") == "observed"]
+    direct_rows = [row for row in rows if row.get("match_status") == "direct"]
+    inferred_rows = [row for row in rows if row.get("match_status") == "inferred"]
     matched_evidence = [
         {
             "signal": row.get("work_signal"),
@@ -327,7 +335,7 @@ def _context_match_summary(payload: dict[str, Any], target: dict[str, str], *, i
             "candidateLabels": [item.get("label_ko") for item in row.get("candidate_observations") or [] if item.get("label_ko")],
             "count": (row.get("aggregate") or {}).get("count"),
         }
-        for row in matched_rows[:5]
+        for row in direct_rows[:5]
     ]
     injected_bytes = _payload_size(matched_evidence) if matched_evidence else 0
     source_count = int(evidence.get("context_record_count") or source.get("contextPackSourceRecordCount") or 0)
@@ -337,16 +345,18 @@ def _context_match_summary(payload: dict[str, Any], target: dict[str, str], *, i
         skip_reason = "no_source_records"
     elif not rows:
         skip_reason = "no_candidate_records"
-    elif not matched_rows:
-        skip_reason = "no_matched_signals"
+    elif not direct_rows:
+        skip_reason = "no_direct_matches"
     elif not matched_evidence:
         skip_reason = "not_injected"
     else:
         skip_reason = "injected"
     return {
         "contextRecordCount": evidence.get("context_record_count"),
-        "matchedSignals": [row.get("work_signal") for row in matched_rows if row.get("work_signal")],
+        "matchedSignals": list(dict.fromkeys(row.get("work_signal") for row in direct_rows if row.get("work_signal"))),
+        "inferredSignals": list(dict.fromkeys(row.get("work_signal") for row in inferred_rows if row.get("work_signal"))),
         "matchedEvidence": matched_evidence,
+        "dataUseLimits": evidence.get("data_limits") or evidence.get("use_limits") or [],
         "diagnostics": {
             "country": target["code"],
             "contextPackRequested": True,
@@ -356,7 +366,7 @@ def _context_match_summary(payload: dict[str, Any], target: dict[str, str], *, i
             "contextPackSourceFound": bool(source.get("contextPackSourceFound")),
             "contextPackSourceRecordCount": source_count,
             "contextPackCandidateRecordCount": len(rows),
-            "contextPackMatchedRecordCount": len(matched_rows),
+            "contextPackMatchedRecordCount": len(direct_rows),
             "contextPackInjectedRecordCount": len(matched_evidence),
             "contextPackInjectedEvidenceBytes": injected_bytes,
             "contextPackSkipReason": skip_reason,
@@ -382,8 +392,8 @@ def _policy_summary(payload: dict[str, Any], target: dict[str, str]) -> dict[str
 
 
 def build_country_recommendation_evidence(payload: dict[str, Any]) -> dict[str, Any]:
-    top_evidence = _top_evidence_by_country(payload)
     include_context_pack = _include_context_pack(payload)
+    top_evidence = _top_evidence_by_country(payload) if include_context_pack else {}
     countries = []
     diagnostics = []
     for target in COUNTRY_COMPARISON_TARGETS:
@@ -397,13 +407,18 @@ def build_country_recommendation_evidence(payload: dict[str, Any]) -> dict[str, 
                 "displayCountry": target["display"],
                 "platformEvidence": top_evidence.get(target["code"], [])[:5],
                 "matchedSignals": context["matchedSignals"],
+                "inferredSignals": context.get("inferredSignals") or [],
                 "matchedContextEvidence": context["matchedEvidence"],
+                "dataUseLimits": context.get("dataUseLimits") or [],
                 "policyRiskSummary": policy,
                 "localizationDifficultyInputs": [
                     f"직접 매칭 {len(context['matchedSignals'])}개",
-                    f"정책 점검 카드 {policy['riskCount']}개",
                     f"참고 컨텍스트 {context['contextRecordCount'] or 0}건",
                 ],
+                "policyReviewSummary": {
+                    "candidateCount": policy["riskCount"],
+                    "note": "정책 점검 후보 수는 국가 적합도 점수에 반영하지 않습니다.",
+                },
             }
         )
     return {
@@ -414,7 +429,7 @@ def build_country_recommendation_evidence(payload: dict[str, Any]) -> dict[str, 
         },
         "countries": countries,
         "contextPackDiagnosticsByCountry": diagnostics,
-        "comparisonRule": "시놉시스의 핵심 매력을 기준으로 4개국 적합도를 비교합니다.",
+        "comparisonRule": "현재 데이터는 국가별 공개 관측 신호와 정책 확인 항목을 분리해 보여주며, 추천 허용 근거가 없으면 국가 순위를 만들지 않습니다.",
     }
 
 
@@ -472,28 +487,14 @@ def _validate_country_result(result: dict[str, Any]) -> None:
 
 
 def _repair_relative_fit_scores(comparisons: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Repair unhelpful LLM scores such as all-zero or all-equal ranked outputs."""
-    scores: list[float] = []
-    for item in comparisons:
-        try:
-            scores.append(float(item.get("relativeFitScore") or 0))
-        except (TypeError, ValueError):
-            scores.append(0.0)
-
-    needs_repair = (
-        any(score <= 0 for score in scores)
-        or len({round(score, 2) for score in scores}) <= 1
-        or any(score > 100 for score in scores)
-    )
-    if not needs_repair:
-        return comparisons
-
-    rank_scores = {1: 86, 2: 74, 3: 62, 4: 50}
+    """Validate/clamp model scores without inventing scores from rank."""
     repaired: list[dict[str, Any]] = []
     for item in comparisons:
-        rank = int(item.get("rank") or 99)
-        score = rank_scores.get(rank, max(35, 90 - rank * 10))
-        repaired.append({**item, "relativeFitScore": score})
+        try:
+            score = float(item.get("relativeFitScore"))
+        except (TypeError, ValueError):
+            score = 0.0
+        repaired.append({**item, "relativeFitScore": max(0, min(100, score))})
     return repaired
 
 
@@ -507,13 +508,33 @@ def _country_evidence_by_code(evidence: dict[str, Any] | None) -> dict[str, dict
     }
 
 
+def _data_limits_forbid_recommendation(evidence: dict[str, Any] | None) -> bool:
+    if not evidence:
+        return True
+    forbidden_terms = ("추천", "성과 예측", "시장 적합도 판단", "유사도 비교")
+    limits = [
+        str(limit)
+        for country in evidence.get("countries") or []
+        for limit in country.get("dataUseLimits") or []
+    ]
+    return any(any(term in limit for term in forbidden_terms) for limit in limits)
+
+
+def _grounded_country_codes(evidence: dict[str, Any] | None) -> list[str]:
+    return [
+        str(country.get("country"))
+        for country in (evidence or {}).get("countries") or []
+        if country.get("country") and _has_direct_country_grounding(country)
+    ]
+
+
 def _has_direct_country_grounding(country_evidence: dict[str, Any]) -> bool:
     if country_evidence.get("matchedSignals"):
         return True
     if country_evidence.get("matchedContextEvidence"):
         return True
     for row in country_evidence.get("platformEvidence") or []:
-        if str(row.get("status") or "").lower() not in {"", "missing", "none"}:
+        if str(row.get("status") or "").lower() == "direct":
             return True
     return False
 
@@ -639,6 +660,7 @@ def _canonicalize_result(
     out = {
         "mode": "synopsis_country_recommendation",
         "requiresSelection": False,
+        "recommendationStatus": "recommended",
         "title": "4개국 비교 추천",
         "recommendedCountry": recommended,
         "recommendedCountryDisplay": _country_display(recommended),
@@ -693,7 +715,7 @@ def _deterministic_comparison(payload: dict[str, Any], evidence: dict[str, Any])
             "title": evidence["story"]["title"],
             "genre": evidence["story"]["genre"],
             "coreSignals": core_signals,
-            "analysisSummary": "입력 시놉시스와 장르를 국가별 공개 플랫폼 신호, 컨텍스트 팩, 정책 점검 항목과 대조해 4개국 적합도를 비교했습니다.",
+            "analysisSummary": "입력 시놉시스와 장르를 국가별 공개 관측 신호와 대조해 4개국의 상대적 검토 순서를 비교했습니다. 정책 점검 후보 수는 점수에 반영하지 않았습니다.",
         },
         "recommendedCountry": comparisons[0]["country"],
         "confidence": "중간",
@@ -716,7 +738,8 @@ def _manual_selection_fallback(
 ) -> dict[str, Any]:
     out = {
         "mode": "synopsis_country_recommendation",
-        "requiresSelection": False,
+        "requiresSelection": True,
+        "recommendationStatus": "generation_failed",
         "title": "국가 비교를 완료하지 못했습니다",
         "message": "추천 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.",
         "genre": payload.get("genre") or "",
@@ -744,10 +767,105 @@ def _manual_selection_fallback(
     return out
 
 
+def _insufficient_evidence_result(
+    payload: dict[str, Any],
+    evidence: dict[str, Any],
+    *,
+    evidence_size: int,
+    internal_diagnostics: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    diagnostics = _diagnostics_by_country(evidence)
+    comparisons: list[dict[str, Any]] = []
+    for country in evidence.get("countries") or []:
+        code = str(country.get("country") or "")
+        display = str(country.get("displayCountry") or _country_display(code))
+        matched = [str(item) for item in country.get("matchedSignals") or [] if str(item).strip()]
+        inferred = [str(item) for item in country.get("inferredSignals") or [] if str(item).strip()]
+        policy_count = _policy_risk_count(country)
+        source_count = int((diagnostics.get(code) or {}).get("contextPackSourceRecordCount") or 0)
+        strengths: list[str] = []
+        if matched:
+            strengths.append(f"{display} 공개 관측 자료에서 직접 일치한 입력 신호는 {', '.join(matched[:4])}입니다.")
+        if inferred:
+            strengths.append(f"정규화·추정으로 연결된 보조 신호는 {', '.join(inferred[:4])}이며 직접 일치와 구분해야 합니다.")
+        if not strengths:
+            strengths.append(f"{display} 공개 관측 자료에서 현재 입력과 직접 겹치는 신호를 확인하지 못했습니다.")
+        comparisons.append(
+            {
+                "country": code,
+                "displayCountry": display,
+                "targetCountry": country.get("targetCountry"),
+                "rank": None,
+                "relativeFitScore": None,
+                "fitLevel": "직접 관측 신호 확인" if matched else "직접 근거 부족",
+                "strengths": strengths,
+                "risks": [
+                    "현재 보유 데이터는 시장 성과나 독자 선호를 비교하는 자료가 아니므로 국가 추천으로 확대 해석할 수 없습니다.",
+                    f"별도 정책 검토 후보는 {policy_count}개이며, 이 개수는 국가 적합도 판단에 사용하지 않습니다.",
+                ],
+                "evidenceSummary": [
+                    f"직접 매칭 신호: {len(matched)}개" + (f" ({', '.join(matched[:4])})" if matched else ""),
+                    f"정규화·추정 신호: {len(inferred)}개" + (f" ({', '.join(inferred[:4])})" if inferred else ""),
+                    f"참고 컨텍스트 원천: {source_count}건",
+                    "데이터 용도: 공개 관측 신호 확인 — 국가 추천·성과 예측 근거로 사용하지 않음",
+                ],
+                "localizationDifficulty": "추천 판단 보류",
+            }
+        )
+
+    genre = _text(evidence.get("story", {}).get("genre"))
+    core_signals = [part.strip() for part in re.split(r"[\n,/;|·]+", genre) if part.strip()][:8]
+    if not core_signals:
+        core_signals = ["입력 시놉시스"]
+    out = {
+        "mode": "synopsis_country_recommendation",
+        "requiresSelection": True,
+        "recommendationStatus": "insufficient_evidence",
+        "title": "국가 추천 보류",
+        "message": "현재 보유 근거로는 4개국의 시장 적합도를 신뢰성 있게 비교할 수 없어 추천을 보류했습니다.",
+        "recommendedCountry": None,
+        "recommendedCountryDisplay": None,
+        "confidence": "판단 보류",
+        "storyProfile": {
+            "title": evidence.get("story", {}).get("title") or "입력 작품",
+            "genre": genre or "장르 미입력",
+            "coreSignals": core_signals,
+            "analysisSummary": "장르와 시놉시스에서 국가별 관측 신호는 확인하되, 현재 데이터의 사용 제한에 따라 국가 순위와 점수는 생성하지 않았습니다.",
+        },
+        "countryComparisons": comparisons,
+        "limitations": [
+            "현재 데이터는 국가별 공개 플랫폼 관측 자료이며 시장 적합도 판단, 성과 예측, 개별 작품 추천 용도로 사용할 수 없습니다.",
+            "국가별 표본 수와 플랫폼 랭킹 기준이 달라 국가 간 점수 비교를 만들지 않았습니다.",
+            "정책 점검 후보 수는 보유 규칙의 양에 영향을 받으므로 국가 추천 점수에 반영하지 않았습니다.",
+            "사용자가 국가를 직접 선택하면 해당 국가의 제목·소개문·태그·정책 검토용 상세 가이드는 생성할 수 있습니다.",
+        ],
+        "recommendationMethod": "insufficient_evidence_guard",
+        "llmCountryRecommendationModel": None,
+        "llmRecommendationEvidenceBytes": evidence_size,
+        "availableCountries": [
+            {"country": target["code"], "targetCountry": target["targetCountry"], "displayCountry": target["display"]}
+            for target in COUNTRY_COMPARISON_TARGETS
+        ],
+        "limitation_notice": "국가 추천은 보류되었으며 국가별 관측 신호만 표시합니다.",
+        "createdAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    }
+    if internal_diagnostics:
+        out.update(internal_diagnostics)
+    return out
+
+
 def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
     evidence = build_country_recommendation_evidence(payload)
     evidence_size = _evidence_size(evidence)
     internal_diagnostics = _aggregate_context_pack_diagnostics(evidence, payload) if _include_internal(payload) else None
+    grounded_codes = _grounded_country_codes(evidence)
+    if _data_limits_forbid_recommendation(evidence) or len(grounded_codes) < len(COUNTRY_COMPARISON_TARGETS):
+        return _insufficient_evidence_result(
+            payload,
+            evidence,
+            evidence_size=evidence_size,
+            internal_diagnostics=internal_diagnostics,
+        )
     if not _has_synopsis(payload) and not llm_requested(payload):
         return _canonicalize_result(
             _deterministic_comparison(payload, evidence),
@@ -768,14 +886,13 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
             "requirements": [
                 "countryComparisons에는 US, CN, JP, TH를 각각 한 번씩 넣으세요.",
                 "rank는 1~4를 중복 없이 사용하고, recommendedCountry는 rank 1과 일치해야 합니다.",
-                "relativeFitScore는 40~95 사이의 상대 우선순위 점수로 작성하고, 0 또는 네 국가 동일 점수는 쓰지 마세요.",
+                "relativeFitScore는 제공된 직접 관측 근거만으로 산정한 상대 검토 점수이며 시장 성공 확률처럼 표현하지 마세요.",
+                "정책 점검 후보 수와 컨텍스트 원천 레코드 수는 relativeFitScore에 반영하지 마세요.",
                 "rank 1은 rank 2보다, rank 2는 rank 3보다, rank 3은 rank 4보다 높은 점수를 주세요.",
                 "작품 자체를 바꾸는 방향 제안이 아니라, 현재 시놉시스 기준 어느 국가에서 먼저 전달하기 좋은지 설명하세요.",
                 "각 국가의 strengths에는 왜 그 국가가 맞거나 덜 맞는지 입력 장르, 시놉시스 신호, 플랫폼/정책 근거 중 최소 2가지를 연결해 구체적으로 쓰세요.",
                 "각 국가의 evidenceSummary에는 점수의 근거가 된 신호를 요약하고, '근거를 확인했습니다'처럼 비어 있는 문장만 쓰지 마세요.",
-                "직접 매칭이 0개인 경우에도 그대로 장점처럼 쓰지 말고, 어떤 보조 근거로 비교했는지 설명하세요.",
-                "직접 매칭 0개 문구는 limitations에서 한 번만 설명하고, 각 국가 카드에서는 시장별 장점과 확인 지점을 중심으로 쓰세요.",
-                "evidence에 직접 매칭, 컨텍스트 주입, 정책 점검 후보가 없으면 그 국가는 '근거 부족 예비 비교'로 쓰고 시장 적합을 단정하지 마세요.",
+                "직접 매칭이 없는 국가는 장점이나 적합 국가로 표현하지 마세요.",
                 "국가별 독자 선호, 시장 규모, 플랫폼 성과, 유사작 흥행은 evidence에 없으면 언급하지 마세요.",
                 "추론이 필요한 문장은 '입력 시놉시스 기준으로는', '예비적으로는', '추가 확인이 필요합니다'처럼 추론임을 표시하세요.",
                 *CREATIVE_BOUNDARY_RULES,

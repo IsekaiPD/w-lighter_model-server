@@ -1,4 +1,4 @@
-﻿
+
 from __future__ import annotations
 
 import html
@@ -79,9 +79,11 @@ GENRE_ALIASES = {
     "romantasy": ["Romance Fantasy", "Romance", JP_ISEKAI_ROMANCE, "villainess"],
     KO_ROMANCE_FANTASY_SHORT: ["Romance Fantasy", "Romance", JP_ISEKAI_ROMANCE, "villainess", JP_ENGAGEMENT_BREAK, JP_DOTING],
     KO_ROMANCE_FANTASY: ["Romance Fantasy", "Romance", JP_ISEKAI_ROMANCE],
-    "romance": ["Romance", "Romance Fantasy", JP_ISEKAI_ROMANCE, "BL", "LGBTQ+"],
-    KO_ROMANCE: ["Romance", "Romance Fantasy", JP_ISEKAI_ROMANCE, "BL", "LGBTQ+"],
-    "bl": ["BL", "LGBTQ+", "Romance"],
+    "romance": ["Romance", "Romance Fantasy", JP_ISEKAI_ROMANCE],
+    KO_ROMANCE: ["Romance", "Romance Fantasy", JP_ISEKAI_ROMANCE],
+    "bl": ["BL", "Boys Love", "LGBTQ+"],
+    "boys love": ["BL", "Boys Love", "LGBTQ+"],
+    "보이즈러브": ["BL", "Boys Love", "LGBTQ+"],
     "fantasy": ["Fantasy", "High Fantasy", JP_HIGH_FANTASY, JP_LOW_FANTASY, "Magic", "Adventure"],
     KO_FANTASY: ["Fantasy", "High Fantasy", JP_HIGH_FANTASY, JP_LOW_FANTASY, "Magic", "Adventure"],
     "action fantasy": ["Action Fantasy", "Action", "Adventure", "Fantasy"],
@@ -99,7 +101,7 @@ SYNOPSIS_KEYWORDS = {
     "progression": ["level", "skill", "system", "rank", "dungeon", "quest", '성장', '스킬', '레벨', '시스템', '던전', '랭커'],
     "isekai": ["reincarn", "isekai", "another world", "transport", '회귀', KO_REINCARNATION, '빙의', KO_ISEKAI, '환생'],
     "action": ["battle", "war", "fight", "survival", "apocalypse", '전투', '전쟁', '복수', '잔혹', '피', '생존', '멸망', '아포칼립스'],
-    "bl": ["omega", "alpha", "bl", "boys love", '남자', '오메가', '알파'],
+    "bl": ["omega", "alpha", "bl", "boys love", "보이즈러브", "남성 간 로맨스", "오메가버스", '오메가', '알파'],
 }
 
 SYNOPSIS_MOTIF_LABELS = {
@@ -253,26 +255,42 @@ def _tokens(value: str) -> list[str]:
     return words
 
 
-def _genre_needles(genre: str | None) -> list[str]:
+def _split_genre_terms(genre: str | None) -> list[str]:
     raw = _text(genre)
-    lowered = raw.lower()
+    if not raw:
+        return []
+    parts = re.split(r"[\n,/;|·]+", raw)
+    return list(dict.fromkeys(part.strip() for part in parts if part.strip()))
+
+
+def _genre_needles(genre: str | None) -> list[str]:
     needles: list[str] = []
-    for key, values in GENRE_ALIASES.items():
-        if key in lowered or key in raw:
-            needles.extend(values)
-    if raw:
-        needles.append(raw)
-    return list(dict.fromkeys(needles))
+    for term in _split_genre_terms(genre):
+        lowered = term.lower()
+        for key, values in GENRE_ALIASES.items():
+            key_text = str(key)
+            if key_text.lower() in lowered or key_text in term:
+                needles.extend(values)
+        needles.append(term)
+    return list(dict.fromkeys(needle for needle in needles if needle))
 
 
 def _synopsis_needles(synopsis: str | None) -> list[str]:
     text = _text(synopsis).lower()
+    if not text:
+        return []
     needles: list[str] = []
-    for values in SYNOPSIS_KEYWORDS.values():
+    signal_aliases = {
+        "romance": ["Romance", "Romance Fantasy", JP_ISEKAI_ROMANCE],
+        "progression": ["LitRPG", "GameLit", "Progression", "System", "Skill"],
+        "isekai": ["Isekai", "Portal Fantasy / Isekai", JP_ISEKAI_REINCARNATION, JP_ISEKAI_TRANSFER, "Reincarnation"],
+        "action": ["Action", "Adventure", "Action Fantasy"],
+        "bl": ["BL", "Boys Love", "LGBTQ+"],
+    }
+    for signal, values in SYNOPSIS_KEYWORDS.items():
         if any(keyword.lower() in text for keyword in values):
-            needles.extend(values)
-    needles.extend(_tokens(text)[:30])
-    return list(dict.fromkeys([needle for needle in needles if needle]))
+            needles.extend(signal_aliases.get(signal, []))
+    return list(dict.fromkeys(needle for needle in needles if needle))
 
 
 def _synopsis_motifs(synopsis: str | None) -> list[str]:
@@ -307,8 +325,17 @@ def _row_search_text(row: dict[str, Any]) -> str:
     ).lower()
 
 
+def _contains_signal(text: str, needle: str) -> bool:
+    signal = _text(needle)
+    if not signal:
+        return False
+    if signal.isascii() and len(signal) <= 3:
+        return bool(re.search(rf"(?<![A-Za-z0-9]){re.escape(signal)}(?![A-Za-z0-9])", text, flags=re.IGNORECASE))
+    return signal.lower() in text.lower()
+
+
 def _match_count(text: str, needles: list[str]) -> int:
-    return sum(1 for needle in needles if needle and needle.lower() in text)
+    return sum(1 for needle in needles if _contains_signal(text, needle))
 
 
 def _country_records(data: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
@@ -410,16 +437,14 @@ def rank_countries(data: dict[str, Any], *, genre: str | None, synopsis: str | N
             if synopsis_hits:
                 reasons["시놉시스 관련 신호가 공개 제목/설명/태그와 겹칩니다"] += synopsis_hits
             evidence_rows.append((row_score, row, f"장르 적중 {genre_hits}, 시놉시스 적중 {synopsis_hits}, 순위 {rank}"))
-        if score == 0 and records:
-            # Keep available countries visible even for weak matches; use top exposure as fallback evidence.
-            top = sorted(records, key=lambda r: int(r.get("rank") or 999))[:3]
-            evidence_rows = [(0.1, row, "상위 공개 노출을 참고한 보조 근거") for row in top]
-            reasons["장르·시놉시스 겹침이 약해 상위 공개 노출을 참고했습니다"] = 1
-            score = 0.1
-        else:
-            # Normalize so larger crawls do not dominate the fit chart. Score is an overlap reference, not a market-success prediction.
+        if score > 0:
+            # Normalize so larger crawls do not dominate the overlap reference.
             coverage_bonus = min(1.0, matched_rows / max(1, len(records))) * 20.0
             score = (score / max(1, len(records))) * 100.0 + coverage_bonus
+        else:
+            score = 0.0
+            reasons["입력 장르·시놉시스와 직접 겹치는 공개 관측 근거가 없습니다"] = 1
+            evidence_rows = []
         evidence = [_evidence_from_row(row, reason) for _, row, reason in sorted(evidence_rows, key=lambda x: x[0], reverse=True)[:8]]
         recommendations.append(
             Recommendation(
@@ -437,7 +462,7 @@ def rank_countries(data: dict[str, Any], *, genre: str | None, synopsis: str | N
             Recommendation(
                 country=country,
                 score=0.0,
-                reasons=["데이터셋에 직접 겹치는 공개 플랫폼 근거가 없어 기본 노출을 참고했습니다"],
+                reasons=["데이터셋에 입력과 직접 겹치는 공개 관측 근거가 없습니다"],
                 evidence=[],
             )
         )

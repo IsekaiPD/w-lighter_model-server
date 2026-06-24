@@ -33,52 +33,114 @@ def _items(values: Any, *, checklist: bool = False) -> str:
     return f'<ul class="{class_name}">' + "".join(f"<li>{_esc(item)}</li>" for item in entries) + "</ul>"
 
 
+def _dedupe_entries(values: Any) -> list[str]:
+    deduped: list[str] = []
+    for item in values or []:
+        text = str(item).strip()
+        if not text or text in deduped:
+            continue
+        deduped.append(text)
+    return deduped
+
+
+def _is_weak_comparison(result: dict[str, Any]) -> bool:
+    comparisons = result.get("countryComparisons") or []
+    if not comparisons:
+        return False
+    return all("근거 부족" in str(item.get("fitLevel") or "") for item in comparisons)
+
+
 
 
 def render_country_recommendation_html(result: dict[str, Any]) -> str:
-    """Render the pre-selection synopsis country comparison as a full document."""
+    """Render the pre-selection country evidence comparison as a full document."""
     profile = result.get("storyProfile") or {}
     title = profile.get("title") or result.get("title") or "입력 작품"
     genre = profile.get("genre") or result.get("genre") or "장르 미입력"
-    recommendation = result.get("recommendedCountryDisplay") or result.get("recommendedCountry") or "추천 결과 없음"
+    status = str(result.get("recommendationStatus") or "")
+    insufficient = status == "insufficient_evidence" or not result.get("recommendedCountry")
+    recommendation = (
+        "추천 보류"
+        if insufficient
+        else result.get("recommendedCountryDisplay") or result.get("recommendedCountry") or "추천 결과 없음"
+    )
     signals = profile.get("coreSignals") or []
-    comparisons = sorted(result.get("countryComparisons") or [], key=lambda item: int(item.get("rank") or 99))
-    top = comparisons[0] if comparisons else {}
+
+    def _sort_key(item: dict[str, Any]) -> tuple[int, str]:
+        try:
+            rank = int(item.get("rank"))
+        except (TypeError, ValueError):
+            rank = 99
+        return rank, str(item.get("country") or "")
+
+    comparisons = sorted(result.get("countryComparisons") or [], key=_sort_key)
+    weak_mode = insufficient or _is_weak_comparison(result)
+    top = comparisons[0] if comparisons and not insufficient else {}
     top_evidence = top.get("evidenceSummary") or []
-    cards = []
+    cards: list[str] = []
     for item in comparisons:
         country = item.get("displayCountry") or item.get("country") or "국가"
-        score = max(0, min(100, int(float(item.get("relativeFitScore") or 0))))
         evidence_html = _items(item.get("evidenceSummary"))
+        if insufficient:
+            ranking_label = "근거 확인 필요"
+        else:
+            score = max(0, min(100, int(float(item.get("relativeFitScore") or 0))))
+            rank = _esc(item.get("rank") or "-")
+            ranking_label = f"#{rank} · 우선순위 {score}"
+        strengths_title = "확인된 관측 신호" if insufficient else "잘 맞는 지점"
         cards.append(
             f'''<article class="wl-guide-card">
-  <span class="wl-guide-risk-level">#{_esc(item.get('rank') or '-')} · 우선순위 {score}</span>
-  <h3>{_esc(country)}</h3><p>{_esc(item.get('fitLevel') or '비교 검토')}</p>
-  <h4>잘 맞는 지점</h4>{_items(item.get('strengths'))}
-  {f'<div class="wl-guide-rationale"><h4>판단 근거</h4>{evidence_html}</div>' if evidence_html else ''}
-  <h4>확인할 지점</h4>{_items(item.get('risks'))}
+  <span class="wl-guide-risk-level">{_esc(ranking_label)}</span>
+  <h3>{_esc(country)}</h3><p>{_esc(item.get('fitLevel') or '근거 확인')}</p>
+  <h4>{strengths_title}</h4>{_items(item.get('strengths'))}
+  {f'<div class="wl-guide-rationale"><h4>근거 상태</h4>{evidence_html}</div>' if evidence_html else ''}
+  <h4>별도 확인할 지점</h4>{_items(item.get('risks'))}
 </article>'''
         )
+
+    if insufficient:
+        comparison_title = "국가별 근거 상태"
+        comparison_lead = "현재 자료로는 국가 간 시장 적합도를 비교할 수 없어 순위와 점수를 만들지 않았습니다. 아래에는 국가별로 확인된 관측 신호와 정책 검토 항목만 표시합니다."
+        guide_title = "추천이 보류된 이유"
+        guide_text = result.get("message") or "현재 보유 근거로는 신뢰성 있는 국가 추천을 만들 수 없습니다."
+        result_type = "근거 확인 및 직접 선택"
+        meta_label = "추천 상태"
+        footer = "이 결과는 국가 추천이 아니라 현재 보유 자료에서 확인 가능한 관측 신호를 정리한 것입니다."
+    else:
+        comparison_title = "국가 우선순위 비교"
+        comparison_lead = "추천은 확정 배포 국가가 아닙니다. 각 시장의 전달 가능성과 직접 관측 근거를 비교해 검토하세요."
+        guide_title = "우선 추천을 읽는 법"
+        guide_text = f"{recommendation}은 현재 입력과 직접 관측 근거를 기준으로 먼저 검토한 국가입니다. 시장 성공 확률이나 확정 배포 판단으로 해석하면 안 됩니다."
+        result_type = "4개국 우선순위 비교"
+        meta_label = "우선 추천"
+        footer = "이 결과는 입력 신호와 공개 관측 자료의 겹침을 비교한 참고 결과입니다."
+
+    limitations = _dedupe_entries(result.get("limitations") or [])
+    if weak_mode and not insufficient:
+        limitations = _dedupe_entries(["직접 매칭 근거가 약한 국가는 시장 적합도로 단정하지 마세요.", *limitations])
+    if not limitations:
+        limitations = ["실제 출시 전에는 플랫폼 정책과 현지화 표현을 별도로 확인하세요."]
+
     body = f'''<main class="wl-guide-page">
   <section class="wl-guide-hero">
     <div class="wl-guide-eyebrow">Synopsis country recommendation</div>
     <h1>{_esc(title)}</h1>
-    <p>{_esc(profile.get('analysisSummary') or '시놉시스에서 드러난 매력을 기준으로 4개국의 전달 적합도를 비교했습니다.')}</p>
+    <p>{_esc(profile.get('analysisSummary') or '시놉시스와 장르에서 확인 가능한 국가별 관측 신호를 정리했습니다.')}</p>
     <div class="wl-guide-meta-grid">
       <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">장르</span><strong class="wl-guide-meta-value">{_esc(genre)}</strong></div>
-      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">우선 추천</span><strong class="wl-guide-meta-value">{_esc(recommendation)}</strong></div>
-      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">판단 신뢰도</span><strong class="wl-guide-meta-value">{_esc(result.get('confidence') or '근거 기반 비교')}</strong></div>
-      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">결과 유형</span><strong class="wl-guide-meta-value">4개국 우선순위 비교</strong></div>
+      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">{_esc(meta_label)}</span><strong class="wl-guide-meta-value">{_esc(recommendation)}</strong></div>
+      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">판단 신뢰도</span><strong class="wl-guide-meta-value">{_esc(result.get('confidence') or '근거 확인')}</strong></div>
+      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">결과 유형</span><strong class="wl-guide-meta-value">{_esc(result_type)}</strong></div>
     </div>
   </section>
   <div class="wl-guide-layout"><div>
-    <section class="wl-guide-section"><h2><span class="wl-guide-icon">📌</span>한눈에 보는 작품 분석</h2><p class="wl-guide-lead">{' · '.join(_esc(signal) for signal in signals) or '입력 시놉시스의 핵심 매력을 정리합니다.'}</p></section>
-    <section class="wl-guide-section"><h2><span class="wl-guide-icon">🌏</span>국가 우선순위 비교</h2><p class="wl-guide-lead">추천은 확정 배포 국가가 아닙니다. 각 시장의 전달 가능성, 소개문·태그 구성 난도, 정책 확인 부담을 비교해 검토하세요.</p><div class="wl-guide-card-grid">{''.join(cards) or '<p class="wl-guide-lead">비교 결과를 준비하지 못했습니다.</p>'}</div></section>
+    <section class="wl-guide-section"><h2><span class="wl-guide-icon">📌</span>한눈에 보는 작품 분석</h2><p class="wl-guide-lead">{' · '.join(_esc(signal) for signal in signals) or '입력 시놉시스의 핵심 신호를 정리합니다.'}</p></section>
+    <section class="wl-guide-section"><h2><span class="wl-guide-icon">🌏</span>{_esc(comparison_title)}</h2><p class="wl-guide-lead">{_esc(comparison_lead)}</p><div class="wl-guide-card-grid">{''.join(cards) or '<p class="wl-guide-lead">비교 결과를 준비하지 못했습니다.</p>'}</div></section>
   </div><aside>
-    <section class="wl-guide-section"><h2><span class="wl-guide-icon">🧭</span>우선 추천을 읽는 법</h2><p class="wl-guide-lead">{_esc(recommendation)}은 지금 입력된 장르와 시놉시스 기준에서 먼저 검토하기 좋은 국가입니다. 아래 근거는 확정 배포 판단이 아니라 소개문·태그·정책 확인 우선순위를 잡기 위한 비교입니다.</p>{_items(top_evidence)}</section>
-    <section class="wl-guide-section"><h2><span class="wl-guide-icon">⚠️</span>해석 시 유의점</h2>{_items(result.get('limitations') or ['추천 결과는 참고용이며, 실제 출시 전에는 플랫폼 정책과 현지화 표현을 별도로 확인하세요.'])}</section>
+    <section class="wl-guide-section"><h2><span class="wl-guide-icon">🧭</span>{_esc(guide_title)}</h2><p class="wl-guide-lead">{_esc(guide_text)}</p>{_items(top_evidence)}</section>
+    <section class="wl-guide-section"><h2><span class="wl-guide-icon">⚠️</span>해석 시 유의점</h2>{_items(limitations)}</section>
   </aside></div>
-  <footer class="wl-guide-footer">이 결과는 작품 특성과 국가별 전달 환경을 비교한 결과입니다.</footer>
+  <footer class="wl-guide-footer">{_esc(footer)}</footer>
 </main>'''
     return f'''<!doctype html><html lang="ko"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>{_esc(title)} 국가 추천</title><style>{COUNTRY_RECOMMENDATION_CSS}</style></head><body>{body}</body></html>'''
 
