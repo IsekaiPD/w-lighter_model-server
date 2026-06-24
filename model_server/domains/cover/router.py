@@ -16,7 +16,7 @@ router = APIRouter(prefix="/cover", tags=["cover"])
 
 
 @router.post("", response_model=CoverResponse)
-async def cover(req: CoverRequest) -> dict:
+def cover(req: CoverRequest) -> dict:
     payload = req.model_dump(exclude_none=True)
     try:
         return service.generate_cover(payload)

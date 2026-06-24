@@ -16,7 +16,7 @@ router = APIRouter(prefix="/relationship-map", tags=["relationship_map"])
 
 
 @router.post("", response_model=RelationResponse)
-async def relationship_map(req: RelationRequest) -> dict:
+def relationship_map(req: RelationRequest) -> dict:
     payload = req.model_dump(exclude_none=True)
     try:
         return service.generate_relationship(payload)

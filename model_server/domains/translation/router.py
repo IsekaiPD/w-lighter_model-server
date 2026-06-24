@@ -19,7 +19,7 @@ router = APIRouter(prefix="/translation", tags=["translation"])
 
 
 @router.post("/translate", response_model=TranslateResponse)
-async def translate(req: TranslateRequest) -> dict:
+def translate(req: TranslateRequest) -> dict:
     payload = req.model_dump(exclude_none=True)
     try:
         return service.translate(payload)
@@ -31,7 +31,7 @@ async def translate(req: TranslateRequest) -> dict:
 
 
 @router.post("/inspect-chat", response_model=InspectChatResponse)
-async def inspect_chat(req: InspectChatRequest) -> dict:
+def inspect_chat(req: InspectChatRequest) -> dict:
     payload = req.model_dump(exclude_none=True)
     try:
         return service.inspect_chat(payload)
