@@ -33,19 +33,45 @@ def generate_relationship(payload: dict[str, Any]) -> dict[str, Any]:
             logger.warning("relationship_map work lookup failed: %r", exc)
 
     work_title = payload.get("workTitle") or payload.get("title") or (work or {}).get("title") or ""
+
     characters = payload.get("characters") or []
-    if not characters and work_id is not None:
+    if work_id is not None:
         try:
-            characters = db_repo.get_characters(int(work_id))
+            db_characters = db_repo.get_characters(int(work_id))
+
+            if characters:
+                profile_by_name = {
+                    str(item.get("char_name") or "").strip(): item.get("profile_label") or ""
+                    for item in db_characters
+                    if isinstance(item, dict)
+                }
+
+                characters = [
+                    {
+                        **item,
+                        "profile_label": item.get("profile_label")
+                        or profile_by_name.get(
+                            str(item.get("char_name") or item.get("name") or "").strip(),
+                            "",
+                        ),
+                    }
+                    for item in characters
+                    if isinstance(item, dict)
+                ]
+            else:
+                characters = db_characters
+
         except Exception as exc:  # noqa: BLE001
             logger.warning("relationship_map character lookup failed: %r", exc)
-            characters = []
+            if not characters:
+                characters = []
 
     data = generate_relation_data(
         work_title=work_title,
         characters=characters,
         limit=int(payload.get("limit") or 20),
     )
+
     result: dict[str, Any] = {"workTitle": work_title, "data": data}
     if payload.get("includeHtml", True):
         result["htmlReport"] = build_relation_html(work_title=work_title, relation_data=data)
