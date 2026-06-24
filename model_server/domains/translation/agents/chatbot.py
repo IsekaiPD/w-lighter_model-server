@@ -18,12 +18,33 @@ CHATBOT_SCHEMA: dict[str, Any] = {
         "proposed_translation": {"type": "string"},
         "change_summary": {"type": "string"},
         "needs_user_confirmation": {"type": "boolean"},
+        "pending_action": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": ["update_glossary", "add_glossary", "delete_glossary", "update_translation"],
+                        },
+                        "description": {"type": "string"},
+                        "original_word": {"type": "string"},
+                        "new_value": {"type": "string"},
+                        "category": {"type": "string"},
+                    },
+                    "required": ["type", "description", "original_word", "new_value", "category"],
+                },
+                {"type": "null"},
+            ]
+        },
     },
     "required": [
         "answer",
         "proposed_translation",
         "change_summary",
         "needs_user_confirmation",
+        "pending_action",
     ],
 }
 
@@ -40,6 +61,7 @@ class ChatbotReply:
     proposed_translation: str
     change_summary: str
     needs_user_confirmation: bool
+    pending_action: dict[str, Any] | None
     raw_response: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
@@ -63,12 +85,13 @@ class ChatbotAgent:
         reviewed_translation: str,
         translation_rationale: str = "",
         used_references: list[dict[str, Any]] | None = None,
-        inspection_report: dict[str, Any] | None = None,
+        inspection_report: list[dict[str, Any]] | None = None,
         reader_endnotes: list[dict[str, Any]] | None = None,
         work_title: str = "",
         episode_id: str = "",
         translation_memory: list[dict[str, Any]] | None = None,
         chat_history: list[ChatMessage | dict[str, str]] | None = None,
+        action_context: str = "",
     ) -> ChatbotReply:
         if self.config.mock:
             payload = chatbot_payload(user_message, source_text, reviewed_translation)
@@ -77,6 +100,7 @@ class ChatbotAgent:
                 proposed_translation=payload["proposed_translation"],
                 change_summary=payload["change_summary"],
                 needs_user_confirmation=payload["needs_user_confirmation"],
+                pending_action=None,
                 raw_response=payload["raw_response"],
             )
 
@@ -89,12 +113,13 @@ class ChatbotAgent:
             reviewed_translation=reviewed_translation,
             translation_rationale=translation_rationale,
             used_references=used_references or [],
-            inspection_report=inspection_report or {},
+            inspection_report=inspection_report or [],
             reader_endnotes=reader_endnotes or [],
             work_title=work_title,
             episode_id=episode_id,
             translation_memory=translation_memory or [],
             chat_history=chat_history or [],
+            action_context=action_context,
         )
         response = client.responses.create(
             model=self.config.review_model,
@@ -124,6 +149,7 @@ class ChatbotAgent:
             proposed_translation=payload["proposed_translation"],
             change_summary=payload["change_summary"],
             needs_user_confirmation=payload["needs_user_confirmation"],
+            pending_action=payload.get("pending_action"),
             raw_response=payload,
         )
 
@@ -136,12 +162,13 @@ class ChatbotAgent:
         reviewed_translation: str,
         translation_rationale: str,
         used_references: list[dict[str, Any]],
-        inspection_report: dict[str, Any],
+        inspection_report: list[dict[str, Any]],
         reader_endnotes: list[dict[str, Any]],
         work_title: str,
         episode_id: str,
         translation_memory: list[dict[str, Any]],
         chat_history: list[ChatMessage | dict[str, str]],
+        action_context: str = "",
     ) -> str:
         normalized_history = [
             asdict(row) if isinstance(row, ChatMessage) else row for row in chat_history
@@ -161,5 +188,6 @@ class ChatbotAgent:
             reader_endnotes_json=json.dumps(reader_endnotes, ensure_ascii=False, indent=2),
             translation_memory_json=json.dumps(translation_memory, ensure_ascii=False, indent=2),
             chat_history_json=json.dumps(normalized_history, ensure_ascii=False, indent=2),
+            action_context=action_context or "- none",
             user_message=user_message,
         )

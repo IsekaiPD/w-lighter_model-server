@@ -224,7 +224,7 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 
 ## POST /api/v1/translation/inspect-chat
 
-번역 검수 챗봇 — 질문에 대한 답변(+선택적 수정 제안).
+번역 검수 챗봇 — 질문 답변 + 선택적 수정 제안 + glossary/번역 DB 편집(사용자 확인 후).
 
 **요청** (`question` 필수)
 
@@ -237,18 +237,57 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 | `workflow` | object | | null | 워크플로 상태 |
 | `chatHistory` | array<object> | | null | 이전 대화 |
 | `title` / `episodeId` | string | | null | 작품/회차 |
-| `translationId` | int | | null | 주면 검수 대화를 `chat_messages`에 저장(rdb일 때) |
+| `workId` | string | | null | glossary 수정 시 필요. 없으면 glossary 편집 액션은 graceful 실패 |
+| `translationId` | int | | null | 주면 검수 대화를 `chat_messages`에 저장(rdb일 때) + DB에서 `inspectionReport` 자동 로드 |
 | `saveChatMessages` | bool | | `true` | `translationId`가 있을 때 저장 여부 |
+| `pendingAction` | object\|null | | null | 이전 턴 응답의 `pendingAction`을 그대로 전달. 사용자 확인/취소 메시지 전송 시 세팅 |
 
 **응답 200**
 
 | 필드 | 타입 | 설명 |
 |---|---|---|
 | `answer` | string | 챗봇 답변 |
-| `proposedTranslation` | string\|null | 수정 제안(있으면) |
+| `proposedTranslation` | string\|null | 번역 수정 제안(있으면) |
 | `changeSummary` | string\|null | 변경 요약 |
 | `needsUserConfirmation` | bool | 사용자 확인 필요 여부 |
-| `persistedChatMessages` | object | `translationId` 저장 시도 시에만(`{saved, count, message_ids}`) — DB 영속화 공통 참조 |
+| `pendingAction` | object\|null | 챗봇이 제안하는 DB 액션. 다음 요청 시 그대로 `pendingAction` 필드에 실어 전송. null이면 대기 액션 없음 |
+| `actionExecuted` | object\|null | 이번 턴에 실행된 액션 결과 `{type, saved, ...}`. DB 변경이 실제로 일어난 경우에만 존재 |
+| `persistedChatMessages` | object | `translationId` 저장 시도 시에만(`{saved, count, message_ids}`) |
+
+**pendingAction 객체 형식**
+
+```json
+{
+  "type": "update_glossary",
+  "description": "민제(minje)를 minjea로 변경",
+  "original_word": "민제",
+  "new_value": "minjea",
+  "category": "person"
+}
+```
+
+| `type` | 동작 | 필요 필드 |
+|---|---|---|
+| `update_glossary` | 기존 glossary 항목 번역어 수정 | `original_word`, `new_value`, `category` + 요청의 `workId` |
+| `add_glossary` | glossary 신규 추가 | `original_word`, `new_value`, `category` + 요청의 `workId` |
+| `delete_glossary` | glossary 항목 삭제 | `original_word` + 요청의 `workId` |
+| `update_translation` | 번역문 전체를 DB에 저장 | `new_value`(전체 번역문) + 요청의 `translationId` |
+
+**pendingAction 플로우 (프론트 구현 규약)**
+
+```
+[Turn N]
+  요청:  { question: "민제를 minjea로 바꿔줘", workId: "123", ... }
+  응답:  { answer: "바꿀까요?", pendingAction: { type: "update_glossary", ... }, needsUserConfirmation: true }
+
+[Turn N+1]
+  요청:  { question: "응 바꿔줘", workId: "123", pendingAction: { type: "update_glossary", ... }, ... }
+  응답:  { answer: "변경했습니다.", actionExecuted: { type: "update_glossary", saved: true }, pendingAction: null }
+```
+
+- 응답 `pendingAction`이 non-null → 프론트가 로컬 저장 후 **다음 요청에 그대로** 포함
+- 응답 `pendingAction`이 null → 저장된 값 초기화
+- 확인/취소 판정은 서버가 키워드 기반으로 처리 ("네/응/해줘" → confirm, "아니/취소/됐어" → cancel)
 
 ---
 

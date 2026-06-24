@@ -118,21 +118,11 @@ _GENDER_F = {"f", "female", "여", "여자", "여성", "girl", "woman"}
 
 
 def normalize_gender(value: Any) -> str:
-    """자유 텍스트 성별 → DB 저장용 코드값(M/F/U)으로 정규화한다."""
+    """자유 텍스트 성별 → 화면/DB 저장용 한글 성별값으로 정규화한다."""
     token = _s(value).lower()
     if token in _GENDER_M:
-        return "M"
-    if token in _GENDER_F:
-        return "F"
-    return "U"
-
-
-def display_gender(value: Any) -> str:
-    """DB 성별 코드값(M/F/U) → 화면/API 응답용 한글 표시값."""
-    token = _s(value).upper()
-    if token == "M":
         return "남"
-    if token == "F":
+    if token in _GENDER_F:
         return "여"
     return "미상"
 
@@ -274,7 +264,7 @@ def get_characters(work_id: int) -> list[dict[str, Any]]:
                     "character_id": r.character_id,
                     "work_id": r.work_id,
                     "char_name": r.char_name,
-                    "gender": display_gender(r.gender),
+                    "gender": r.gender,
                     "age": r.age,
                     "role": r.role,
                     "profile_label": profile_label,
@@ -344,6 +334,115 @@ def save_translation_result(payload: dict[str, Any]) -> dict[str, Any]:
         raise
     finally:
         session.close()
+
+
+def get_work_id_by_episode(episode_id: int) -> int | None:
+    """episode_id로 work_id 조회."""
+    if not rdb_enabled():
+        return None
+    from .models import Episode
+
+    session = get_session()
+    try:
+        ep = session.get(Episode, int(episode_id))
+        return ep.work_id if ep else None
+    finally:
+        session.close()
+
+
+def get_translation_result(translation_id: int) -> dict[str, Any] | None:
+    """번역 결과 단건 조회 → dict. rdb 비활성이거나 해당 ID 없으면 None."""
+    if not rdb_enabled():
+        return None
+    from .models import TranslationResult
+
+    session = get_session()
+    try:
+        row = session.get(TranslationResult, int(translation_id))
+        if row is None:
+            return None
+        return {
+            "translation_id": row.translation_id,
+            "episode_id": row.episode_id,
+            "target_country": row.target_country,
+            "translated_text": row.translated_text,
+            "summary": row.summary,
+            "glossary_can": row.glossary_can,
+            "annotation_can": row.annotation_can,
+            "inspection_report": row.inspection_report,
+        }
+    finally:
+        session.close()
+
+
+def update_translation_text(translation_id: int, new_text: str) -> dict[str, Any]:
+    """챗봇 승인 후 번역문 본문 업데이트 → {saved, translation_id}."""
+    if not rdb_enabled():
+        return {"saved": False, "reason": "persistence_disabled"}
+    from .models import TranslationResult
+
+    session = get_session()
+    try:
+        row = session.get(TranslationResult, int(translation_id))
+        if row is None:
+            return {"saved": False, "reason": f"translation_id {translation_id} not found"}
+        row.translated_text = str(new_text)
+        session.commit()
+        return {"saved": True, "translation_id": translation_id}
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def upsert_glossary_entry(
+    *,
+    work_id: str,
+    target_country: str,
+    original_word: str,
+    translated_word: str,
+    glossary_type: str = "",
+) -> dict[str, Any]:
+    """glossary 항목 upsert → {saved, glossary_id}. mysql 백엔드만 지원."""
+    try:
+        repo = _glossary_repository()
+        if not hasattr(repo, "upsert_entry"):
+            return {"saved": False, "reason": "glossary store does not support upsert (mysql 백엔드 필요)"}
+        record = repo.upsert_entry(
+            work_id=str(work_id),
+            target_country=target_country,
+            original_word=original_word,
+            translated_word=translated_word,
+            glossary_type=glossary_type or "",
+        )
+        return {"saved": True, "glossary_id": record.glossary_id}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("upsert_glossary_entry failed: %r", exc)
+        return {"saved": False, "reason": f"{type(exc).__name__}: {exc}"}
+
+
+def delete_glossary_entry_by_word(
+    *,
+    work_id: str,
+    target_country: str,
+    original_word: str,
+) -> dict[str, Any]:
+    """원어로 glossary 항목 전체 삭제 → {saved, deleted_count}."""
+    try:
+        repo = _glossary_repository()
+        if not hasattr(repo, "list_glossary") or not hasattr(repo, "delete_entry"):
+            return {"saved": False, "reason": "glossary store does not support delete"}
+        records = repo.list_glossary(str(work_id), target_country, limit=0)
+        targets = [r for r in records if r.original_word == original_word]
+        if not targets:
+            return {"saved": False, "reason": f"'{original_word}'을(를) glossary에서 찾을 수 없습니다."}
+        for r in targets:
+            repo.delete_entry(r.glossary_id)
+        return {"saved": True, "deleted_count": len(targets)}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("delete_glossary_entry_by_word failed: %r", exc)
+        return {"saved": False, "reason": f"{type(exc).__name__}: {exc}"}
 
 
 # ------------------------------------------------------------------ #
