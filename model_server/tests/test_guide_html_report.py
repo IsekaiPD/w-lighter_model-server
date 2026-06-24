@@ -224,6 +224,57 @@ class GuideHtmlReportTests(unittest.TestCase):
         self.assertIn("이 결과는 입력 신호와 공개 관측 자료의 겹침을 비교한 참고 결과입니다.", html)
         self.assertIn("추천은 선택 전 비교 결과입니다.", html)
 
+
+    def test_country_analysis_separates_market_and_policy_sources_and_collapses_snippets(self) -> None:
+        result = {
+            "storyProfile": {
+                "title": "야근하는 신들의 사무소",
+                "genre": "현대 판타지",
+                "coreSignals": ["서울시 민원 공무원", "기억을 잃은 산신"],
+                "analysisSummary": "한국 행정과 오컬트를 결합한 작품입니다.",
+            },
+            "countryAnalyses": [
+                {
+                    "country": "US",
+                    "displayCountry": "미국/글로벌 영어",
+                    "fitLevel": "일부 연결 신호가 확인됨",
+                    "evidenceLevel": "제한적",
+                    "strengths": ["서울시 민원 공무원과 산신의 결합은 도시 판타지 소개문 훅으로 전달할 수 있습니다."],
+                    "risks": ["민원과 산신의 문화적 의미를 영어권 독자에게 압축해 설명해야 합니다."],
+                    "evidenceSummary": ["장르 관측과 정책 자료를 서로 다른 용도로 확인했습니다."],
+                    "localizationDifficulty": "중간",
+                    "liveEvidence": [
+                        {
+                            "category": "genre_trend",
+                            "source_type": "trusted",
+                            "domain": "example.com",
+                            "title": "Urban fantasy tags",
+                            "url": "https://example.com/tags",
+                            "summary": "도시 판타지와 초자연 미스터리 태그 관측 자료입니다." * 20,
+                        },
+                        {
+                            "category": "platform_reference",
+                            "source_type": "trusted",
+                            "domain": "example.com",
+                            "title": "Content policy",
+                            "url": "https://example.com/policy",
+                            "summary": "폭력 및 성적 콘텐츠 게시 기준 안내입니다." * 20,
+                        },
+                    ],
+                }
+            ],
+            "limitations": ["검색 결과는 전체 시장 통계가 아닙니다."],
+        }
+
+        html = render_country_recommendation_html(result)
+
+        self.assertIn("작품 적합성 근거", html)
+        self.assertIn("게시·정책 검토 근거", html)
+        self.assertIn("근거 상세 보기", html)
+        self.assertIn("<details", html)
+        self.assertLess(html.count("도시 판타지와 초자연 미스터리 태그 관측 자료입니다."), 20)
+        self.assertLess(html.count("폭력 및 성적 콘텐츠 게시 기준 안내입니다."), 20)
+
     def test_country_recommendation_collapses_weak_repetition(self) -> None:
         result = {
             "recommendedCountry": "US",
@@ -268,8 +319,8 @@ class GuideHtmlReportTests(unittest.TestCase):
         html = render_country_recommendation_html(result)
 
         self.assertIn("국가별 현지화 적합성 분석", html)
-        self.assertIn("잘 맞는 요소", html)
-        self.assertIn("주의할 요소", html)
+        self.assertIn("작품에서 잘 전달될 요소", html)
+        self.assertIn("현지화에서 주의할 요소", html)
         self.assertIn("현지화 난이도", html)
         self.assertNotIn("추천 보류", html)
         self.assertNotIn("국가 우선순위 비교", html)

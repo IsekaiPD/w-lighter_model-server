@@ -31,7 +31,7 @@ COUNTRY_RECOMMENDATION_CSS = """
 .wl-guide-layout { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(300px,.8fr); gap:18px; margin-top:18px; } .wl-guide-section { margin-top:18px; padding:24px; border:1px solid var(--wl-guide-border); border-radius:28px; background:rgba(255,255,255,.84); box-shadow:0 12px 36px rgba(51,35,76,.08); } .wl-guide-section h2 { display:flex; gap:10px; align-items:center; margin:0 0 14px; font-size:22px; line-height:1.25; letter-spacing:-.025em; } .wl-guide-icon { display:inline-grid; width:34px; height:34px; place-items:center; border-radius:12px; background:var(--wl-guide-panel-soft); } .wl-guide-lead { margin:0; color:var(--wl-guide-muted); font-size:15px; }
 .wl-guide-card-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:18px; } .wl-guide-card { padding:18px; border:1px solid var(--wl-guide-border); border-radius:20px; background:#fff; } .wl-guide-card p { display:block; margin-top:8px; color:var(--wl-guide-muted); font-size:13px; } .wl-guide-card h3 { margin:0 0 8px; font-size:16px; } .wl-guide-card p { margin:0; font-size:14px; }
 .wl-guide-action-list,.wl-guide-list { display:grid; gap:10px; margin:16px 0 0; padding:0; list-style:none; } .wl-guide-action-list li,.wl-guide-list li { position:relative; padding:14px 14px 14px 42px; border:1px solid var(--wl-guide-border); border-radius:18px; background:#fff; } .wl-guide-action-list li::before { content:"✓"; position:absolute; left:14px; top:14px; width:20px; height:20px; display:grid; place-items:center; border-radius:50%; color:#fff; background:var(--wl-guide-good); font-size:12px; font-weight:900; } .wl-guide-list li::before { content:"•"; position:absolute; left:18px; color:var(--wl-guide-primary); font-weight:900; }
-.wl-guide-risk { border-left:5px solid var(--wl-guide-warn); } .wl-guide-risk-high { border-left-color:var(--wl-guide-risk); } .wl-guide-risk-level { display:inline-flex; margin-bottom:8px; padding:4px 9px; border-radius:999px; color:#7c2d12; background:#ffedd5; font-size:12px; font-weight:800; } .wl-guide-rationale { margin-top:14px; padding:14px; border:1px solid #dbeafe; border-radius:18px; background:#eff6ff; } .wl-guide-rationale h4 { margin-top:0; } .wl-guide-market-note { margin-top:14px; padding:14px; border-radius:18px; background:#f8fafc; color:#475569; font-size:13px; } .wl-guide-source { display:block; margin-top:10px; color:var(--wl-guide-primary); overflow-wrap:anywhere; word-break:break-word; } .wl-guide-source-list { display:grid; gap:10px; margin:12px 0 0; padding:0; list-style:none; } .wl-guide-source-item { padding:12px 14px; border:1px solid var(--wl-guide-border); border-radius:16px; background:#f8fafc; } .wl-guide-source-item a { color:var(--wl-guide-primary); font-weight:800; text-decoration:none; } .wl-guide-source-item small { display:block; margin-top:4px; color:var(--wl-guide-muted); } .wl-guide-source-item p { margin:6px 0 0; font-size:13px; } .wl-guide-signal-wrap { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; } .wl-guide-signal { padding:7px 10px; border:1px solid var(--wl-guide-border); border-radius:999px; background:var(--wl-guide-panel-soft); font-size:13px; font-weight:700; } .wl-guide-footer { margin-top:18px; padding:18px 24px; border:1px solid var(--wl-guide-border); border-radius:22px; color:var(--wl-guide-muted); background:rgba(255,255,255,.64); font-size:13px; }
+.wl-guide-risk { border-left:5px solid var(--wl-guide-warn); } .wl-guide-risk-high { border-left-color:var(--wl-guide-risk); } .wl-guide-risk-level { display:inline-flex; margin-bottom:8px; padding:4px 9px; border-radius:999px; color:#7c2d12; background:#ffedd5; font-size:12px; font-weight:800; } .wl-guide-rationale { margin-top:14px; padding:14px; border:1px solid #dbeafe; border-radius:18px; background:#eff6ff; } .wl-guide-rationale h4 { margin-top:0; } .wl-guide-market-note { margin-top:14px; padding:14px; border-radius:18px; background:#f8fafc; color:#475569; font-size:13px; } .wl-guide-source { display:block; margin-top:10px; color:var(--wl-guide-primary); overflow-wrap:anywhere; word-break:break-word; } .wl-guide-source-list { display:grid; gap:10px; margin:12px 0 0; padding:0; list-style:none; } .wl-guide-source-item { padding:12px 14px; border:1px solid var(--wl-guide-border); border-radius:16px; background:#f8fafc; } .wl-guide-source-item a { color:var(--wl-guide-primary); font-weight:800; text-decoration:none; } .wl-guide-source-item small { display:block; margin-top:4px; color:var(--wl-guide-muted); } .wl-guide-source-item p { margin:6px 0 0; font-size:13px; } .wl-guide-source-details { margin-top:10px; } .wl-guide-source-details summary { cursor:pointer; color:var(--wl-guide-primary); font-weight:800; } .wl-guide-source-details[open] summary { margin-bottom:10px; } .wl-guide-signal-wrap { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; } .wl-guide-signal { padding:7px 10px; border:1px solid var(--wl-guide-border); border-radius:999px; background:var(--wl-guide-panel-soft); font-size:13px; font-weight:700; } .wl-guide-footer { margin-top:18px; padding:18px 24px; border:1px solid var(--wl-guide-border); border-radius:22px; color:var(--wl-guide-muted); background:rgba(255,255,255,.64); font-size:13px; }
 @media (max-width:920px) { .wl-guide-layout,.wl-guide-meta-grid,.wl-guide-card-grid { grid-template-columns:1fr; } }
 """
 
@@ -62,27 +62,30 @@ SOURCE_TYPE_LABELS = {
 }
 
 
-def _source_items(values: Any) -> str:
+def _source_items(values: Any, *, categories: set[str] | None = None) -> str:
     entries: list[str] = []
     for item in values or []:
         if not isinstance(item, dict):
+            continue
+        raw_category = str(item.get("category") or "").strip()
+        if categories is not None and raw_category not in categories:
             continue
         url = str(item.get("url") or "").strip()
         title = str(item.get("title") or item.get("domain") or "공개 근거").strip()
         if not url or not url.lower().startswith(("http://", "https://")):
             continue
         domain = str(item.get("domain") or "").strip()
-        raw_category = str(item.get("category") or "").strip()
         raw_source_type = str(item.get("source_type") or "").strip()
         category = SOURCE_CATEGORY_LABELS.get(raw_category, raw_category)
         source_type = SOURCE_TYPE_LABELS.get(raw_source_type, raw_source_type)
         summary = str(item.get("summary") or "").strip()
+        compact_summary = summary[:220].rstrip() + ("…" if len(summary) > 220 else "")
         meta = " · ".join(value for value in (domain, category, source_type) if value)
         entries.append(
             '<li class="wl-guide-source-item">'
             f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">{_esc(title)}</a>'
             f'{f"<small>{_esc(meta)}</small>" if meta else ""}'
-            f'{f"<p>{_esc(summary)}</p>" if summary else ""}'
+            f'{f"<details class=\"wl-guide-source-details\"><summary>근거 상세 보기</summary><p>{_esc(compact_summary)}</p></details>" if compact_summary else ""}'
             '</li>'
         )
     if not entries:
@@ -119,15 +122,17 @@ def render_country_recommendation_html(result: dict[str, Any]) -> str:
         country = item.get("displayCountry") or item.get("country") or "국가"
         fit_level = item.get("fitLevel") or "추가 확인 필요"
         evidence_level = item.get("evidenceLevel") or "확인 필요"
-        source_html = _source_items(item.get("liveEvidence"))
+        market_source_html = _source_items(item.get("liveEvidence"), categories={"genre_trend", "title_synopsis_style", "reader_hook"})
+        policy_source_html = _source_items(item.get("liveEvidence"), categories={"platform_reference"})
         cards.append(
             f'''<article class="wl-guide-card">
   <span class="wl-guide-risk-level">{_esc(fit_level)}</span>
   <h3>{_esc(country)}</h3><p>근거 수준 · {_esc(evidence_level)}</p>
-  <h4>잘 맞는 요소</h4>{_items(item.get('strengths'))}
+  <h4>작품에서 잘 전달될 요소</h4>{_items(item.get('strengths'))}
   <div class="wl-guide-rationale"><h4>근거 요약</h4>{_items(item.get('evidenceSummary'))}</div>
-  {f'<h4>확인한 공개 출처</h4>{source_html}' if source_html else ''}
-  <h4>주의할 요소</h4>{_items(item.get('risks'))}
+  {f'<h4>작품 적합성 근거</h4>{market_source_html}' if market_source_html else ''}
+  {f'<h4>게시·정책 검토 근거</h4>{policy_source_html}' if policy_source_html else ''}
+  <h4>현지화에서 주의할 요소</h4>{_items(item.get('risks'))}
   <h4>현지화 난이도</h4><p>{_esc(item.get('localizationDifficulty') or '추가 확인 필요')}</p>
 </article>'''
         )
