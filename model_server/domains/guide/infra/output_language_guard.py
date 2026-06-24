@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .country_recommendation_html import UNGROUNDED_MARKET_LIMITATION
+
 ALLOWED_ORIGINAL_FIELD_NAMES = {
     "workTitle",
     "targetCountry",
@@ -95,8 +97,8 @@ def _safe_korean_fallback(key: str | None, value: str) -> str:
         "notice": "검토 필요",
         "summary": "요약을 확인해 주세요.",
         "analysisSummary": "분석 결과를 한국어로 정리합니다.",
-        "confidence": "중간",
-        "limitations": "한계가 있습니다.",
+        "confidence": "낮음",
+        "limitations": UNGROUNDED_MARKET_LIMITATION,
         "recommendationNotice": "추천이 필요합니다.",
         "limitation_notice": "참고용 안내입니다.",
         "fitLevel": "적합",

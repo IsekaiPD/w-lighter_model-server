@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import html
-import json
 import re
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass
@@ -756,11 +755,16 @@ def recommend_country(payload: dict[str, Any], *, data_path: Path = DEFAULT_INPU
     recommendations = rank_countries(data, genre=genre, synopsis=synopsis)
     limitation_notice = _recommendation_notice(synopsis_present=bool(synopsis))
 
-    if not synopsis and not requested_country:
+    if not synopsis and (not requested_country or not genre):
+        missing = []
+        if not requested_country:
+            missing.append("대상 국가")
+        if not genre:
+            missing.append("장르")
         return {
             "mode": "needs_country_and_genre_selection",
             "requiresSelection": True,
-            "message": '시놉시스가 없어 국가 추천은 제공할 수 없습니다. 대상 국가를 직접 선택하면 번역 전 현지화 기준서를 만들 수 있습니다.',
+            "message": f"시놉시스가 없어 국가 추천은 제공할 수 없습니다. {'와 '.join(missing)}를 선택하면 번역 전 현지화 기준서를 만들 수 있습니다.",
             "availableCountries": _available_countries(),
             "limitation_notice": limitation_notice,
             "recommendedCountry": None,
@@ -810,7 +814,7 @@ def generate_localization_guide(payload: dict[str, Any], *, data_path: Path = DE
     requested_country = normalize_country(payload.get("targetCountry") or payload.get("country"))
     if synopsis:
         return recommend_country(payload, data_path=data_path)
-    if not requested_country:
+    if not requested_country or not genre:
         return recommend_country(payload, data_path=data_path)
 
     recommendations = rank_countries(data, genre=genre, synopsis=synopsis)

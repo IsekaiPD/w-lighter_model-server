@@ -69,6 +69,11 @@ RECOMMENDATION_PUBLIC_KEYS = {
     "confidence",
     "storyProfile",
     "recommendationMethod",
+    "liveMarketUsed",
+    "liveMarketEnabled",
+    "liveMarketSkipReason",
+    "liveMarketResultCount",
+    "liveMarketInjectedCount",
     "createdAt",
 }
 
@@ -380,9 +385,13 @@ def generate_guide(payload: dict[str, Any]) -> dict[str, Any]:
     # synopsis deep guides are a later product enhancement, not an active mode.
     if report_mode == "synopsis_country_recommendation":
         recommendation = {**generate_country_recommendation(payload), "reportMode": report_mode}
+        # The public response layer owns the final report. Always render from
+        # structured data here so lower-layer mocks or stale htmlReport values
+        # cannot become the public artifact.
+        html_report = render_country_recommendation_html(recommendation)
         return _shape_recommendation_response(
             payload,
-            {**recommendation, "htmlReport": render_country_recommendation_html(recommendation)},
+            {**recommendation, "htmlReport": html_report},
         )
 
     result = build_localization_advice(payload)
@@ -397,19 +406,15 @@ def generate_guide(payload: dict[str, Any]) -> dict[str, Any]:
     enriched = _attach_live_market_evidence(payload, enriched, report_mode=report_mode)
     enriched = {**enriched, **build_policy_attention_payload(payload, enriched)}
 
-    deterministic_mode = "deterministic_guide"
-    if not llm_requested(payload):
-        return _shape_guide_response(
-            payload,
-            {**enriched, "generationMode": deterministic_mode},
-        )
-
+    # A generated guide is a paid, user-facing artifact. Keep deterministic data
+    # only as grounding input and always use the LLM for the final guide prose.
     try:
         return _shape_guide_response(payload, {**enriched, **generate_llm_guide(payload, enriched)})
     except Exception as exc:
-        fallback = dict(enriched)
-        fallback["generationMode"] = "llm_guide_failed"
-        fallback["llmGeneratedGuide"] = False
-        fallback["message"] = "LLM 가이드 생성에 실패해 임시 기준서만 반환했습니다. 서버 로그와 모델/API 설정을 확인해 주세요."
-        fallback["llmGuideError"] = str(exc)
-        return _shape_guide_response(payload, fallback)
+        failed = dict(enriched)
+        failed.pop("htmlReport", None)
+        failed["generationMode"] = "llm_guide_failed"
+        failed["llmGeneratedGuide"] = False
+        failed["message"] = "LLM 가이드 생성에 실패해 결과를 만들지 못했습니다. 서버 로그와 모델/API 설정을 확인해 주세요."
+        failed["llmGuideError"] = str(exc)
+        return _shape_guide_response(payload, failed)

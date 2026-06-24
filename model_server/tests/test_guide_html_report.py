@@ -273,7 +273,7 @@ class GuideHtmlReportTests(unittest.TestCase):
         self.assertNotIn("우선순위 76", html)
         self.assertEqual(html.count("직접 매칭이 0개라 점수는 예비 참고입니다."), 1)
         self.assertIn("현재 자료로는 국가 간 시장 적합도를 비교할 수 없어 순위와 점수를 만들지 않았습니다.", html)
-        self.assertIn("이 결과는 국가 추천이 아니라 현재 보유 자료에서 확인 가능한 관측 신호를 정리한 것입니다.", html)
+        self.assertNotIn("이 결과는 국가 추천이 아니라 현재 보유 자료에서 확인 가능한 관측 신호를 정리한 것입니다.", html)
 
 
 if __name__ == "__main__":

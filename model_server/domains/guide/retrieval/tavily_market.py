@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 from urllib.parse import urlparse
 
@@ -41,9 +42,16 @@ TRUSTED_DOMAINS = {
     ],
     "US": [
         "royalroad.com",
+        "wattpad.com",
+        "tapas.io",
+        "inkitt.com",
     ],
     "CN": [
         "write.qq.com",
+        "qidian.com",
+        "fanqienovel.com",
+        "jjwxc.net",
+        "yuewen.com",
         "chinawriter.com.cn",
         "cssn.cn",
     ],
@@ -51,6 +59,8 @@ TRUSTED_DOMAINS = {
         "readawrite.com",
         "dek-d.com",
         "novel.dek-d.com",
+        "fictionlog.co",
+        "tunwalai.com",
     ],
 }
 
@@ -78,28 +88,28 @@ REFERENCE_DOMAINS = {
 
 QUERY_CONFIG = {
     "JP": {
-        "platform_reference": "小説家になろう カクヨム ガイドライン AI利用 禁止事項 投稿ルール",
-        "genre_trend": "日本 Web小説 ライトノベル 人気ジャンル 傾向 {genre}",
-        "title_synopsis_style": "小説家になろう カクヨム Web小説 タイトル あらすじ 傾向",
-        "reader_hook": "日本 Web小説 読者 人気 タグ ざまぁ 悪役令嬢 異世界転生",
+        "platform_reference": "小説家になろう カクヨム 投稿 ガイドライン コンテンツ規定",
+        "genre_trend": "site:kakuyomu.jp OR site:syosetu.com {genre} {signals} Web小説",
+        "title_synopsis_style": "日本 Web小説 {genre} {signals} 現代ファンタジー 怪異 恋愛",
+        "reader_hook": "日本 Web小説 読者 タグ {genre} {signals}",
     },
     "US": {
-        "platform_reference": "Royal Road content guidelines fiction tags profanity sexual content AI",
-        "genre_trend": "Royal Road popular genres {genre} progression fantasy LitRPG web fiction trends",
-        "title_synopsis_style": "Royal Road fiction synopsis title tags progression fantasy LitRPG",
-        "reader_hook": "English web fiction reader expectations progression fantasy LitRPG weak to strong",
+        "platform_reference": "Royal Road content guidelines fiction tags AI sexual violence",
+        "genre_trend": "site:royalroad.com fiction {genre} {signals}",
+        "title_synopsis_style": "English web fiction {genre} {signals} urban fantasy mystery romance",
+        "reader_hook": "English web fiction reader tags {genre} {signals}",
     },
     "CN": {
-        "platform_reference": "起点中文网 作家专区 投稿 规则 内容规范 AI 生成内容",
-        "genre_trend": "中国 网络文学 热门题材 趋势 {genre} 玄幻 修仙 重生 系统 爽文",
-        "title_synopsis_style": "网络小说 标题 简介 写法 起点 中文网",
-        "reader_hook": "中国 网络文学 读者 喜欢 爽点 金手指 升级流 系统流",
+        "platform_reference": "起点中文网 晋江文学城 番茄小说 投稿 规则 内容规范",
+        "genre_trend": "中国 网络文学 {genre} {signals} 热门题材 标签",
+        "title_synopsis_style": "起点 晋江 番茄 小说 {genre} {signals} 简介 标签",
+        "reader_hook": "中国 网络小说 读者 标签 {genre} {signals}",
     },
     "TH": {
-        "platform_reference": "ReadAWrite Dek-D กฎการลงนิยาย เนื้อหาต้องห้าม AI",
-        "genre_trend": "นิยายออนไลน์ ไทย แนวโน้ม {genre} แฟนตาซี โรแมนซ์ เกิดใหม่ ระบบ",
-        "title_synopsis_style": "นิยายออนไลน์ ไทย ชื่อเรื่อง คำโปรย เรื่องย่อ นิยาย",
-        "reader_hook": "นักอ่านนิยายออนไลน์ไทย ชอบ แนว โรแมนซ์ แฟนตาซี จีนโบราณ เกิดใหม่",
+        "platform_reference": "ReadAWrite Dek-D กฎการลงนิยาย เนื้อหาต้องห้าม",
+        "genre_trend": "นิยายออนไลน์ ไทย {genre} {signals} แนวโน้ม แท็ก",
+        "title_synopsis_style": "ReadAWrite Dek-D นิยาย {genre} {signals} คำโปรย แท็ก",
+        "reader_hook": "นักอ่านนิยายออนไลน์ไทย แท็ก {genre} {signals}",
     },
 }
 
@@ -144,11 +154,17 @@ def _truthy_flag(value: Any, *, default: bool) -> bool:
 
 
 def live_market_enabled(payload: dict[str, Any]) -> bool:
+    """Return whether Tavily enrichment is enabled for a selected-country guide.
+
+    Compatibility contract: the ordinary country/genre guide remains opt-in by
+    default. Synopsis four-country comparison uses the separate
+    ``_synopsis_live_market_enabled`` gate, which is default-on.
+    """
     if "includeLiveMarket" in payload:
-        return _truthy_flag(payload.get("includeLiveMarket"), default=True)
+        return _truthy_flag(payload.get("includeLiveMarket"), default=False)
 
     if "include_live_market" in payload:
-        return _truthy_flag(payload.get("include_live_market"), default=True)
+        return _truthy_flag(payload.get("include_live_market"), default=False)
 
     return _truthy_flag(os.getenv("WLIGHTER_GUIDE_TAVILY"), default=False)
 
@@ -214,15 +230,17 @@ def classify_source(country: str, url: str) -> str:
     return "other"
 
 
-def build_queries(country: str, genre: str) -> dict[str, str]:
+def build_queries(country: str, genre: str, signals: list[str] | None = None) -> dict[str, str]:
     config = QUERY_CONFIG.get(country)
     if not config:
         return {}
 
     safe_genre = clean_text(genre) or "web novel"
+    signal_text = clean_text(" ".join(str(item) for item in (signals or []) if str(item).strip()))
+    safe_signals = signal_text[:180] or safe_genre
 
     return {
-        category: query.format(genre=safe_genre)
+        category: clean_text(query.format(genre=safe_genre, signals=safe_signals))
         for category, query in config.items()
     }
 
@@ -253,9 +271,10 @@ def collect_live_market_rows(
     genre: str,
     max_results: int,
     search_depth: str,
+    signals: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    queries = build_queries(country, genre)
+    queries = build_queries(country, genre, signals)
 
     for category, query in queries.items():
         try:
@@ -364,7 +383,6 @@ def build_balanced_context_pack(
             "title": row.get("title", ""),
             "url": row.get("url", ""),
             "summary": (row.get("content", "") or "")[:max_chars_per_content],
-            "score": row.get("score"),
         }
         for row in selected[:max_items]
     ]
@@ -449,9 +467,196 @@ def build_live_market_evidence(
         },
     }
 
+
+COUNTRY_DISPLAY = {
+    "JP": "일본",
+    "US": "미국/글로벌 영어",
+    "CN": "중국",
+    "TH": "태국",
+}
+
+
+def _synopsis_live_market_enabled(payload: dict[str, Any]) -> bool:
+    """Synopsis comparison uses Tavily by default unless the caller explicitly disables it."""
+    if "includeLiveMarket" in payload:
+        return _truthy_flag(payload.get("includeLiveMarket"), default=True)
+    if "include_live_market" in payload:
+        return _truthy_flag(payload.get("include_live_market"), default=True)
+    return _truthy_flag(os.getenv("WLIGHTER_GUIDE_TAVILY"), default=True)
+
+
+def _story_search_signals(story_profile: dict[str, Any], country: str) -> list[str]:
+    localized = (story_profile.get("searchTermsByCountry") or {}).get(country) or []
+    values: list[str] = []
+    for item in localized:
+        text = clean_text(str(item))
+        if text and text not in values:
+            values.append(text)
+    if values:
+        return values[:6]
+
+    # Compatibility fallback for profiles created before localized search terms were added.
+    for item in story_profile.get("coreSignals") or []:
+        text = clean_text(str(item))
+        if text and text not in values:
+            values.append(text)
+    genre = clean_text(str(story_profile.get("genre") or ""))
+    for item in re.split(r"[\n,/;|·]+", genre):
+        item = clean_text(item)
+        if item and item not in values:
+            values.append(item)
+    return values[:6]
+
+
+def _evidence_level(items: list[dict[str, Any]]) -> str:
+    trusted = sum(1 for item in items if item.get("source_type") == "trusted")
+    categories = {str(item.get("category") or "") for item in items if item.get("category")}
+    if trusted >= 2 and len(categories) >= 2 and len(items) >= 3:
+        return "충분"
+    if trusted >= 1 and len(categories) >= 2 and len(items) >= 2:
+        return "보통"
+    if items:
+        return "제한적"
+    return "없음"
+
+
+def _country_live_summary(country: str, rows: list[dict[str, Any]], items: list[dict[str, Any]]) -> dict[str, Any]:
+    trusted_count = sum(1 for item in items if item.get("source_type") == "trusted")
+    reference_count = sum(1 for item in items if item.get("source_type") == "reference")
+    categories = sorted({str(item.get("category") or "") for item in items if item.get("category")})
+    return {
+        "country": country,
+        "displayCountry": COUNTRY_DISPLAY.get(country, country),
+        "evidenceLevel": _evidence_level(items),
+        "rawResultCount": len(rows),
+        "injectedCount": len(items),
+        "trustedCount": trusted_count,
+        "referenceCount": reference_count,
+        "categoriesCovered": categories,
+        "items": items,
+    }
+
+
+def build_multi_country_live_market_evidence(
+    payload: dict[str, Any],
+    story_profile: dict[str, Any],
+    *,
+    report_mode: str = "synopsis_country_recommendation",
+) -> dict[str, Any]:
+    """Collect balanced Tavily evidence for all four target markets before LLM comparison."""
+    requested = "includeLiveMarket" in payload or "include_live_market" in payload
+    enabled = _synopsis_live_market_enabled(payload)
+    countries = ("JP", "US", "CN", "TH")
+
+    if not enabled:
+        return {
+            "liveMarketRequested": requested,
+            "liveMarketEnabled": False,
+            "liveMarketUsed": False,
+            "liveMarketSkipReason": "disabled",
+            "recommendationAllowed": False,
+            "countries": {},
+        }
+
+    if not os.getenv("TAVILY_API_KEY", "").strip():
+        return {
+            "liveMarketRequested": requested,
+            "liveMarketEnabled": True,
+            "liveMarketUsed": False,
+            "liveMarketSkipReason": "missing_api_key",
+            "recommendationAllowed": False,
+            "countries": {},
+        }
+
+    max_results = int(os.getenv("WLIGHTER_TAVILY_MAX_RESULTS", "3"))
+    max_items = int(os.getenv("WLIGHTER_TAVILY_COUNTRY_ITEMS", os.getenv("WLIGHTER_TAVILY_MAX_ITEMS", "5")))
+    max_chars = int(os.getenv("WLIGHTER_TAVILY_CONTENT_CHARS", "420"))
+    min_score = float(os.getenv("WLIGHTER_TAVILY_MIN_SCORE", "0.20"))
+    search_depth = os.getenv("WLIGHTER_TAVILY_SEARCH_DEPTH", "basic")
+    genre = clean_text(str(story_profile.get("genre") or payload.get("genre") or "web novel"))
+    signals_by_country = {country: _story_search_signals(story_profile, country) for country in countries}
+
+    rows_by_country: dict[str, list[dict[str, Any]]] = {}
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(
+                collect_live_market_rows,
+                country=country,
+                genre=genre,
+                max_results=max_results,
+                search_depth=search_depth,
+                signals=signals_by_country[country],
+            ): country
+            for country in countries
+        }
+        for future in as_completed(futures):
+            country = futures[future]
+            try:
+                rows_by_country[country] = future.result()
+            except Exception as exc:  # noqa: BLE001
+                rows_by_country[country] = [{
+                    "country": country,
+                    "category": "collection_error",
+                    "query": "",
+                    "rank_in_search": None,
+                    "title": "ERROR",
+                    "url": "",
+                    "domain": "",
+                    "source_type": "error",
+                    "content": f"{type(exc).__name__}: {exc}",
+                    "score": None,
+                }]
+
+    country_payloads: dict[str, dict[str, Any]] = {}
+    total_rows = 0
+    total_items = 0
+    for country in countries:
+        rows = rows_by_country.get(country, [])
+        total_rows += len(rows)
+        filtered_rows = [
+            row for row in rows
+            if row.get("title") != "ERROR"
+            and (
+                row.get("source_type") == "trusted"
+                or float(row.get("score") or 0) >= min_score
+            )
+        ]
+        items = build_balanced_context_pack(
+            filtered_rows,
+            max_items=max_items,
+            max_chars_per_content=max_chars,
+        )
+        total_items += len(items)
+        country_payloads[country] = _country_live_summary(country, rows, items)
+
+    levels = [country_payloads[country]["evidenceLevel"] for country in countries]
+    all_markets_observed = all(level != "없음" for level in levels)
+    comparable_markets = sum(level in {"충분", "보통"} for level in levels)
+    recommendation_allowed = all_markets_observed and comparable_markets >= 2
+
+    return {
+        "liveMarketRequested": requested,
+        "liveMarketEnabled": True,
+        "liveMarketUsed": total_items > 0,
+        "liveMarketSkipReason": None if total_items else "no_useful_results",
+        "liveMarketResultCount": total_rows,
+        "liveMarketInjectedCount": total_items,
+        "recommendationAllowed": recommendation_allowed,
+        "reportMode": report_mode,
+        "genre": genre,
+        "signalsByCountry": signals_by_country,
+        "countries": country_payloads,
+        "limitations": [
+            "Tavily 결과는 검색 시점의 공개 웹 자료이며 전체 시장 통계가 아닙니다.",
+            "공식 플랫폼·정책 출처를 우선하고 참고 출처는 보조 근거로만 사용합니다.",
+            "검색 결과의 존재는 흥행 가능성을 의미하지 않으며 작품과의 연결은 LLM의 근거 기반 추론입니다.",
+        ],
+    }
+
 __all__ = [
     "build_balanced_context_pack",
     "build_live_market_evidence",
+    "build_multi_country_live_market_evidence",
     "build_queries",
     "classify_source",
     "collect_live_market_rows",

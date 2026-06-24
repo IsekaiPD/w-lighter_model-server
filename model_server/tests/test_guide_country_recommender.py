@@ -121,15 +121,25 @@ class GuideCountryRecommenderTests(unittest.TestCase):
             "model_server.domains.guide.guide_pipeline.build_policy_attention_payload",
             return_value={"policyAttentionCards": [], "policyLimitations": []},
         ), patch(
-            "model_server.domains.guide.guide_pipeline.llm_requested",
-            return_value=False,
+            "model_server.domains.guide.guide_pipeline.generate_llm_guide",
+            return_value={
+                "htmlReport": "<!doctype html><html><body><main>final live guide for work fantasy</main></body></html>",
+                "llmGeneratedGuide": True,
+                "generationMode": "llm_guide",
+            },
         ):
             result = generate_guide(payload)
 
-        self.assertEqual(result["htmlReport"], "<!doctype html><html><body>guide</body></html>")
+        self.assertNotEqual(result["htmlReport"], "<!doctype html><html><body>guide</body></html>")
+        self.assertIn("<!doctype html>", result["htmlReport"].lower())
+        self.assertIn("<main>", result["htmlReport"])
+        self.assertIn("work", result["htmlReport"])
+        self.assertIn("fantasy", result["htmlReport"])
         self.assertNotIn("liveMarketEvidence", result)
         self.assertNotIn("liveMarketResultCount", result)
         self.assertNotIn("liveMarketSkipReason", result)
+        self.assertNotIn("liveMarketEvidence", result["htmlReport"])
+        self.assertNotIn("includeInternal", result["htmlReport"])
 
     def test_llm_failure_falls_back_to_manual_selection_without_random_choice(self) -> None:
         evidence = {

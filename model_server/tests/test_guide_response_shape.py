@@ -9,6 +9,7 @@ from model_server.domains.guide.guide_pipeline import generate_guide
 
 
 HTML_REPORT = "<!doctype html><html><body><main>guide</main></body></html>"
+FINAL_HTML_REPORT = "<!doctype html><html lang=\"ko\"><body><main>Sample Work final guide</main></body></html>"
 
 
 def _guide_base_result() -> dict:
@@ -62,15 +63,27 @@ class GuideResponseShapeTests(unittest.TestCase):
                     "policyLimitations": ["internal"],
                 },
             ),
-            patch("model_server.domains.guide.guide_pipeline.llm_requested", return_value=False),
+            patch(
+                "model_server.domains.guide.guide_pipeline.generate_llm_guide",
+                return_value={
+                    "htmlReport": FINAL_HTML_REPORT,
+                    "llmGeneratedGuide": True,
+                    "generationMode": "llm_guide",
+                },
+            ),
         ):
             result = generate_guide({"targetCountry": "JP"})
 
-        self.assertEqual(result["htmlReport"], HTML_REPORT)
+        self.assertEqual(result["htmlReport"], FINAL_HTML_REPORT)
+        self.assertNotEqual(result["htmlReport"], HTML_REPORT)
+        self.assertIn("<!doctype html>", result["htmlReport"].lower())
+        self.assertIn("<main>", result["htmlReport"])
+        self.assertIn("Sample Work", result["htmlReport"])
         self.assertEqual(result["mode"], "guide")
-        self.assertEqual(result["generationMode"], "deterministic_guide")
+        self.assertEqual(result["generationMode"], "llm_guide")
         self.assertFalse(result["requiresSelection"])
         self.assertNotIn("internal", result)
+        self.assertNotIn("internal", result["htmlReport"])
 
         for key in (
             "guide_html",
@@ -103,11 +116,22 @@ class GuideResponseShapeTests(unittest.TestCase):
                 "model_server.domains.guide.guide_pipeline.build_policy_attention_payload",
                 return_value={"policyAttentionCards": [{"title": "internal"}]},
             ),
-            patch("model_server.domains.guide.guide_pipeline.llm_requested", return_value=False),
+            patch(
+                "model_server.domains.guide.guide_pipeline.generate_llm_guide",
+                return_value={
+                    "htmlReport": FINAL_HTML_REPORT,
+                    "llmGeneratedGuide": True,
+                    "generationMode": "llm_guide",
+                },
+            ),
         ):
             result = generate_guide({"targetCountry": "JP", "includeInternal": True})
 
-        self.assertEqual(result["htmlReport"], HTML_REPORT)
+        self.assertEqual(result["htmlReport"], FINAL_HTML_REPORT)
+        self.assertNotEqual(result["htmlReport"], HTML_REPORT)
+        self.assertIn("<!doctype html>", result["htmlReport"].lower())
+        self.assertIn("Sample Work", result["htmlReport"])
+        self.assertNotIn("internal", result["htmlReport"])
         self.assertNotIn("internal", result)
         self.assertNotIn("contextPackEvidence", result)
         self.assertNotIn("modelPromptPayload", result)
@@ -160,13 +184,19 @@ class GuideResponseShapeTests(unittest.TestCase):
             ),
             patch(
                 "model_server.domains.guide.guide_pipeline.generate_country_recommendation",
-                return_value=recommendation,
+                return_value={**recommendation, "htmlReport": "<html>lower mock</html>"},
+            ),
+            patch(
+                "model_server.domains.guide.guide_pipeline.render_country_recommendation_html",
+                return_value="<!doctype html><html><body>renderer final</body></html>",
             ),
         ):
             public_result = generate_guide({"synopsis": "story"})
             internal_requested_result = generate_guide({"synopsis": "story", "includeInternal": True})
 
         self.assertEqual(public_result["recommendedCountry"], "JP")
+        self.assertEqual(public_result["htmlReport"], "<!doctype html><html><body>renderer final</body></html>")
+        self.assertNotEqual(public_result["htmlReport"], "<html>lower mock</html>")
         self.assertNotIn("llmRecommendationEvidenceBytes", public_result)
         self.assertNotIn("llmCountryRecommendationModel", public_result)
         self.assertNotIn("llmCountryRecommendationError", public_result)
