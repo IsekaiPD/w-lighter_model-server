@@ -6,7 +6,7 @@ import types
 import unittest
 from unittest.mock import patch
 
-from model_server.domains.guide.agents.country_recommender import generate_country_recommendation
+from model_server.domains.guide.agents.country_recommender import _canonicalize_result, generate_country_recommendation
 from model_server.domains.guide.agents.guide_writer import _client_and_model
 from model_server.domains.guide.engine.recommendation import generate_localization_guide, recommend_country
 from model_server.domains.guide.guide_pipeline import generate_guide
@@ -192,6 +192,164 @@ class GuideCountryRecommenderTests(unittest.TestCase):
 
         self.assertEqual(model, "gpt-5.4-mini")
         self.assertEqual(client.api_key, "test-key")
+
+    def test_flat_country_scores_are_repaired_to_ranked_priority_scores(self) -> None:
+        def build_raw(score: int) -> dict:
+            return {
+            "recommendedCountry": "US",
+            "confidence": "medium",
+            "storyProfile": {
+                "title": "work",
+                "genre": "romance",
+                "coreSignals": ["romance"],
+                "analysisSummary": "summary",
+            },
+            "limitations": ["limit"],
+                "countryComparisons": [
+                    {
+                        "country": "US",
+                        "rank": 1,
+                        "relativeFitScore": score,
+                        "fitLevel": "high",
+                        "strengths": ["strength"],
+                        "risks": ["risk"],
+                        "evidenceSummary": ["evidence"],
+                    },
+                    {
+                        "country": "JP",
+                        "rank": 2,
+                        "relativeFitScore": score,
+                        "fitLevel": "mid",
+                        "strengths": ["strength"],
+                        "risks": ["risk"],
+                        "evidenceSummary": ["evidence"],
+                    },
+                    {
+                        "country": "TH",
+                        "rank": 3,
+                        "relativeFitScore": score,
+                        "fitLevel": "mid",
+                        "strengths": ["strength"],
+                        "risks": ["risk"],
+                        "evidenceSummary": ["evidence"],
+                    },
+                    {
+                        "country": "CN",
+                        "rank": 4,
+                        "relativeFitScore": score,
+                        "fitLevel": "low",
+                        "strengths": ["strength"],
+                        "risks": ["risk"],
+                        "evidenceSummary": ["evidence"],
+                    },
+                ],
+            }
+
+        for score in (0, 10):
+            with self.subTest(score=score):
+                result = _canonicalize_result(build_raw(score), evidence_size=0)
+
+                self.assertEqual(
+                    [item["relativeFitScore"] for item in result["countryComparisons"]],
+                    [86, 74, 62, 50],
+                )
+
+    def test_ungrounded_llm_market_claims_are_replaced_with_evidence_limits(self) -> None:
+        raw = {
+            "recommendedCountry": "US",
+            "confidence": "medium",
+            "storyProfile": {
+                "title": "work",
+                "genre": "romance",
+                "coreSignals": ["romance"],
+                "analysisSummary": "English readers prefer this trope.",
+            },
+            "limitations": ["limit"],
+            "countryComparisons": [
+                {
+                    "country": "US",
+                    "rank": 1,
+                    "relativeFitScore": 86,
+                    "fitLevel": "high",
+                    "strengths": ["영어권 독자에게 익숙한 조합이라 유리합니다."],
+                    "risks": ["risk"],
+                    "evidenceSummary": ["English romance market fit"],
+                },
+                {
+                    "country": "JP",
+                    "rank": 2,
+                    "relativeFitScore": 74,
+                    "fitLevel": "mid",
+                    "strengths": ["일본 독자에게 익숙합니다."],
+                    "risks": ["risk"],
+                    "evidenceSummary": ["Japanese market fit"],
+                },
+                {
+                    "country": "TH",
+                    "rank": 3,
+                    "relativeFitScore": 62,
+                    "fitLevel": "mid",
+                    "strengths": ["태국 시장에 맞습니다."],
+                    "risks": ["risk"],
+                    "evidenceSummary": ["Thai market fit"],
+                },
+                {
+                    "country": "CN",
+                    "rank": 4,
+                    "relativeFitScore": 50,
+                    "fitLevel": "low",
+                    "strengths": ["중국 시장에 맞습니다."],
+                    "risks": ["risk"],
+                    "evidenceSummary": ["China market fit"],
+                },
+            ],
+        }
+        evidence = {
+            "countries": [
+                {
+                    "country": "US",
+                    "matchedSignals": [],
+                    "matchedContextEvidence": [],
+                    "platformEvidence": [{"status": "missing"}],
+                    "policyRiskSummary": {"riskCount": 0},
+                },
+                {
+                    "country": "JP",
+                    "matchedSignals": [],
+                    "matchedContextEvidence": [],
+                    "platformEvidence": [{"status": "missing"}],
+                    "policyRiskSummary": {"riskCount": 0},
+                },
+                {
+                    "country": "TH",
+                    "matchedSignals": [],
+                    "matchedContextEvidence": [],
+                    "platformEvidence": [{"status": "missing"}],
+                    "policyRiskSummary": {"riskCount": 0},
+                },
+                {
+                    "country": "CN",
+                    "matchedSignals": [],
+                    "matchedContextEvidence": [],
+                    "platformEvidence": [{"status": "missing"}],
+                    "policyRiskSummary": {"riskCount": 0},
+                },
+            ],
+            "contextPackDiagnosticsByCountry": [
+                {"country": "US", "contextPackSourceRecordCount": 450, "contextPackInjectedRecordCount": 0},
+                {"country": "JP", "contextPackSourceRecordCount": 340, "contextPackInjectedRecordCount": 0},
+                {"country": "TH", "contextPackSourceRecordCount": 220, "contextPackInjectedRecordCount": 0},
+                {"country": "CN", "contextPackSourceRecordCount": 136, "contextPackInjectedRecordCount": 0},
+            ],
+        }
+
+        result = _canonicalize_result(raw, evidence_size=0, evidence=evidence)
+
+        self.assertEqual(result["confidence"], "낮음")
+        self.assertIn("직접 매칭된 컨텍스트 근거는 아직 확인되지 않았습니다", result["countryComparisons"][0]["strengths"][0])
+        self.assertIn("국가별 독자 선호, 플랫폼 실적", result["limitations"][0])
+        self.assertNotIn("영어권 독자에게 익숙", " ".join(result["countryComparisons"][0]["strengths"]))
+        self.assertIn("해석 수준: 근거 부족 예비 비교", result["countryComparisons"][0]["evidenceSummary"])
 
 
 if __name__ == "__main__":

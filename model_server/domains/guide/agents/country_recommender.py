@@ -45,7 +45,7 @@ COUNTRY_RECOMMENDATION_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "country": {"type": "string", "enum": ["US", "CN", "JP", "TH"]},
                     "rank": {"type": "integer", "minimum": 1, "maximum": 4},
-                    "relativeFitScore": {"type": "number", "minimum": 0, "maximum": 100},
+                    "relativeFitScore": {"type": "number", "minimum": 1, "maximum": 100},
                     "fitLevel": {"type": "string"},
                     "strengths": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 4},
                     "risks": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 4},
@@ -471,10 +471,147 @@ def _validate_country_result(result: dict[str, Any]) -> None:
         raise ValueError("recommendedCountry must match rank 1 country")
 
 
+def _repair_relative_fit_scores(comparisons: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Repair unhelpful LLM scores such as all-zero or all-equal ranked outputs."""
+    scores: list[float] = []
+    for item in comparisons:
+        try:
+            scores.append(float(item.get("relativeFitScore") or 0))
+        except (TypeError, ValueError):
+            scores.append(0.0)
+
+    needs_repair = (
+        any(score <= 0 for score in scores)
+        or len({round(score, 2) for score in scores}) <= 1
+        or any(score > 100 for score in scores)
+    )
+    if not needs_repair:
+        return comparisons
+
+    rank_scores = {1: 86, 2: 74, 3: 62, 4: 50}
+    repaired: list[dict[str, Any]] = []
+    for item in comparisons:
+        rank = int(item.get("rank") or 99)
+        score = rank_scores.get(rank, max(35, 90 - rank * 10))
+        repaired.append({**item, "relativeFitScore": score})
+    return repaired
+
+
+def _country_evidence_by_code(evidence: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    if not evidence:
+        return {}
+    return {
+        str(country.get("country") or ""): country
+        for country in evidence.get("countries") or []
+        if country.get("country")
+    }
+
+
+def _has_direct_country_grounding(country_evidence: dict[str, Any]) -> bool:
+    if country_evidence.get("matchedSignals"):
+        return True
+    if country_evidence.get("matchedContextEvidence"):
+        return True
+    for row in country_evidence.get("platformEvidence") or []:
+        if str(row.get("status") or "").lower() not in {"", "missing", "none"}:
+            return True
+    return False
+
+
+def _policy_risk_count(country_evidence: dict[str, Any]) -> int:
+    try:
+        return int((country_evidence.get("policyRiskSummary") or {}).get("riskCount") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _diagnostics_by_country(evidence: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    if not evidence:
+        return {}
+    return {
+        str(row.get("country") or ""): row
+        for row in evidence.get("contextPackDiagnosticsByCountry") or []
+        if row.get("country")
+    }
+
+
+def _ground_ungrounded_country_cards(
+    result: dict[str, Any],
+    evidence: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Prevent LLM prose from presenting weak evidence as verified market facts."""
+    if not evidence:
+        return result
+
+    countries = _country_evidence_by_code(evidence)
+    diagnostics = _diagnostics_by_country(evidence)
+    if not countries:
+        return result
+
+    grounded_count = sum(1 for item in countries.values() if _has_direct_country_grounding(item))
+    all_weak = grounded_count == 0
+    repaired_comparisons: list[dict[str, Any]] = []
+
+    for item in result.get("countryComparisons") or []:
+        code = str(item.get("country") or "")
+        country_evidence = countries.get(code) or {}
+        if not country_evidence or _has_direct_country_grounding(country_evidence):
+            repaired_comparisons.append(item)
+            continue
+
+        display = _country_display(code)
+        risk_count = _policy_risk_count(country_evidence)
+        diagnostic = diagnostics.get(code) or {}
+        source_count = int(diagnostic.get("contextPackSourceRecordCount") or 0)
+        injected_count = int(diagnostic.get("contextPackInjectedRecordCount") or 0)
+        repaired = {
+            **item,
+            "fitLevel": "근거 부족 예비 우선" if int(item.get("rank") or 99) == 1 else "근거 부족 비교 대상",
+            "strengths": [
+                f"{display}에서 이 작품 신호와 직접 매칭된 컨텍스트 근거는 아직 확인되지 않았습니다.",
+                "따라서 이 카드는 국가별 독자 선호나 실적을 확인한 결론이 아니라, 입력 시놉시스와 점검 부담을 기준으로 한 예비 비교입니다.",
+                "제목·소개문·태그 초안을 만든 뒤 실제 플랫폼 기준으로 다시 확인해야 합니다.",
+            ],
+            "risks": [
+                "시장 반응, 독자 선호, 유사작 성과를 확인한 근거가 아니므로 확정 추천처럼 해석하면 안 됩니다.",
+                "국가별 장르 친화도 표현은 현재 근거만으로 단정하지 않고, 현지화 문구 작성 후 재검토해야 합니다.",
+            ],
+            "evidenceSummary": [
+                "확인된 직접 매칭: 0개",
+                f"컨텍스트 직접 주입: {injected_count}건",
+                f"정책 점검 후보: {risk_count}개",
+                f"참고 컨텍스트 원천: {source_count}건 — 직접 매칭 근거로는 사용되지 않음",
+                "해석 수준: 근거 부족 예비 비교",
+            ],
+        }
+        repaired_comparisons.append(repaired)
+
+    out = {**result, "countryComparisons": repaired_comparisons}
+    if all_weak:
+        story = dict(out.get("storyProfile") or {})
+        story["analysisSummary"] = (
+            "현재 입력에서는 4개국 모두 직접 매칭 근거가 확인되지 않았습니다. "
+            "아래 결과는 국가별 시장 사실을 단정한 것이 아니라, 입력 시놉시스와 정책 점검 부담을 기준으로 한 예비 우선순위입니다."
+        )
+        out["storyProfile"] = story
+        out["confidence"] = "낮음"
+        limitations = [
+            "국가별 독자 선호, 플랫폼 실적, 유사작 성과를 확인한 결과가 아닙니다.",
+            "직접 매칭 근거가 0개이므로 시장 적합도 단정이 아니라 예비 우선순위로만 읽어야 합니다.",
+            "제목·소개문·태그·표지 브리프를 만든 뒤 실제 플랫폼 정책과 현지 반응 기준으로 재검토해야 합니다.",
+        ]
+        for item in out.get("limitations") or []:
+            if item not in limitations:
+                limitations.append(item)
+        out["limitations"] = limitations[:6]
+    return out
+
+
 def _canonicalize_result(
     result: dict[str, Any],
     *,
     evidence_size: int,
+    evidence: dict[str, Any] | None = None,
     model: str | None = None,
     internal_diagnostics: dict[str, Any] | None = None,
     request_hash: str | None = None,
@@ -484,6 +621,8 @@ def _canonicalize_result(
     validation = validate_user_facing_language(repaired)
     if not validation["ok"]:
         repaired = repair_user_facing_explanations(repaired)
+    _validate_country_result(repaired)
+    repaired = _ground_ungrounded_country_cards(repaired, evidence)
     _validate_country_result(repaired)
     recommended = str(repaired["recommendedCountry"])
     comparisons = []
@@ -496,6 +635,7 @@ def _canonicalize_result(
                 "targetCountry": COUNTRY_COMPARISON_TARGETS[[t["code"] for t in COUNTRY_COMPARISON_TARGETS].index(code)]["targetCountry"],
             }
         )
+    comparisons = _repair_relative_fit_scores(comparisons)
     out = {
         "mode": "synopsis_country_recommendation",
         "requiresSelection": False,
@@ -612,6 +752,7 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
         return _canonicalize_result(
             _deterministic_comparison(payload, evidence),
             evidence_size=evidence_size,
+            evidence=evidence,
             internal_diagnostics=internal_diagnostics,
         )
 
@@ -619,17 +760,24 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
         client, model = _client_and_model(payload)
         system = (
             "당신은 한국어로 국가 추천을 설명하는 도우미다. "
-            "반드시 한국어 JSON 객체만 출력하고, 4개국 비교 결과를 균형 있게 제시한다."
+            "반드시 한국어 JSON 객체만 출력하고, 4개국 비교 결과를 균형 있게 제시한다. "
+            "제공된 evidence에 없는 시장 선호, 독자 반응, 유사작 성과, 플랫폼 실적을 확인된 사실처럼 쓰면 안 됩니다."
         )
         user = {
             "task": "일본, 중국, 미국/글로벌 영어, 태국 중 적합한 국가를 비교 추천해 주세요.",
             "requirements": [
                 "countryComparisons에는 US, CN, JP, TH를 각각 한 번씩 넣으세요.",
                 "rank는 1~4를 중복 없이 사용하고, recommendedCountry는 rank 1과 일치해야 합니다.",
+                "relativeFitScore는 40~95 사이의 상대 우선순위 점수로 작성하고, 0 또는 네 국가 동일 점수는 쓰지 마세요.",
+                "rank 1은 rank 2보다, rank 2는 rank 3보다, rank 3은 rank 4보다 높은 점수를 주세요.",
                 "작품 자체를 바꾸는 방향 제안이 아니라, 현재 시놉시스 기준 어느 국가에서 먼저 전달하기 좋은지 설명하세요.",
                 "각 국가의 strengths에는 왜 그 국가가 맞거나 덜 맞는지 입력 장르, 시놉시스 신호, 플랫폼/정책 근거 중 최소 2가지를 연결해 구체적으로 쓰세요.",
                 "각 국가의 evidenceSummary에는 점수의 근거가 된 신호를 요약하고, '근거를 확인했습니다'처럼 비어 있는 문장만 쓰지 마세요.",
                 "직접 매칭이 0개인 경우에도 그대로 장점처럼 쓰지 말고, 어떤 보조 근거로 비교했는지 설명하세요.",
+                "직접 매칭 0개 문구는 limitations에서 한 번만 설명하고, 각 국가 카드에서는 시장별 장점과 확인 지점을 중심으로 쓰세요.",
+                "evidence에 직접 매칭, 컨텍스트 주입, 정책 점검 후보가 없으면 그 국가는 '근거 부족 예비 비교'로 쓰고 시장 적합을 단정하지 마세요.",
+                "국가별 독자 선호, 시장 규모, 플랫폼 성과, 유사작 흥행은 evidence에 없으면 언급하지 마세요.",
+                "추론이 필요한 문장은 '입력 시놉시스 기준으로는', '예비적으로는', '추가 확인이 필요합니다'처럼 추론임을 표시하세요.",
                 *CREATIVE_BOUNDARY_RULES,
                 "설명은 모두 한국어로 작성하세요.",
             ],
@@ -655,6 +803,7 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
         return _canonicalize_result(
             result,
             evidence_size=evidence_size,
+            evidence=evidence,
             model=model,
             internal_diagnostics=internal_diagnostics,
             request_hash=request_hash,

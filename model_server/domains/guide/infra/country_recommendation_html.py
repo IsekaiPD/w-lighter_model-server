@@ -52,7 +52,7 @@ def render_country_recommendation_html(result: dict[str, Any]) -> str:
         evidence_html = _items(item.get("evidenceSummary"))
         cards.append(
             f'''<article class="wl-guide-card">
-  <span class="wl-guide-risk-level">#{_esc(item.get('rank') or '-')} · 적합도 {score}</span>
+  <span class="wl-guide-risk-level">#{_esc(item.get('rank') or '-')} · 우선순위 {score}</span>
   <h3>{_esc(country)}</h3><p>{_esc(item.get('fitLevel') or '비교 검토')}</p>
   <h4>잘 맞는 지점</h4>{_items(item.get('strengths'))}
   {f'<div class="wl-guide-rationale"><h4>판단 근거</h4>{evidence_html}</div>' if evidence_html else ''}
@@ -68,12 +68,12 @@ def render_country_recommendation_html(result: dict[str, Any]) -> str:
       <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">장르</span><strong class="wl-guide-meta-value">{_esc(genre)}</strong></div>
       <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">우선 추천</span><strong class="wl-guide-meta-value">{_esc(recommendation)}</strong></div>
       <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">판단 신뢰도</span><strong class="wl-guide-meta-value">{_esc(result.get('confidence') or '근거 기반 비교')}</strong></div>
-      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">결과 유형</span><strong class="wl-guide-meta-value">4개국 적합도 비교</strong></div>
+      <div class="wl-guide-meta-card"><span class="wl-guide-meta-label">결과 유형</span><strong class="wl-guide-meta-value">4개국 우선순위 비교</strong></div>
     </div>
   </section>
   <div class="wl-guide-layout"><div>
     <section class="wl-guide-section"><h2><span class="wl-guide-icon">📌</span>한눈에 보는 작품 분석</h2><p class="wl-guide-lead">{' · '.join(_esc(signal) for signal in signals) or '입력 시놉시스의 핵심 매력을 정리합니다.'}</p></section>
-    <section class="wl-guide-section"><h2><span class="wl-guide-icon">🌏</span>국가 적합도 비교</h2><p class="wl-guide-lead">추천은 확정 배포 국가가 아닙니다. 각 시장의 전달 적합도와 주의점을 비교해 검토하세요.</p><div class="wl-guide-card-grid">{''.join(cards) or '<p class="wl-guide-lead">비교 결과를 준비하지 못했습니다.</p>'}</div></section>
+    <section class="wl-guide-section"><h2><span class="wl-guide-icon">🌏</span>국가 우선순위 비교</h2><p class="wl-guide-lead">추천은 확정 배포 국가가 아닙니다. 각 시장의 전달 가능성, 소개문·태그 구성 난도, 정책 확인 부담을 비교해 검토하세요.</p><div class="wl-guide-card-grid">{''.join(cards) or '<p class="wl-guide-lead">비교 결과를 준비하지 못했습니다.</p>'}</div></section>
   </div><aside>
     <section class="wl-guide-section"><h2><span class="wl-guide-icon">🧭</span>우선 추천을 읽는 법</h2><p class="wl-guide-lead">{_esc(recommendation)}은 지금 입력된 장르와 시놉시스 기준에서 먼저 검토하기 좋은 국가입니다. 아래 근거는 확정 배포 판단이 아니라 소개문·태그·정책 확인 우선순위를 잡기 위한 비교입니다.</p>{_items(top_evidence)}</section>
     <section class="wl-guide-section"><h2><span class="wl-guide-icon">⚠️</span>해석 시 유의점</h2>{_items(result.get('limitations') or ['추천 결과는 참고용이며, 실제 출시 전에는 플랫폼 정책과 현지화 표현을 별도로 확인하세요.'])}</section>

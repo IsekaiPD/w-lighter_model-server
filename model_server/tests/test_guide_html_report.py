@@ -220,7 +220,7 @@ class GuideHtmlReportTests(unittest.TestCase):
 
         self.assertTrue(html.lstrip().lower().startswith("<!doctype html>"))
         self.assertIn('class="wl-guide-page"', html)
-        self.assertIn("국가 적합도 비교", html)
+        self.assertIn("국가 우선순위 비교", html)
         self.assertIn("작품 특성과 국가별 전달 환경을 비교한 결과입니다.", html)
         self.assertIn("추천은 선택 전 비교 결과입니다.", html)
 
