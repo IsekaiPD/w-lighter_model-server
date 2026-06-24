@@ -57,8 +57,8 @@ class Episode(Base, TimestampMixin):
 class Character(Base, TimestampMixin):
     """ERD CHARACTERS — 등장인물. character_extract 결과 적재 대상.
 
-    매핑(extraction → 컬럼): gender는 M/F/U 정규화.
-    extraction의 `profile_label`은 별도 컬럼을 추가하지 않고 detail_setting 첫 줄에 고정 포맷으로 합쳐 저장한다.
+    매핑(extraction → 컬럼): gender는 한글 값으로 정규화한다.
+    profile_label은 관계도 카드 표시용 별도 컬럼으로 저장한다.
     """
 
     __tablename__ = "characters"
@@ -69,6 +69,7 @@ class Character(Base, TimestampMixin):
     gender: Mapped[str | None] = mapped_column(String(5), nullable=True)  # CHECK: M/F/U
     age: Mapped[str | None] = mapped_column(String(10), nullable=True)
     role: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    profile_label: Mapped[str | None] = mapped_column(String(80), nullable=True, default="")
     appearance: Mapped[str | None] = mapped_column(String(300), nullable=True)
     relationships: Mapped[str | None] = mapped_column(String(500), nullable=True)
     detail_setting: Mapped[str | None] = mapped_column(String(1000), nullable=True)

@@ -81,14 +81,10 @@ _DETAIL_PREFIX_RE = re.compile(r"^\s*세부\s*설정\s*:\s*", re.MULTILINE)
 
 
 def split_profile_label(detail_setting: Any) -> tuple[str, str]:
-    """detail_setting에 묻어둔 profile_label을 분리한다.
+    """구버전 detail_setting에 묻힌 profile_label을 읽기 호환용으로 분리한다.
 
-    DB 컬럼 추가 없이 아래 고정 포맷을 사용한다.
-    프로필 라벨: 전직 형사
-    세부 설정: ...
-
-    이전 응답/저장값처럼 한 줄로 붙은 값도 같이 처리한다.
-    프로필 라벨: 전직 형사 세부 설정: ...
+    신규 저장은 characters.profile_label 컬럼을 사용하며,
+    detail_setting에는 캐릭터 세부 설정만 저장한다.
     """
     detail = _s(detail_setting)
     if not detail:
@@ -106,33 +102,15 @@ def split_profile_label(detail_setting: Any) -> tuple[str, str]:
 
 
 def format_profile_detail(profile_label: Any, detail_setting: Any) -> str:
-    """캐릭터 설정집 표시용 문자열을 만든다.
+    """캐릭터 설정 화면용 세부 설정 문자열. profile_label은 섞지 않는다."""
+    return _s(detail_setting)
 
-    예: 실종 피해자 / 공식적으로는 죽은 사람으로 처리되었지만 실제로는 살아 있다.
-    """
+
+def normalize_profile_fields(profile_label: Any, detail_setting: Any) -> tuple[str, str]:
+    """profile_label 컬럼값과 detail_setting 본문을 분리해 정규화한다."""
     label = _trunc(profile_label, 80)
-    detail = _s(detail_setting)
-    if label and detail:
-        return f"{label} / {detail}"
-    return label or detail
-
-
-def pack_profile_label(profile_label: Any, detail_setting: Any, *, max_len: int = 1000) -> str:
-    """profile_label을 detail_setting에 고정 포맷으로 합쳐 저장한다."""
-    label = _trunc(profile_label, 80)
-    detail = _s(detail_setting)
-    existing_label, cleaned_detail = split_profile_label(detail)
-    if not label:
-        label = existing_label
-    if not cleaned_detail:
-        cleaned_detail = detail if not existing_label else ""
-    if label:
-        combined = f"프로필 라벨: {label}"
-        if cleaned_detail:
-            combined += f"\n세부 설정: {cleaned_detail}"
-    else:
-        combined = cleaned_detail or detail
-    return _trunc(combined, max_len)
+    legacy_label, cleaned_detail = split_profile_label(detail_setting)
+    return label or _trunc(legacy_label, 80), _trunc(cleaned_detail, 1000)
 
 
 _GENDER_M = {"m", "male", "남", "남자", "남성", "사내", "boy", "man"}
@@ -150,18 +128,17 @@ def normalize_gender(value: Any) -> str:
 
 
 def _map_character(raw: dict[str, Any]) -> dict[str, Any]:
-    """character_extract 출력 1건 → CHARACTERS 컬럼 dict.
-
-    profile_label은 화면/DB 컬럼 추가를 피하기 위해 detail_setting에 묻어 저장한다.
-    """
+    """character_extract 출력 1건 → CHARACTERS 컬럼 dict."""
+    profile_label, detail_setting = normalize_profile_fields(raw.get("profile_label"), raw.get("detail_setting"))
     return {
         "char_name": _trunc(raw.get("char_name"), 30),
         "gender": normalize_gender(raw.get("gender")),
         "age": _trunc(raw.get("age"), 10),
         "role": _trunc(raw.get("role"), 5),  # ERD VARCHAR(5) — extraction(≤10)보다 짧으므로 절단
+        "profile_label": profile_label,
         "appearance": _trunc(raw.get("appearance"), 300),
         "relationships": _trunc(raw.get("relationships"), 500),
-        "detail_setting": pack_profile_label(raw.get("profile_label"), raw.get("detail_setting"), max_len=1000),
+        "detail_setting": detail_setting,
     }
 
 
@@ -279,7 +256,9 @@ def get_characters(work_id: int) -> list[dict[str, Any]]:
         ).scalars().all()
         results: list[dict[str, Any]] = []
         for r in rows:
-            profile_label, cleaned_detail = split_profile_label(r.detail_setting)
+            legacy_label, cleaned_detail = split_profile_label(r.detail_setting)
+            profile_label = _trunc(getattr(r, "profile_label", "") or legacy_label, 80)
+            detail_setting = cleaned_detail or _s(r.detail_setting)
             results.append(
                 {
                     "character_id": r.character_id,
@@ -288,15 +267,11 @@ def get_characters(work_id: int) -> list[dict[str, Any]]:
                     "gender": r.gender,
                     "age": r.age,
                     "role": r.role,
+                    "profile_label": profile_label,
                     "appearance": r.appearance,
                     "relationships": r.relationships,
-                    # API/LLM용으로는 profile_label을 복원해 넘긴다.
-                    "profile_label": profile_label,
-                    # 관계도/표지 프롬프트에는 라벨 줄을 제거한 세부 설정만 전달한다.
-                    "detail_setting": cleaned_detail or r.detail_setting,
-                    # 캐릭터 설정집 화면 표시용.
-                    "detail_setting_display": format_profile_detail(profile_label, cleaned_detail),
-                    # 디버깅/이관용 원본. 화면에서 필요 없으면 무시 가능.
+                    "detail_setting": detail_setting,
+                    "detail_setting_display": format_profile_detail(profile_label, detail_setting),
                     "detail_setting_raw": r.detail_setting,
                 }
             )

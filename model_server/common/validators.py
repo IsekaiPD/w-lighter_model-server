@@ -9,6 +9,7 @@ from common.limits import (
     MAX_CHARACTER_DETAIL,
     MAX_CHARACTER_GENDER,
     MAX_CHARACTER_NAME,
+    MAX_CHARACTER_PROFILE_LABEL,
     MAX_CHARACTER_RELATIONSHIPS,
     MAX_CHARACTER_ROLE,
 )
@@ -43,7 +44,6 @@ def validate_character_dicts(
         _check_text_len(item, "relationships", MAX_CHARACTER_RELATIONSHIPS, idx)
         _check_text_len(item, "appearance", MAX_CHARACTER_APPEARANCE, idx)
         _check_text_len(item, "detail_setting", MAX_CHARACTER_DETAIL, idx)
-        # profile_label은 별도 DB 컬럼 없이 detail_setting에 합쳐 저장되므로 같은 상한을 적용한다.
-        _check_text_len(item, "profile_label", MAX_CHARACTER_DETAIL, idx)
+        _check_text_len(item, "profile_label", MAX_CHARACTER_PROFILE_LABEL, idx)
 
     return characters

@@ -22,7 +22,7 @@ class RelationRequest(BaseModel):
         max_length=MAX_RELATION_CHARACTER_COUNT,
         description="캐릭터 설정집",
     )
-    limit: int = Field(10, ge=1, le=MAX_RELATION_CHARACTER_COUNT, description="관계도 캐릭터 수(1~10)")
+    limit: int = Field(20, ge=1, le=MAX_RELATION_CHARACTER_COUNT, description="관계도 캐릭터 수(1~20)")
     includeHtml: bool = Field(True, description="true면 관계도 HTML도 함께 반환")
     saveRelationMap: bool = Field(True, description="workId가 있을 때 관계도 결과를 relation_maps에 저장")
 

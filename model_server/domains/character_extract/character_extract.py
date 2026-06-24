@@ -5,6 +5,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from common.limits import MAX_CHARACTER_COUNT, MAX_SYNOPSIS
+
 from .character_prompts import SYSTEM_PROMPT, build_character_extract_prompt
 
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -12,8 +14,8 @@ load_dotenv(dotenv_path=CURRENT_DIR.parent / ".env")
 
 TEXT_MODEL = os.getenv("WLIGHTER_TEXT_MODEL", "gpt-5.4-mini")
 CHARACTER_LIMIT_DEFAULT = 20
-CHARACTER_LIMIT_MAX = 30
-SYNOPSIS_MAX_CHARS = 30000
+CHARACTER_LIMIT_MAX = MAX_CHARACTER_COUNT
+SYNOPSIS_MAX_CHARS = MAX_SYNOPSIS
 
 CHARACTER_FIELDS = [
     "char_name",
@@ -49,6 +51,30 @@ def text(value, max_length: int | None = None) -> str:
     return cleaned
 
 
+BLOCKED_PROFILE_LABELS = {
+    "-",
+    "기타",
+    "인물",
+    "등장인물",
+    "주요 인물",
+    "미상",
+    "없음",
+    "주인공",
+    "악역",
+    "조력자",
+    "친구",
+    "연인",
+    "가족",
+}
+
+
+def clean_profile_label(value: str | None, max_length: int = 80) -> str:
+    label = text(value, max_length)
+    if not label or label in BLOCKED_PROFILE_LABELS:
+        return ""
+    return label
+
+
 def validate_character_request(*, synopsis: str, limit: int) -> None:
     if not synopsis or not synopsis.strip():
         raise ValueError("시놉시스가 비어 있습니다.")
@@ -63,7 +89,7 @@ def normalize_character_item(item: dict) -> dict:
     normalized["char_name"] = text(normalized["char_name"], 30)
     normalized["age"] = text(normalized["age"], 10)
     normalized["role"] = text(normalized["role"], 10)
-    normalized["profile_label"] = text(normalized["profile_label"], 80)
+    normalized["profile_label"] = clean_profile_label(normalized["profile_label"], 80)
     normalized["gender"] = text(normalized["gender"], 10)
     normalized["relationships"] = text(normalized["relationships"], 500)
     normalized["appearance"] = text(normalized["appearance"], 300)

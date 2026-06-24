@@ -11,7 +11,7 @@ CURRENT_DIR = Path(__file__).resolve().parent
 load_dotenv(dotenv_path=CURRENT_DIR.parent / ".env")
 
 TEXT_MODEL = os.getenv("WLIGHTER_TEXT_MODEL", "gpt-5.4-mini")
-RELATION_CHARACTER_LIMIT_DEFAULT = 12
+RELATION_CHARACTER_LIMIT_DEFAULT = 20
 RELATION_CHARACTER_LIMIT_MAX = 20
 
 STYLE_COLORS = {
@@ -46,6 +46,30 @@ def text(value, max_length: int | None = None) -> str:
     if max_length and len(cleaned) > max_length:
         return cleaned[:max_length].rstrip()
     return cleaned
+
+
+BLOCKED_PROFILE_LABELS = {
+    "-",
+    "기타",
+    "인물",
+    "등장인물",
+    "주요 인물",
+    "미상",
+    "없음",
+    "주인공",
+    "악역",
+    "조력자",
+    "친구",
+    "연인",
+    "가족",
+}
+
+
+def clean_profile_label(value: str | None, max_length: int = 80) -> str:
+    label = text(value, max_length)
+    if not label or label in BLOCKED_PROFILE_LABELS:
+        return ""
+    return label
 
 
 def importance(value, default: int = 3) -> int:
@@ -90,6 +114,8 @@ def merge_relation(existing: dict, current: dict) -> dict:
 
 def character_id(character: dict, index: int) -> str:
     raw_id = character.get("id")
+    if raw_id is None or str(raw_id).strip() == "":
+        raw_id = character.get("character_id")
     if raw_id is None or str(raw_id).strip() == "":
         return f"char_{index}"
     raw = str(raw_id).strip()
@@ -137,7 +163,7 @@ def normalize_relation_data(raw: dict, *, work_title: str, input_characters: lis
                 "id": item_id,
                 "name": text(item.get("name")) or value(original, "char_name"),
                 "role": text(item.get("role"), 20) or value(original, "role"),
-                "profile_label": text(item.get("profile_label"), 80) or value(original, "profile_label"),
+                "profile_label": clean_profile_label(value(original, "profile_label"), 80) or clean_profile_label(item.get("profile_label"), 80),
                 "description": text(item.get("description"), 120),
                 "is_main": bool(item.get("is_main")),
                 "importance": importance(item.get("importance")),
@@ -154,7 +180,7 @@ def normalize_relation_data(raw: dict, *, work_title: str, input_characters: lis
                     "id": original["id"],
                     "name": value(original, "char_name"),
                     "role": value(original, "role"),
-                    "profile_label": value(original, "profile_label"),
+                    "profile_label": clean_profile_label(value(original, "profile_label"), 80),
                     "description": value(original, "detail_setting")[:120],
                     "is_main": index == 0,
                     "importance": 1 if index == 0 else 3,

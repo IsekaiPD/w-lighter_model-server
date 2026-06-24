@@ -44,7 +44,7 @@ def generate_relationship(payload: dict[str, Any]) -> dict[str, Any]:
     data = generate_relation_data(
         work_title=work_title,
         characters=characters,
-        limit=int(payload.get("limit") or 12),
+        limit=int(payload.get("limit") or 20),
     )
     result: dict[str, Any] = {"workTitle": work_title, "data": data}
     if payload.get("includeHtml", True):
