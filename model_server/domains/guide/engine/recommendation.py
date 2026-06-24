@@ -44,6 +44,7 @@ JP_DOTING = "\u6eba\u611b"
 
 COUNTRY_ALIASES = {
     "us": "US/global English",
+    "en": "US/global English",
     "usa": "US/global English",
     "united states": "US/global English",
     "america": "US/global English",

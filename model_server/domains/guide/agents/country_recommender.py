@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any
 
 from ..engine.policy_analysis import build_policy_attention_report
+from ..engine.recommendation import DEFAULT_INPUT, load_trend_data, rank_countries
 from ..infra.output_language_guard import repair_user_facing_explanations, sanitize_deterministic_explanations, validate_user_facing_language
 from ..retrieval.context_pack import build_context_pack_overlap_report, inspect_context_pack_source
 from .guide_writer import _client_and_model, llm_requested
@@ -104,6 +105,10 @@ def _include_internal(payload: dict[str, Any]) -> bool:
     return _truthy_flag(payload.get("includeInternal") or payload.get("include_internal"), default=False)
 
 
+def _has_synopsis(payload: dict[str, Any]) -> bool:
+    return bool(_text(payload.get("synopsis") or payload.get("desc")))
+
+
 def _stable_hash(value: Any) -> str:
     text = json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -125,6 +130,129 @@ def _country_display(code: str) -> str:
         if target["code"] == code:
             return target["display"]
     return code
+
+
+COUNTRY_NAME_TO_CODE = {
+    "Japan": "JP",
+    "China": "CN",
+    "US/global English": "US",
+    "Thailand": "TH",
+}
+
+
+def _support_signal_labels(reasons: list[str], evidence_count: int) -> list[str]:
+    labels: list[str] = []
+    joined = " ".join(reasons)
+    if "장르" in joined:
+        labels.append("입력 장르와 공개 장르·태그 겹침")
+    if "시놉시스" in joined:
+        labels.append("시놉시스와 공개 제목·소개문 신호 겹침")
+    if evidence_count and not labels:
+        labels.append("상위 공개 노출 사례")
+    return labels
+
+
+def _recommendation_support_by_code(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Build country-fit support from the same trend ranker used by legacy recommendations."""
+    try:
+        recommendations = rank_countries(
+            load_trend_data(DEFAULT_INPUT),
+            genre=payload.get("genre") or "",
+            synopsis=payload.get("synopsis") or payload.get("desc") or "",
+        )
+    except Exception:
+        return {}
+
+    out: dict[str, dict[str, Any]] = {}
+    positive_scores = [float(rec.score or 0) for rec in recommendations if float(rec.score or 0) > 0]
+    max_score = max(positive_scores) if positive_scores else 0.0
+    for index, rec in enumerate(recommendations, start=1):
+        code = COUNTRY_NAME_TO_CODE.get(rec.country)
+        if not code:
+            continue
+        reasons = [str(item) for item in rec.reasons[:4] if str(item).strip()]
+        evidence_count = len(rec.evidence)
+        out[code] = {
+            "score": float(rec.score or 0),
+            "normalizedScore": (float(rec.score or 0) / max_score) if max_score else 0.0,
+            "rankIndex": index,
+            "reasons": reasons,
+            "signals": _support_signal_labels(reasons, evidence_count),
+            "evidenceCount": evidence_count,
+        }
+    return out
+
+
+def _score_from_support(target: dict[str, Any], support: dict[str, Any]) -> int:
+    matched = len(target.get("matchedSignals") or [])
+    platform = len(target.get("platformEvidence") or [])
+    risk = int((target.get("policyRiskSummary") or {}).get("riskCount") or 0)
+    normalized = float(support.get("normalizedScore") or 0)
+    if normalized > 0:
+        rank_penalty = max(0, int(support.get("rankIndex") or 1) - 1) * 4
+        return max(18, min(95, int(round(34 + normalized * 56 + matched * 5 + min(platform, 5) * 2 - risk * 2 - rank_penalty))))
+    return max(10, min(45, 24 + matched * 8 + min(platform, 5) * 2 - risk * 2))
+
+
+def _country_strengths(target: dict[str, Any], support: dict[str, Any]) -> list[str]:
+    display = target["displayCountry"]
+    reasons = support.get("reasons") or []
+    signals = support.get("signals") or []
+    matched = target.get("matchedSignals") or []
+    strengths: list[str] = []
+    if reasons:
+        strengths.append(f"{display} 공개 플랫폼 자료에서 {reasons[0]} 흐름이 확인됩니다.")
+    if signals:
+        strengths.append(f"참고 신호는 {', '.join(signals[:4])} 중심으로 잡혔습니다.")
+    if matched:
+        strengths.append(f"컨텍스트 팩에서 직접 겹친 입력 신호는 {', '.join(matched[:4])}입니다.")
+    evidence_count = int(support.get("evidenceCount") or 0)
+    if evidence_count:
+        strengths.append(f"국가별 비교에는 관련 공개 노출 사례 {evidence_count}건을 보조 근거로 사용했습니다.")
+    if not strengths:
+        strengths.append(f"{display}은 직접 겹치는 신호가 약해 기본 시장 참고 자료만으로 비교했습니다.")
+    return strengths[:4]
+
+
+def _country_risks(target: dict[str, Any], support: dict[str, Any]) -> list[str]:
+    policy = target.get("policyRiskSummary") or {}
+    risks = [str(item.get("message") or item.get("title")) for item in policy.get("risks") or [] if item.get("message") or item.get("title")]
+    out = risks[:2]
+    if not support.get("signals"):
+        out.append("시놉시스·장르와 직접 겹치는 공개 신호가 제한적이어서 추가 작품 정보로 재확인이 필요합니다.")
+    out.append("이 비교는 배포 확정이 아니라 제목·소개문·태그·정책 검토 우선순위를 정하기 위한 참고입니다.")
+    return list(dict.fromkeys(item for item in out if item))[:4]
+
+
+def _evidence_summary(target: dict[str, Any], support: dict[str, Any]) -> list[str]:
+    summary: list[str] = []
+    if support.get("reasons"):
+        summary.extend(support["reasons"][:2])
+    if support.get("signals"):
+        summary.append(f"참고 신호: {', '.join(support['signals'][:4])}")
+    matched = target.get("matchedSignals") or []
+    if matched:
+        summary.append(f"직접 매칭 신호: {', '.join(matched[:4])}")
+    else:
+        summary.append("직접 매칭 신호: 없음 — 플랫폼 랭킹/태그 기반 보조 비교")
+    summary.append(f"정책 점검 카드: {(target.get('policyRiskSummary') or {}).get('riskCount', 0)}개")
+    return summary[:5]
+
+
+def _story_core_signals(payload: dict[str, Any], evidence: dict[str, Any], supports: dict[str, dict[str, Any]]) -> list[str]:
+    signals: list[str] = []
+    genre = _text(evidence["story"].get("genre"))
+    if genre:
+        signals.append(f"입력 장르: {genre}")
+    for support in supports.values():
+        for signal in support.get("signals") or []:
+            if signal and signal not in signals:
+                signals.append(signal)
+            if len(signals) >= 6:
+                return signals
+    if _text(payload.get("synopsis") or payload.get("desc")) and "시놉시스 기반 비교" not in signals:
+        signals.append("시놉시스 기반 비교")
+    return signals or ["입력 장르"]
 
 
 def _top_evidence_by_country(payload: dict[str, Any], *, limit: int = 5) -> dict[str, list[dict[str, Any]]]:
@@ -396,45 +524,36 @@ def _canonicalize_result(
 
 
 def _deterministic_comparison(payload: dict[str, Any], evidence: dict[str, Any]) -> dict[str, Any]:
+    supports = _recommendation_support_by_code(payload)
     rows = []
     for target in evidence["countries"]:
-        matched = len(target.get("matchedSignals") or [])
-        platform = len(target.get("platformEvidence") or [])
-        risk = int((target.get("policyRiskSummary") or {}).get("riskCount") or 0)
-        score = max(10, min(95, 45 + matched * 15 + min(platform, 5) * 4 - risk * 3))
+        support = supports.get(target["country"], {})
+        score = _score_from_support(target, support)
         rows.append((score, target))
     ranked = sorted(rows, key=lambda item: item[0], reverse=True)
     comparisons = []
     for rank, (score, target) in enumerate(ranked, start=1):
-        matched_signals = target.get("matchedSignals") or []
         code = target["country"]
+        support = supports.get(code, {})
         comparisons.append(
             {
                 "country": code,
                 "rank": rank,
                 "relativeFitScore": score,
                 "fitLevel": "상위 적합" if rank == 1 else "비교 적합",
-                "strengths": [
-                    f"{target['displayCountry']} 기준 직접 매칭 신호 {len(matched_signals)}개가 확인됩니다.",
-                    "플랫폼 근거와 정책 근거를 함께 확인했습니다.",
-                ],
-                "risks": [
-                    "정밀한 최종 판단은 추가 확인이 필요합니다.",
-                    "문화 차이와 플랫폼 규정은 별도 검토가 필요합니다.",
-                ],
-                "evidenceSummary": [
-                    f"직접 매칭 신호: {', '.join(matched_signals[:4]) if matched_signals else '없음'}",
-                    f"정책 점검 카드: {target['policyRiskSummary']['riskCount']}개",
-                ],
-                "localizationDifficulty": "보통",
+                "strengths": _country_strengths(target, support),
+                "risks": _country_risks(target, support),
+                "evidenceSummary": _evidence_summary(target, support),
+                "localizationDifficulty": "낮음" if score >= 70 else "보통" if score >= 40 else "추가 검토 필요",
             }
         )
+    core_signals = _story_core_signals(payload, evidence, supports)
     result = {
         "storyProfile": {
             "title": evidence["story"]["title"],
             "genre": evidence["story"]["genre"],
-            "coreSignals": [evidence["story"]["genre"]] if evidence["story"]["genre"] else ["입력 장르"],
-            "analysisSummary": "입력 시놉시스와 컨텍스트 팩을 바탕으로 4개국 비교를 구성했습니다.",
+            "coreSignals": core_signals,
+            "analysisSummary": "입력 시놉시스와 장르를 국가별 공개 플랫폼 신호, 컨텍스트 팩, 정책 점검 항목과 대조해 4개국 적합도를 비교했습니다.",
         },
         "recommendedCountry": comparisons[0]["country"],
         "confidence": "중간",
@@ -489,7 +608,7 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
     evidence = build_country_recommendation_evidence(payload)
     evidence_size = _evidence_size(evidence)
     internal_diagnostics = _aggregate_context_pack_diagnostics(evidence, payload) if _include_internal(payload) else None
-    if not llm_requested(payload):
+    if not _has_synopsis(payload) and not llm_requested(payload):
         return _canonicalize_result(
             _deterministic_comparison(payload, evidence),
             evidence_size=evidence_size,
@@ -508,6 +627,9 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
                 "countryComparisons에는 US, CN, JP, TH를 각각 한 번씩 넣으세요.",
                 "rank는 1~4를 중복 없이 사용하고, recommendedCountry는 rank 1과 일치해야 합니다.",
                 "작품 자체를 바꾸는 방향 제안이 아니라, 현재 시놉시스 기준 어느 국가에서 먼저 전달하기 좋은지 설명하세요.",
+                "각 국가의 strengths에는 왜 그 국가가 맞거나 덜 맞는지 입력 장르, 시놉시스 신호, 플랫폼/정책 근거 중 최소 2가지를 연결해 구체적으로 쓰세요.",
+                "각 국가의 evidenceSummary에는 점수의 근거가 된 신호를 요약하고, '근거를 확인했습니다'처럼 비어 있는 문장만 쓰지 마세요.",
+                "직접 매칭이 0개인 경우에도 그대로 장점처럼 쓰지 말고, 어떤 보조 근거로 비교했는지 설명하세요.",
                 *CREATIVE_BOUNDARY_RULES,
                 "설명은 모두 한국어로 작성하세요.",
             ],

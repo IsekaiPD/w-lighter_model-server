@@ -13,6 +13,7 @@ COUNTRY_ALIASES = {
     "日本": "JP",
 
     "us": "US",
+    "en": "US",
     "usa": "US",
     "english": "US",
     "global english": "US",

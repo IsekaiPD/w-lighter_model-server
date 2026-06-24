@@ -19,6 +19,7 @@ PIPELINE_MARKET_ALIASES = {
     "japan": "japan",
     "jp": "japan",
     "us": "english",
+    "en": "english",
     "usa": "english",
     "english": "english",
     "global english": "english",
@@ -400,7 +401,8 @@ def generate_guide(payload: dict[str, Any]) -> dict[str, Any]:
         return _shape_guide_response(payload, {**enriched, **generate_llm_guide(payload, enriched)})
     except Exception as exc:
         fallback = dict(enriched)
-        fallback["generationMode"] = deterministic_mode
+        fallback["generationMode"] = "llm_guide_failed"
         fallback["llmGeneratedGuide"] = False
+        fallback["message"] = "LLM 가이드 생성에 실패해 임시 기준서만 반환했습니다. 서버 로그와 모델/API 설정을 확인해 주세요."
         fallback["llmGuideError"] = str(exc)
         return _shape_guide_response(payload, fallback)

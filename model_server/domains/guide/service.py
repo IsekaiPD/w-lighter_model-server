@@ -40,6 +40,7 @@ def _target_country(payload: dict[str, Any], result: dict[str, Any]) -> str | No
         "japan": "JP",
         "jp": "JP",
         "english": "US",
+        "en": "US",
         "us": "US",
         "usa": "US",
         "global english": "US",

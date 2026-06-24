@@ -15,7 +15,7 @@ COUNTRY_RECOMMENDATION_CSS = """
 .wl-guide-layout { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(300px,.8fr); gap:18px; margin-top:18px; } .wl-guide-section { margin-top:18px; padding:24px; border:1px solid var(--wl-guide-border); border-radius:28px; background:rgba(255,255,255,.84); box-shadow:0 12px 36px rgba(51,35,76,.08); } .wl-guide-section h2 { display:flex; gap:10px; align-items:center; margin:0 0 14px; font-size:22px; line-height:1.25; letter-spacing:-.025em; } .wl-guide-icon { display:inline-grid; width:34px; height:34px; place-items:center; border-radius:12px; background:var(--wl-guide-panel-soft); } .wl-guide-lead { margin:0; color:var(--wl-guide-muted); font-size:15px; }
 .wl-guide-score-row,.wl-guide-card-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:18px; } .wl-guide-score,.wl-guide-card { padding:18px; border:1px solid var(--wl-guide-border); border-radius:20px; background:var(--wl-guide-panel-soft); } .wl-guide-card { background:#fff; } .wl-guide-score strong { display:block; font-size:28px; line-height:1; } .wl-guide-score span,.wl-guide-card p { display:block; margin-top:8px; color:var(--wl-guide-muted); font-size:13px; } .wl-guide-card h3 { margin:0 0 8px; font-size:16px; } .wl-guide-card p { margin:0; font-size:14px; }
 .wl-guide-action-list,.wl-guide-list { display:grid; gap:10px; margin:16px 0 0; padding:0; list-style:none; } .wl-guide-action-list li,.wl-guide-list li { position:relative; padding:14px 14px 14px 42px; border:1px solid var(--wl-guide-border); border-radius:18px; background:#fff; } .wl-guide-action-list li::before { content:"✓"; position:absolute; left:14px; top:14px; width:20px; height:20px; display:grid; place-items:center; border-radius:50%; color:#fff; background:var(--wl-guide-good); font-size:12px; font-weight:900; } .wl-guide-list li::before { content:"•"; position:absolute; left:18px; color:var(--wl-guide-primary); font-weight:900; }
-.wl-guide-risk { border-left:5px solid var(--wl-guide-warn); } .wl-guide-risk-high { border-left-color:var(--wl-guide-risk); } .wl-guide-risk-level { display:inline-flex; margin-bottom:8px; padding:4px 9px; border-radius:999px; color:#7c2d12; background:#ffedd5; font-size:12px; font-weight:800; } .wl-guide-market-note { margin-top:14px; padding:14px; border-radius:18px; background:#f8fafc; color:#475569; font-size:13px; } .wl-guide-source { display:block; margin-top:10px; color:var(--wl-guide-primary); overflow-wrap:anywhere; word-break:break-word; } .wl-guide-footer { margin-top:18px; padding:18px 24px; border:1px solid var(--wl-guide-border); border-radius:22px; color:var(--wl-guide-muted); background:rgba(255,255,255,.64); font-size:13px; }
+.wl-guide-risk { border-left:5px solid var(--wl-guide-warn); } .wl-guide-risk-high { border-left-color:var(--wl-guide-risk); } .wl-guide-risk-level { display:inline-flex; margin-bottom:8px; padding:4px 9px; border-radius:999px; color:#7c2d12; background:#ffedd5; font-size:12px; font-weight:800; } .wl-guide-rationale { margin-top:14px; padding:14px; border:1px solid #dbeafe; border-radius:18px; background:#eff6ff; } .wl-guide-rationale h4 { margin-top:0; } .wl-guide-market-note { margin-top:14px; padding:14px; border-radius:18px; background:#f8fafc; color:#475569; font-size:13px; } .wl-guide-source { display:block; margin-top:10px; color:var(--wl-guide-primary); overflow-wrap:anywhere; word-break:break-word; } .wl-guide-footer { margin-top:18px; padding:18px 24px; border:1px solid var(--wl-guide-border); border-radius:22px; color:var(--wl-guide-muted); background:rgba(255,255,255,.64); font-size:13px; }
 @media (max-width:920px) { .wl-guide-layout,.wl-guide-meta-grid,.wl-guide-score-row,.wl-guide-card-grid { grid-template-columns:1fr; } }
 """
 
@@ -43,15 +43,19 @@ def render_country_recommendation_html(result: dict[str, Any]) -> str:
     recommendation = result.get("recommendedCountryDisplay") or result.get("recommendedCountry") or "추천 결과 없음"
     signals = profile.get("coreSignals") or []
     comparisons = sorted(result.get("countryComparisons") or [], key=lambda item: int(item.get("rank") or 99))
+    top = comparisons[0] if comparisons else {}
+    top_evidence = top.get("evidenceSummary") or []
     cards = []
     for item in comparisons:
         country = item.get("displayCountry") or item.get("country") or "국가"
         score = max(0, min(100, int(float(item.get("relativeFitScore") or 0))))
+        evidence_html = _items(item.get("evidenceSummary"))
         cards.append(
             f'''<article class="wl-guide-card">
   <span class="wl-guide-risk-level">#{_esc(item.get('rank') or '-')} · 적합도 {score}</span>
   <h3>{_esc(country)}</h3><p>{_esc(item.get('fitLevel') or '비교 검토')}</p>
   <h4>잘 맞는 지점</h4>{_items(item.get('strengths'))}
+  {f'<div class="wl-guide-rationale"><h4>판단 근거</h4>{evidence_html}</div>' if evidence_html else ''}
   <h4>확인할 지점</h4>{_items(item.get('risks'))}
 </article>'''
         )
@@ -71,6 +75,7 @@ def render_country_recommendation_html(result: dict[str, Any]) -> str:
     <section class="wl-guide-section"><h2><span class="wl-guide-icon">📌</span>한눈에 보는 작품 분석</h2><p class="wl-guide-lead">{' · '.join(_esc(signal) for signal in signals) or '입력 시놉시스의 핵심 매력을 정리합니다.'}</p></section>
     <section class="wl-guide-section"><h2><span class="wl-guide-icon">🌏</span>국가 적합도 비교</h2><p class="wl-guide-lead">추천은 확정 배포 국가가 아닙니다. 각 시장의 전달 적합도와 주의점을 비교해 검토하세요.</p><div class="wl-guide-card-grid">{''.join(cards) or '<p class="wl-guide-lead">비교 결과를 준비하지 못했습니다.</p>'}</div></section>
   </div><aside>
+    <section class="wl-guide-section"><h2><span class="wl-guide-icon">🧭</span>우선 추천을 읽는 법</h2><p class="wl-guide-lead">{_esc(recommendation)}은 지금 입력된 장르와 시놉시스 기준에서 먼저 검토하기 좋은 국가입니다. 아래 근거는 확정 배포 판단이 아니라 소개문·태그·정책 확인 우선순위를 잡기 위한 비교입니다.</p>{_items(top_evidence)}</section>
     <section class="wl-guide-section"><h2><span class="wl-guide-icon">⚠️</span>해석 시 유의점</h2>{_items(result.get('limitations') or ['추천 결과는 참고용이며, 실제 출시 전에는 플랫폼 정책과 현지화 표현을 별도로 확인하세요.'])}</section>
   </aside></div>
   <footer class="wl-guide-footer">이 결과는 작품 특성과 국가별 전달 환경을 비교한 결과입니다.</footer>

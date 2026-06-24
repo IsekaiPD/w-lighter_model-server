@@ -142,7 +142,10 @@ def llm_requested(payload: dict[str, Any]) -> bool:
     )
     if explicit is not None:
         return str(explicit).strip().lower() not in {"0", "false", "no", "off", ""}
-    return str(os.getenv("WLIGHTER_GUIDE_LLM", "")).strip().lower() in {"1", "true", "yes", "on", "live"}
+    env_value = os.getenv("WLIGHTER_GUIDE_LLM")
+    if env_value is not None:
+        return str(env_value).strip().lower() not in {"0", "false", "no", "off", ""}
+    return True
 
 
 def _client_and_model(payload: dict[str, Any]):
