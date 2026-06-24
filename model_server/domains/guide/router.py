@@ -16,7 +16,7 @@ router = APIRouter(prefix="/guide", tags=["guide"])
 
 
 @router.post("", response_model=GuideResponse)
-async def guide(req: GuideRequest) -> dict:
+def guide(req: GuideRequest) -> dict:
     payload = req.model_dump(exclude_none=True)
     try:
         return service.generate(payload)

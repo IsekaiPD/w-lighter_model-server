@@ -16,7 +16,7 @@ router = APIRouter(prefix="/character-extract", tags=["character_extract"])
 
 
 @router.post("", response_model=CharacterExtractResponse)
-async def character_extract(req: CharacterExtractRequest) -> dict:
+def character_extract(req: CharacterExtractRequest) -> dict:
     payload = req.model_dump(exclude_none=True)
     try:
         return service.extract(payload)
