@@ -118,13 +118,17 @@ _GENDER_F = {"f", "female", "여", "여자", "여성", "girl", "woman"}
 
 
 def normalize_gender(value: Any) -> str:
-    """자유 텍스트 성별 → 화면/DB 저장용 한글 성별값으로 정규화한다."""
+    """자유 텍스트 성별 → DB 저장용 코드(M/F/U)로 정규화한다.
+
+    characters.gender는 M/F/U만 허용(ERD CHECK). 한글 표시값(남/여/미상)은 응답 단계에서
+    display_gender로 따로 변환한다. (M/M·남/male… → M, F/여/female… → F, 그 외 → U)
+    """
     token = _s(value).lower()
     if token in _GENDER_M:
-        return "남"
+        return "M"
     if token in _GENDER_F:
-        return "여"
-    return "미상"
+        return "F"
+    return "U"
 
 
 def _map_character(raw: dict[str, Any]) -> dict[str, Any]:

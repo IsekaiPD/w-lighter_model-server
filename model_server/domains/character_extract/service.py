@@ -30,6 +30,12 @@ def extract(payload: dict[str, Any]) -> dict[str, Any]:
         limit=int(payload.get("limit") or 20),
     )
 
+    # gender 단일 정규화(저장·응답 공용): 자유텍스트/남/male… → M/F/U 코드.
+    # 이후 저장은 이 코드값을 그대로 쓰고(=CHECK 통과), 응답 직전에만 display_gender로 한글 변환한다.
+    for character in result.get("characters") or []:
+        if isinstance(character, dict):
+            character["gender"] = db_repo.normalize_gender(character.get("gender"))
+
     # workId가 주어지면 CHARACTERS에 적재(rdb 백엔드일 때만 저장, 아니면 no-op).
     # 영속화 실패가 추출 응답을 막지 않도록 best-effort.
     work_id = payload.get("workId") or payload.get("work_id")
