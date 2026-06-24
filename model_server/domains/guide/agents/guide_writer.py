@@ -50,6 +50,32 @@ GUIDE_JSON_SCHEMA: dict[str, Any] = {
     ],
 }
 
+GENRE_SIGNALS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "genreSignals": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 3,
+            "maxItems": 8,
+        },
+        "localizationFocus": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 2,
+            "maxItems": 5,
+        },
+        "targetCountrySearchTerms": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 2,
+            "maxItems": 6,
+        },
+    },
+    "required": ["genreSignals", "localizationFocus", "targetCountrySearchTerms"],
+}
+
 CREATIVE_BOUNDARY_RULES = [
     "작품의 플롯, 결말, 캐릭터 성격, 핵심 설정, 장르 방향을 바꾸라고 제안하지 마세요.",
     "스토리 개선안, 플롯 수정안, 캐릭터 수정안, 시장 맞춤 리라이트처럼 보이는 표현을 쓰지 마세요.",
@@ -165,6 +191,46 @@ def _client_and_model(payload: dict[str, Any]):
     return OpenAI(api_key=api_key), model
 
 
+def generate_genre_signals(payload: dict[str, Any]) -> dict[str, Any]:
+    """장르·제목 기반 경량 LLM 신호 분석 — 시놉시스 없는 country_genre_guide 경로 전용."""
+    client, model = _client_and_model(payload)
+    title = payload.get("title") or payload.get("workTitle") or "입력 작품"
+    genre = payload.get("genre") or "장르 미입력"
+    target_country = payload.get("targetCountry") or payload.get("country") or ""
+    system = (
+        "당신은 한국 웹소설 장르를 분석하는 편집자다. "
+        "반드시 한국어 JSON 객체만 출력하고, 확인되지 않은 시장 성과나 독자 선호를 단정하지 않는다."
+    )
+    user = {
+        "task": "장르와 제목을 바탕으로 현지화 기준서 작성에 필요한 신호를 분석해 주세요.",
+        "input": {"title": title, "genre": genre, "targetCountry": target_country},
+        "requirements": [
+            "genreSignals: 이 장르에서 현지화할 때 중요한 구체 신호를 3~8개 작성하세요.",
+            "localizationFocus: 대상 국가에서 이 장르를 소개할 때 집중할 2~5개 포인트를 작성하세요.",
+            "targetCountrySearchTerms: 대상 국가 플랫폼·트렌드 검색에 쓸 2~6개 검색어를 작성하세요.",
+            "확인되지 않은 시장 성과, 독자 선호, 흥행 가능성을 단정하지 마세요.",
+            "작품의 플롯, 결말, 캐릭터를 바꾸라는 제안을 하지 마세요.",
+            "설명은 모두 한국어로 작성하세요.",
+        ],
+    }
+    response = client.responses.create(
+        model=model,
+        input=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": json.dumps(user, ensure_ascii=False)},
+        ],
+        text={
+            "format": {
+                "type": "json_schema",
+                "name": "guide_genre_signals",
+                "schema": GENRE_SIGNALS_SCHEMA,
+                "strict": True,
+            }
+        },
+    )
+    return json.loads(response.output_text)
+
+
 def _evidence_payload(payload: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
     briefing = result.get("contextPackBriefing") or {}
     evidence = result.get("contextPackEvidence") or {}
@@ -198,6 +264,7 @@ def _evidence_payload(payload: dict[str, Any], result: dict[str, Any]) -> dict[s
         "reportMode": result.get("reportMode") or "country_genre_guide",
         "countryRecommendation": _compact(result.get("countryRecommendation") or {}, 9000),
         "liveMarketEvidence": _compact(result.get("liveMarketEvidence") or {}, 12000),
+        "genreSignals": _compact(result.get("genreSignals") or {}, 3000),
     }
 
 
@@ -358,6 +425,7 @@ def generate_llm_guide(payload: dict[str, Any], result: dict[str, Any]) -> dict[
         "task": "입력 근거를 바탕으로 한국어 가이드를 작성해 주세요.",
         "requirements": [
             "reportMode가 country_genre_guide이면 선택 국가와 장르, 사용자가 궁금해하는 파트를 중심으로 일반 현지화 가이드를 작성하세요.",
+            "genreSignals가 있으면 장르 특화 신호(genreSignals·localizationFocus)를 가이드 본문에 직접 반영해 구체적인 내용을 작성하세요.",
             "liveMarketEvidence가 있으면 최신 웹 근거를 보조 근거로 활용하되, 출처 문장을 그대로 길게 복사하지 마세요.",
             "liveMarketEvidence는 최신 웹 참고자료이며 전체 시장 통계처럼 단정하지 마세요.",
             "liveMarketEvidence의 원문이 일본어, 영어, 중국어, 태국어여도 그대로 복사하지 말고 한국어로 요약·해석하세요.",
@@ -434,9 +502,11 @@ def _truthy_flag(value: Any, *, default: bool) -> bool:
 
 __all__ = [
     "DEFAULT_MODEL",
+    "GENRE_SIGNALS_SCHEMA",
     "GUIDE_JSON_SCHEMA",
     "_client_and_model",
     "llm_requested",
+    "generate_genre_signals",
     "generate_llm_guide",
     "render_llm_html",
 ]

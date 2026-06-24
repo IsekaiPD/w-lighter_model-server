@@ -7,7 +7,7 @@ import os
 from typing import Any
 
 from .agents.country_recommender import generate_country_recommendation
-from .agents.guide_writer import generate_llm_guide, llm_requested
+from .agents.guide_writer import generate_genre_signals, generate_llm_guide, llm_requested
 from .engine.policy_analysis import build_policy_attention_payload
 from .engine.recommendation import build_localization_advice
 from .infra.country_recommendation_html import render_country_recommendation_html
@@ -409,6 +409,13 @@ def generate_guide(payload: dict[str, Any]) -> dict[str, Any]:
     enriched = _attach_context_pack_briefing(payload, result)
     enriched = _attach_live_market_evidence(payload, enriched, report_mode=report_mode)
     enriched = {**enriched, **build_policy_attention_payload(payload, enriched)}
+
+    try:
+        genre_signals = generate_genre_signals(payload)
+        if genre_signals:
+            enriched = {**enriched, "genreSignals": genre_signals}
+    except Exception:
+        pass
 
     # A generated guide is a paid, user-facing artifact. Keep deterministic data
     # only as grounding input and always use the LLM for the final guide prose.
