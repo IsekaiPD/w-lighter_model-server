@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+import re as _re
 from dataclasses import asdict
 from typing import Any
 
@@ -215,6 +216,64 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
     return response
 
 
+_CONFIRM_TOKENS = {"네", "응", "ㅇㅇ", "예", "맞아", "해줘", "좋아", "ok", "yes", "수정해", "변경해", "적용해", "저장해", "ㅇ"}
+_CANCEL_TOKENS  = {"아니", "됐어", "취소", "no", "안해", "그냥둬", "ㄴㄴ", "괜찮아", "말아줘"}
+
+
+def _classify_user_intent(message: str) -> str:
+    """'confirm' | 'cancel' | 'other' — pendingAction 처리 전 사용자 의도 판정."""
+    tokens = set(_re.sub(r"[^가-힣a-zA-Z0-9]", " ", message.lower()).split())
+    if tokens & _CONFIRM_TOKENS:
+        return "confirm"
+    if tokens & _CANCEL_TOKENS:
+        return "cancel"
+    return "other"
+
+
+def _execute_pending_action(
+    pending_action: dict[str, Any],
+    *,
+    work_id: str | None,
+    target_country: str,
+    translation_id: int | None,
+) -> dict[str, Any]:
+    """pendingAction을 실제 DB에 반영. {type, saved, ...} 반환."""
+    action_type = pending_action.get("type", "")
+    original_word = pending_action.get("original_word", "")
+    new_value = pending_action.get("new_value", "")
+    category = pending_action.get("category", "")
+
+    if action_type in ("update_glossary", "add_glossary"):
+        if not work_id:
+            return {"type": action_type, "saved": False, "reason": "workId가 없어 glossary를 수정할 수 없습니다."}
+        result = db_repo.upsert_glossary_entry(
+            work_id=work_id,
+            target_country=target_country,
+            original_word=original_word,
+            translated_word=new_value,
+            glossary_type=category,
+        )
+        return {"type": action_type, **result}
+
+    if action_type == "delete_glossary":
+        if not work_id:
+            return {"type": action_type, "saved": False, "reason": "workId가 없어 glossary를 삭제할 수 없습니다."}
+        result = db_repo.delete_glossary_entry_by_word(
+            work_id=work_id,
+            target_country=target_country,
+            original_word=original_word,
+        )
+        return {"type": action_type, **result}
+
+    if action_type == "update_translation":
+        if not translation_id:
+            return {"type": action_type, "saved": False, "reason": "translationId가 없어 번역을 저장할 수 없습니다."}
+        result = db_repo.update_translation_text(translation_id, new_value)
+        return {"type": action_type, **result}
+
+    return {"type": action_type, "saved": False, "reason": f"알 수 없는 action type: {action_type}"}
+
+
 def _should_save_chat(payload: dict[str, Any]) -> bool:
     value = payload.get("saveChatMessages")
     if value is None:
@@ -232,13 +291,37 @@ def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("question is required")
     normalized = normalize_target_fields(payload)
     locale = normalized["targetLocale"]
+    target_country = normalized["targetCountry"]
 
     workflow = payload.get("workflow") or {}
     draft = workflow.get("draft") or {}
+
+    # translationId 조기 추출 → DB에서 번역 결과 로드 (inspectionReport 주입용)
+    translation_id = _payload_value(payload, "translationId", "translation_id") or workflow.get("translationId") or workflow.get("translation_id")
+    db_translation: dict[str, Any] | None = None
+    if translation_id is not None:
+        try:
+            db_translation = db_repo.get_translation_result(int(translation_id))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("get_translation_result failed (translation_id=%s): %r", translation_id, exc)
+
+    # work_id 확보 — 페이로드 우선, 없으면 episode → work 역추적
+    work_id: str | None = str(_payload_value(payload, "workId", "work_id") or "").strip() or None
+    if work_id is None and db_translation is not None:
+        ep_id = db_translation.get("episode_id")
+        if ep_id:
+            try:
+                derived = db_repo.get_work_id_by_episode(int(ep_id))
+                if derived is not None:
+                    work_id = str(derived)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("get_work_id_by_episode failed: %r", exc)
+
     reviewed = (
         str(_payload_value(payload, "currentTranslation", "current_translation", default="") or "")
         or workflow.get("finalTranslation")
         or workflow.get("reviewed_translation")
+        or (db_translation.get("translated_text") if db_translation else None)
         or draft.get("translation")
         or ""
     )
@@ -250,6 +333,34 @@ def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
             role = str(row.get("role") or "").strip()
             chat_history.append(ChatMessage(role="assistant" if role in {"ai", "assistant"} else "user", content=str(row["content"]).strip()))
 
+    # inspectionReport: DB 로드 우선(전체 리바이저 decisions), 없으면 페이로드 폴백
+    inspection_report: list[dict[str, Any]] = (
+        (db_translation.get("inspection_report") if db_translation else None)
+        or workflow.get("inspectionReport")
+        or []
+    )
+
+    # pendingAction 처리 — 이전 턴에서 제안된 액션에 대한 사용자 응답 판정
+    incoming_pending_action: dict[str, Any] | None = payload.get("pendingAction")
+    action_executed: dict[str, Any] | None = None
+    action_context = ""
+
+    if incoming_pending_action:
+        intent = _classify_user_intent(question)
+        if intent == "confirm":
+            action_executed = _execute_pending_action(
+                incoming_pending_action,
+                work_id=work_id,
+                target_country=target_country,
+                translation_id=int(translation_id) if translation_id is not None else None,
+            )
+            desc = incoming_pending_action.get("description", "")
+            status = "성공" if action_executed.get("saved") else f"실패({action_executed.get('reason', '')})"
+            action_context = f"[시스템: 사용자가 '{desc}' 액션을 승인하여 실행. 결과: {status}]"
+        elif intent == "cancel":
+            desc = incoming_pending_action.get("description", "")
+            action_context = f"[시스템: 사용자가 '{desc}' 액션을 취소했습니다.]"
+
     reply = _chatbot(locale).reply(
         user_message=question,
         source_text=source_text,
@@ -257,21 +368,28 @@ def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
         reviewed_translation=reviewed,
         translation_rationale="",  # translationRationale 폐지 — 챗봇에 넘길 내용은 추후 재정의(팀원 협의).
         used_references=[],
-        inspection_report=workflow.get("qaIssues") or {},
+        inspection_report=inspection_report,
         reader_endnotes=workflow.get("readerEndnotes") or [],
         work_title=str(payload.get("title") or ""),
         episode_id=str(_payload_value(payload, "episodeId", "episode_id", default="") or ""),
         translation_memory=[],
         chat_history=chat_history,
+        action_context=action_context,
     )
-    response = {
+
+    # 액션 실행 완료 후엔 새 pendingAction을 내보내지 않음
+    new_pending_action = reply.pending_action if action_executed is None else None
+
+    response: dict[str, Any] = {
         "answer": reply.answer,
         "proposedTranslation": reply.proposed_translation,
         "changeSummary": reply.change_summary,
         "needsUserConfirmation": reply.needs_user_confirmation,
+        "pendingAction": new_pending_action,
     }
+    if action_executed is not None:
+        response["actionExecuted"] = action_executed
 
-    translation_id = _payload_value(payload, "translationId", "translation_id") or workflow.get("translationId") or workflow.get("translation_id")
     if translation_id is not None and _should_save_chat(payload):
         assistant_text = reply.answer or ""
         if reply.proposed_translation:

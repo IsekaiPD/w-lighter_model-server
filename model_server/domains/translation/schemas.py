@@ -60,9 +60,11 @@ class InspectChatRequest(BaseModel):
     workflow: dict[str, Any] | None = None
     chatHistory: list[dict[str, Any]] | None = None
     title: str | None = Field(None, max_length=MAX_WORK_TITLE)
+    workId: str | None = Field(None, max_length=20, description="glossary 수정 시 필요")
     episodeId: str | None = Field(None, max_length=20)
     translationId: int | None = Field(None, description="주면 검수 챗봇 대화를 chat_messages에 저장")
     saveChatMessages: bool = Field(True, description="translationId가 있을 때 chat_messages에 저장")
+    pendingAction: dict[str, Any] | None = Field(None, description="이전 턴에서 제안된 액션 — 확인/취소 판정에 사용")
 
 
 class InspectChatResponse(BaseModel):
@@ -72,3 +74,5 @@ class InspectChatResponse(BaseModel):
     proposedTranslation: str | None = None
     changeSummary: str | None = None
     needsUserConfirmation: bool = False
+    pendingAction: dict[str, Any] | None = None
+    actionExecuted: dict[str, Any] | None = None
