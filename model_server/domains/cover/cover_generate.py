@@ -21,7 +21,7 @@ IMAGE_QUALITY = os.getenv("WLIGHTER_IMAGE_QUALITY", "medium")
 IMAGE_FORMAT = os.getenv("WLIGHTER_IMAGE_FORMAT", "png")
 
 USER_PROMPT_MAX_CHARS = 500
-AI_GENERATED_NOTICE = "이 이미지는 AI로 생성된 이미지입니다."
+AI_GENERATED_NOTICE = "이 이미지는 AI로 생성된 이미지입니다. 이미지 안의 문구는 정확하지 않거나 일부 깨질 수 있습니다."
 DEFAULT_VISIBLE_CHARACTER_LIMIT = 2
 
 GROUP_COVER_HINT_KEYWORDS = [
@@ -175,7 +175,11 @@ def build_cover_prompt(
         - 위의 "커버에 직접 등장시킬 핵심 인물"만 화면에 인물로 배치한다.
         - "참고용 인물"은 관계, 갈등, 분위기를 잡는 데만 사용하고 화면에 직접 등장시키지 않는다.
         - 사용자가 단체 구도를 명시하지 않았다면 인물 수를 늘리지 않는다.
-        - 표지 안에는 제목, 말풍선, 설명 문장, 로고, 워터마크를 넣지 않는다.
+        - 사용자 추가 요청에는 표지에 넣고 싶은 문구와 이미지 연출 요청이 함께 포함될 수 있다.
+        - 따옴표 안의 짧은 문구, 작품 제목처럼 보이는 문구, "문구는 ~" 형태의 요청은 표지 텍스트로 반영을 시도한다.
+        - 그 외 내용은 분위기, 구도, 배경, 소품, 인물 외형 요청으로 반영한다.
+        - 표지 텍스트는 짧고 크게 배치하되, AI 생성 특성상 글자가 정확하지 않거나 깨질 수 있다.
+        - 말풍선, 긴 설명 문장, 로고, 워터마크, 실존 브랜드는 넣지 않는다.
 
         [국가별 커버 스타일: {get_country_label(country)}]
         {get_country_cover_prompt(country)}

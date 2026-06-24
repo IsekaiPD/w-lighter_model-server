@@ -21,8 +21,9 @@ COMMON_COVER_RULES = dedent(
     Do not over-define character appearance when it is not specified in the character sheet.
     Unless the user explicitly requests a group composition, focus on one main character or one strong focal pair.
     Supporting characters should be used as context for mood and conflict, not placed prominently unless requested.
-    Leave some natural empty space where title typography can be added later.
-    Do not generate readable title text, sentences, speech bubbles, fake letters, logos, watermarks, real brands, real people, or copyrighted characters.
+    If the user requests cover text, try to place it as short, large, simple cover typography.
+    Cover text may be inaccurate or visually inconsistent because it is AI-generated.
+    Do not generate speech bubbles, long sentences, fake letters, logos, watermarks, real brands, real people, or copyrighted characters.
     Avoid explicit nudity, excessive violence, and dangerous depiction of minors.
     """
 ).strip()
