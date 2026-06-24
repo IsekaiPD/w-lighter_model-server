@@ -4,25 +4,9 @@ from typing import Any
 
 
 def translation_payload(config: Any, resources: Any, source_text: str, retrievals: list[Any]) -> dict[str, Any]:
-    reference_ids = [row.item.get("id", "") for row in retrievals if row.item.get("id")]
-    decisions = [
-        {
-            "source_span": ", ".join(row.item.get("ko_anchor_expression", []) or row.item.get("ko_expression", []) or []),
-            "reference_id": row.item.get("id", ""),
-            "reference_expression": row.item.get("expression", ""),
-            "translated_span": row.item.get("expression", ""),
-            "decision_type": row.item.get("translation_strategy", "reference"),
-            "reason": "Mock mode records the matched RAG row as a deterministic translation decision.",
-        }
-        for row in retrievals
-        if row.item.get("id")
-    ]
     return {
         "translation": f"[MOCK {resources.target_language}] {source_text}",
-        "strategy": "mock-reference" if retrievals else "mock-direct",
-        "rationale": "Mock mode bypassed the external model call and returned a deterministic draft.",
-        "reference_ids": reference_ids,
-        "translation_decisions": decisions,
+        "overview": "목 모드: 외부 모델 호출 없이 결정적 초벌을 반환했습니다.",
         "raw_response": {},
     }
 

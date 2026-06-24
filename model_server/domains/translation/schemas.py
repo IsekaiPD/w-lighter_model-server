@@ -41,13 +41,8 @@ class TranslateResponse(BaseModel):
     locale: str
     pipeline: str | None = None
     finalTranslation: str
-    deliveryStatus: str
-    userVisibleErrorCode: str | None = None
-    message: str = ""
-    translationRationale: dict[str, Any] = {}
     readerEndnotes: list[dict[str, Any]] = []
     authorReviewCards: list[dict[str, Any]] = []
-    qaIssues: list[dict[str, Any]] = []
     metadata: dict[str, Any] = {}
     # 화면설계서 번역 리포트 4종 묶음. 프론트가 분리/합성해 사용.
     translationReport: dict[str, Any] = {}

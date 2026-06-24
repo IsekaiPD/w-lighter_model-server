@@ -99,15 +99,10 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 |---|---|---|
 | `country` / `locale` | string | 정규화된 목표 |
 | `pipeline` | string\|null | 사용 파이프라인 |
-| `finalTranslation` | string | 최종 번역문 |
-| `deliveryStatus` | string | 예: `deliverable` |
-| `userVisibleErrorCode` | string\|null | 사용자 표시용 에러코드 |
-| `message` | string | 보조 메시지 |
-| `translationRationale` | object | 번역 근거(중첩). 리포트 4요소 아님 — `inspect-chat` 검수 챗봇 컨텍스트로 넘기는 용도(웹이 보관 후 전달) |
+| `finalTranslation` | string | 최종 번역문 (항상 deliver — 차단 상태 없음) |
 | `readerEndnotes` | array<object> | 독자용 문화 각주(없으면 `[]`). 각 항목 = `{keyword, koreanNote, targetNote, applied}` — 한국 문화 키워드 / 한국어 미주 / 대상언어 미주 / `applied`(0=미적용 기본, 웹 컨펌 시 1). **말미 목록 스타일**(번역문 위치 앵커링 없음, 스팬 필드 없음). `translationReport.readerEndnotes`도 동일 형태 |
-| `translationReport` | object | **웹 번역 리포트 4요소**. `{summary, glossaryCandidates, readerEndnotes, culturalRiskResult}` — `summary`(text, 5단: 번역가 overview + 말투/자연스러움/문화권 검수자 총평 + 최종수정 총평), `glossaryCandidates`(각 항목 `{source, suggested_target, category, reason, applied(0/1)}`), `readerEndnotes`(각 항목 `{keyword, koreanNote, targetNote, applied(0/1)}`), `culturalRiskResult`(문화리스크 = 리바이저 cultural 적용/보류 결정 `{reviewerType, problem, action(applied/deferred), reason, revisedSpan, ...}`). DB 컬럼 `summary/glossary_can/annotation_can/inspection_report`와 1:1. (`translationRationale`은 리포트가 아니라 **top-level**에 별도 — 검수 챗봇 컨텍스트용) |
+| `translationReport` | object | **웹 번역 리포트 4요소** `{summary, glossaryCandidates, readerEndnotes, inspectionReport}`. DB 컬럼 `summary/glossary_can/annotation_can/inspection_report`와 1:1. 각 요소 상세·실제 JSON은 **아래 "번역 리포트 4요소" 절** 참조. |
 | `authorReviewCards` | array<object> | 작가 리뷰 카드(말투/자연스러움/문화) |
-| `qaIssues` | array<object> | QA 이슈 |
 | `metadata` | object | 빌드/모델 메타 |
 | `internal` | object\|null | `includeInternal=true`일 때만 |
 | `persisted` | object | `saveTranslationResult` 저장 시도 시에만(`{saved, translation_id}`) — DB 영속화 공통 참조 |
@@ -115,6 +110,84 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 요청에 `saveTranslationResult`(bool, **기본 true**) + `episodeId`가 있으면 `translation_results`에 저장(번역문 + summary·glossary_can·annotation_can·inspection_report)하고 `persisted`로 결과(특히 `translation_id`)를 반환한다. 이 `translation_id`를 inspect-chat의 `translationId`로 넘기면 챗 로그가 연결된다.
 
 **에러**: `422`(`sourceText` 누락/빈 값·타입 불일치 — Pydantic 검증), `400`(`targetLocale`·`targetCountry` 둘 다 없음 또는 로케일 정규화 실패 — 서비스 검증), `503`(엔진 미준비).
+
+#### 번역 리포트 4요소 (translationReport) — 상세
+
+화면설계서의 번역 리포트 화면을 구성하는 4요소다. DB `translation_results`의 4개 컬럼과 1:1.
+
+| 요소(응답 키) | DB 컬럼 | 타입 | 의미 |
+|---|---|---|---|
+| `summary` | `summary` | string(text) | 5단 총평: **번역가 overview**(첫 번역가 실데이터) + 말투/자연스러움/문화권 **검수자 총평** + **최종 수정 총평**(리바이저). `\n`으로 묶인 단일 텍스트 |
+| `glossaryCandidates` | `glossary_can` | array<object> | 신규 용어 후보. 항목 `{source, suggested_target, category, reason, applied}`. `applied`=0 기본(웹 컨펌 시 1) |
+| `readerEndnotes` | `annotation_can` | array<object> | 독자용 문화 각주(말미 목록). 항목 `{keyword, koreanNote, targetNote, applied}`. 앵커링/스팬 없음 |
+| `inspectionReport` | `inspection_report` | array<object> | **리바이저 전체 적용/보류 결정**(voice·naturalness·cultural·glossary). 항목 `{reviewerType, sourceSpan, targetSpan, problem, action, reason, revisedSpan}`. **웹은 `reviewerType=='cultural'`만 필터해 "문화리스크"로 표시**, 챗봇 핸드오프는 전체 소비. `action` ∈ {`applied`,`deferred`}(glossary는 항상 applied), `revisedSpan`은 보류 시 빈 문자열 |
+
+> ⚠️ `inspectionReport` 변경(2026-06-24): 이전 `culturalRiskResult`(cultural만)에서 **전체 decisions로 확장 + 키명 변경**. 웹의 "문화리스크" 표시는 이제 **웹이 cultural을 필터**해야 함(이전엔 서버가 pre-filter). 옛 DB row의 `inspection_report`는 cultural-only 리스트라 읽을 때 모양 방어 권장.
+
+**실제 응답 예시** (`translationReport`):
+```json
+{
+  "translationReport": {
+    "summary": "번역가: 원문의 사건 진행과 감정선을 유지하며 일본어 독자에게 자연스럽게 읽히도록 했습니다.\n\n말투 검수자 : 캐릭터 말투 일관됨.\n자연스러움 검수자 : 직역투 1건 보정 권장.\n문화권 리스크 검수자 : '삼복더위' 배경 설명 권장.\n\n최종 수정 : 말투 1건 반영, 직역투 1건 반영, 문화 1건 보류(각주 대체).",
+    "glossaryCandidates": [
+      {
+        "source": "철수",
+        "suggested_target": "チョルス",
+        "category": "person",
+        "reason": "주요 등장인물 고유명사 음역.",
+        "applied": 0
+      }
+    ],
+    "readerEndnotes": [
+      {
+        "keyword": "삼복더위",
+        "koreanNote": "한여름 가장 더운 삼복 기간의 더위를 가리키는 한국 표현.",
+        "targetNote": "韓国で真夏の最も暑い「三伏」の時期の暑さを指す表現。",
+        "applied": 0
+      }
+    ],
+    "inspectionReport": [
+      {
+        "reviewerType": "voice",
+        "sourceSpan": "철수가 말했다",
+        "targetSpan": "チョルスが申しました",
+        "problem": "캐릭터 말투가 장면보다 과하게 정중함.",
+        "action": "applied",
+        "reason": "장면상 평어가 적절.",
+        "revisedSpan": "チョルスが言った"
+      },
+      {
+        "reviewerType": "naturalness",
+        "sourceSpan": "비가 억수같이 쏟아졌다",
+        "targetSpan": "雨が水のように降った",
+        "problem": "직역투로 어색함.",
+        "action": "applied",
+        "reason": "관용 표현으로 자연화.",
+        "revisedSpan": "雨が土砂降りになった"
+      },
+      {
+        "reviewerType": "cultural",
+        "sourceSpan": "삼계탕",
+        "targetSpan": "サムゲタン",
+        "problem": "현지 독자에게 문화 배경 설명이 필요.",
+        "action": "deferred",
+        "reason": "본문 수정 대신 독자 각주로 대체.",
+        "revisedSpan": ""
+      },
+      {
+        "reviewerType": "glossary",
+        "sourceSpan": "철수",
+        "targetSpan": "チョルス",
+        "problem": "승인 용어집 표기 일관성.",
+        "action": "applied",
+        "reason": "승인 표기 강제(glossary는 항상 반영).",
+        "revisedSpan": "チョルス"
+      }
+    ]
+  }
+}
+```
+위에서 웹 "문화리스크" 화면 = `inspectionReport.filter(d => d.reviewerType === 'cultural')`.
 
 ---
 

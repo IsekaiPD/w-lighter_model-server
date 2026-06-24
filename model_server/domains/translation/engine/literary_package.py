@@ -47,29 +47,10 @@ class RAGPackets:
 
 
 @dataclass(slots=True)
-class TranslationRationaleItem:
-    sourceSpan: str
-    targetSpan: str
-    category: str
-    strategy: str
-    explanation: str
-
-
-@dataclass(slots=True)
-class TranslationRationale:
-    title: str
-    overview: str
-    styleIntent: str
-    strategyRatio: dict[str, int]
-    items: list[TranslationRationaleItem] = field(default_factory=list)
-
-
-@dataclass(slots=True)
 class V3LiteraryPackageResult:
     pipeline: str
     deliveryStatus: str
     finalTranslation: str
-    translationRationale: TranslationRationale
     qaIssues: list[dict[str, Any]] = field(default_factory=list)
     authorReviewCards: list[dict[str, Any]] = field(default_factory=list)
     internal: dict[str, Any] = field(default_factory=dict)
@@ -1428,34 +1409,6 @@ def run_translation_loop(source_text: str, target_locale: str, translator_guidel
     return TranslationLoopResult("" if status.startswith("blocked_translation_") else final, iterations, judge, issues, _review_cards_from_issues(issues, notes), status, error_code)
 
 
-def _glossary_rationale_items(final_translation: str, work_memory: WorkMemory | None) -> list[TranslationRationaleItem]:
-    if not work_memory:
-        return []
-    items = []
-    for entry in work_memory.approvedGlossary[:8]:
-        if entry.target and entry.target in final_translation:
-            items.append(TranslationRationaleItem(entry.source, entry.target, "terminology", "approved_glossary", "작품 내 용어 일관성을 위해 승인된 표기인 '{target}'을 사용했습니다.".format(target=entry.target)))
-    return items
-
-
-def write_translation_rationale(source_text: str, final_translation: str, target_locale: str, idiom_notes: list[IdiomNote], translator_guideline: str, editor_guideline: str, qa_issues: list[dict[str, Any]], work_memory: Any = None) -> TranslationRationale:
-    del source_text, target_locale, translator_guideline, editor_guideline
-    memory = normalize_work_memory(work_memory, target_locale="")
-    blocked = not _clean(final_translation)
-    items: list[TranslationRationaleItem] = []
-    if not blocked:
-        for note in idiom_notes[:6]:
-            items.append(TranslationRationaleItem(note.sourceSpan, "", "idiom", "adaptive", "{span}은 {meaning}이라는 뜻이므로 이미지 직역보다 장면의 감정과 압박이 자연스럽게 전달되도록 처리했습니다.".format(span=note.sourceSpan, meaning=note.meaningKo)))
-        items.extend(_glossary_rationale_items(final_translation, memory))
-        if not items:
-            items.append(TranslationRationaleItem("", "", "style", "balanced", "원문의 사건 진행과 감정선을 유지하면서 목표 언어 독자가 바로 읽을 수 있는 문장 흐름을 우선했습니다."))
-    for issue in qa_issues[:2]:
-        if issue.get("priority") != "P0":
-            items.append(TranslationRationaleItem(str(issue.get("sourceSpan") or ""), "", "review", "defer_to_author_review", str(issue.get("message") or "검수자가 확인할 여지가 있는 표현입니다.")))
-    literal = 35 if idiom_notes else 55
-    return TranslationRationale("왜 이렇게 번역했는지", "번역이 안전 기준을 통과하지 못해 독자용 번역을 비웠습니다." if blocked else "원문의 의미를 보존하되 관용어와 장르 문체는 목표 언어에서 자연스럽게 읽히도록 조정했습니다.", "대사와 서술의 속도를 살리고, 과도한 직역보다 웹소설 독자의 몰입감을 우선합니다.", {"literal": literal, "adaptive": 100 - literal}, items[:8])
-
-
 def _failure_signals(issues: list[dict[str, Any]]) -> list[str]:
     mapping = {"idiom_literal_risk_detected", "glossary_consistency", "glossary_forbidden_translation", "korean_residue_detected", "hangul_residue_integrity", "bracket_block_count_mismatch", "bracket_block_role_or_order_mismatch", "system_message_missing"}
     signals = []
@@ -1476,7 +1429,6 @@ def build_v3_literary_package(source_text: str, target_locale: str, *, genre: st
     rag = build_rag_packets(source_text, target_locale, genre, notes, work_memory=memory, source_evidence=source_evidence)
     guidelines = build_v3_guidelines(source_text, target_locale, genre, notes, rag)
     loop = run_translation_loop(source_text, target_locale, guidelines.translatorGuideline, guidelines.editorGuideline, idiom_notes=notes, max_iterations=max_iterations, translate_once=translate_once, work_memory=memory)
-    rationale = write_translation_rationale(source_text, loop.finalTranslation, target_locale, notes, guidelines.translatorGuideline, guidelines.editorGuideline, loop.qaIssues, work_memory=memory)
     internal = {"idiomNotes": [asdict(n) for n in notes], "idiomDetection": {"mode": mode, "notes": [asdict(n) for n in notes], "ftEnabled": False}, "characterReferences": source_evidence.get("characterReferences") or [], "entityCandidates": source_evidence.get("entityCandidates") or [], "ragPackets": asdict(rag), "workMemory": asdict(memory) if memory else None, "guidelines": asdict(guidelines), "iterations": loop.iterations, "judge": loop.judge, "failureSignals": _failure_signals(loop.qaIssues), "maxIterations": min(max(1, int(max_iterations or 2)), 2), "maxRevisionPass": 1, "mockBoundaries": {"idiomDetector": "rule adapter by default; llm/ft adapters are placeholders", "sourceAnalyzer": "deterministic source-evidence adapter; no LLM call", "ragPackets": "static/mock packet builder", "workMemory": "in-memory payload only"}}
     internal["userVisibleErrorCode"] = loop.userVisibleErrorCode
-    return V3LiteraryPackageResult("v3_literary_package", loop.deliveryStatus, loop.finalTranslation, rationale, loop.qaIssues, loop.authorReviewCards, internal, userVisibleErrorCode=loop.userVisibleErrorCode)
+    return V3LiteraryPackageResult("v3_literary_package", loop.deliveryStatus, loop.finalTranslation, loop.qaIssues, loop.authorReviewCards, internal, userVisibleErrorCode=loop.userVisibleErrorCode)

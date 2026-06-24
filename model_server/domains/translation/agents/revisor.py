@@ -5,7 +5,7 @@ draft 번역 + 리뷰어 findings(voice·naturalness·cultural·glossary)를 받
 - voice·naturalness·cultural : 취사선택(보류 가능, 사유 기록)
 - glossary                    : 항상 applied(거부 불가 — 승인 용어집 일관성 강제)
 
-반환 decisions[]는 culturalRiskResult·translationRationale·챗봇 핸드오프의 공통 원천.
+반환 decisions[]는 inspectionReport(전체)·챗봇 핸드오프의 공통 원천. 웹은 cultural만 필터해 문화리스크로 표시.
 그래프 배선은 별도(이 파일은 독립 부품).
 """
 from __future__ import annotations
