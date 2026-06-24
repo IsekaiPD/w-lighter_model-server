@@ -12,6 +12,16 @@ from .character_extract import extract_characters
 logger = get_logger("character_extract.service")
 
 
+def display_gender(value: Any) -> str:
+    """DB/LLM 성별 코드값(M/F/U) → 화면/API 응답용 한글 표시값."""
+    token = str(value or "").strip().upper()
+    if token == "M":
+        return "남"
+    if token == "F":
+        return "여"
+    return "미상"
+
+
 def extract(payload: dict[str, Any]) -> dict[str, Any]:
     result = extract_characters(
         work_title=payload.get("workTitle") or payload.get("title") or "",
@@ -30,6 +40,11 @@ def extract(payload: dict[str, Any]) -> dict[str, Any]:
         except Exception as exc:  # noqa: BLE001
             logger.warning("character persistence failed: %r", exc)
             result["persisted"] = {"saved": False, "reason": f"{type(exc).__name__}: {exc}"}
+
+    # DB 저장은 M/F/U로 처리하고, 프론트/API 응답에서만 남/여/미상으로 변환한다.
+    for character in result.get("characters") or []:
+        if isinstance(character, dict):
+            character["gender"] = display_gender(character.get("gender"))
 
     return result
 
