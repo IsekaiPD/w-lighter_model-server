@@ -19,6 +19,7 @@ IMAGE_MODEL = os.getenv("WLIGHTER_IMAGE_MODEL", "gpt-image-2")
 IMAGE_SIZE = os.getenv("WLIGHTER_IMAGE_SIZE", "1024x1536")
 IMAGE_QUALITY = os.getenv("WLIGHTER_IMAGE_QUALITY", "medium")
 IMAGE_FORMAT = os.getenv("WLIGHTER_IMAGE_FORMAT", "png")
+COVER_PROMPT_MODEL = os.getenv("WLIGHTER_COVER_PROMPT_MODEL", os.getenv("OPENAI_MODEL", "gpt-5.4-mini"))
 
 USER_PROMPT_MAX_CHARS = 500
 AI_GENERATED_NOTICE = "이 이미지는 AI로 생성된 이미지입니다. 이미지 안의 문구는 정확하지 않거나 일부 깨질 수 있습니다."
@@ -97,47 +98,47 @@ def format_visual_subject(character: dict, index: int) -> str:
     )
 
 
-def format_reference_character(character: dict) -> str:
-    name = value(character, "char_name")
-    if not name:
-        return ""
-
-    parts = [
-        value(character, "role"),
-        value(character, "profile_label"),
-        value(character, "relationships"),
-    ]
-    compact = " / ".join(part for part in parts if part)
-    return f"- {name}: {compact}" if compact else f"- {name}"
+def format_character_full_context(character: dict, index: int) -> str:
+    name = value(character, "char_name") or f"인물 {index}"
+    return "\n".join(
+        [
+            f"[{index}] {name}",
+            f"- 역할: {value(character, 'role') or '-'}",
+            f"- 직업/소속/정체성: {value(character, 'profile_label') or '-'}",
+            f"- 성별/나이: {value(character, 'gender') or '-'} / {value(character, 'age') or '-'}",
+            f"- 외형: {value(character, 'appearance') or '-'}",
+            f"- 관계: {value(character, 'relationships') or '-'}",
+            f"- 세부 설정/분위기: {value(character, 'detail_setting') or '-'}",
+        ]
+    )
 
 
 def format_characters_for_cover(characters: list[dict], *, user_prompt: str = "") -> str:
     if not characters:
-        return "캐릭터 설정집이 제공되지 않았습니다. 작품 제목, 장르, 시놉시스의 분위기를 중심으로 표지를 구성합니다."
+        return "캐릭터 설정집이 제공되지 않았습니다. 장르와 시놉시스의 분위기를 중심으로 표지를 구성합니다."
 
     indexed = [(index, character) for index, character in enumerate(characters, start=1) if isinstance(character, dict)]
     sorted_characters = sorted(indexed, key=lambda pair: character_priority(pair[1], pair[0]))
-    visible_limit = 4 if is_group_cover_requested(user_prompt) else DEFAULT_VISIBLE_CHARACTER_LIMIT
+    default_visible_limit = 4 if is_group_cover_requested(user_prompt) else DEFAULT_VISIBLE_CHARACTER_LIMIT
 
-    visual_subjects = sorted_characters[:visible_limit]
-    reference_characters = sorted_characters[visible_limit:]
-
-    visual_blocks = [
+    default_subjects = sorted_characters[:default_visible_limit]
+    default_blocks = [
         format_visual_subject(character, output_index)
-        for output_index, (_, character) in enumerate(visual_subjects, start=1)
+        for output_index, (_, character) in enumerate(default_subjects, start=1)
     ]
-    reference_lines = [
-        line
-        for _, character in reference_characters
-        if (line := format_reference_character(character))
+    all_character_blocks = [
+        format_character_full_context(character, index)
+        for index, character in indexed
     ]
 
     return "\n\n".join(
         [
-            "[커버에 직접 등장시킬 핵심 인물]",
-            "\n\n".join(visual_blocks) or "직접 등장시킬 인물 정보 없음.",
-            "[직접 등장시키지 말고 분위기/갈등 참고용으로만 사용할 인물]",
-            "\n".join(reference_lines) if reference_lines else "추가 참고 인물 없음.",
+            "[기본 표지 후보 인물]",
+            "\n\n".join(default_blocks) or "기본 후보 인물 정보 없음.",
+            "[전체 캐릭터 설정집]",
+            "\n\n".join(all_character_blocks) if all_character_blocks else "전체 캐릭터 정보 없음.",
+            "[캐릭터 선택 규칙]",
+            "사용자 추가 요청에 특정 캐릭터 포함/제외/단독 등장 요청이 있으면 기본 후보보다 사용자 요청을 우선한다.",
         ]
     )
 
@@ -161,7 +162,6 @@ def build_cover_prompt(
         {COMMON_COVER_RULES}
 
         [작품 정보]
-        작품명: {work_title.strip() or '제목 미입력'}
         작품 장르: {genre.strip() or '장르 미입력'}
 
         [시놉시스 요약/원문]
@@ -172,13 +172,15 @@ def build_cover_prompt(
 
         [커버 구도 지시]
         - 이 이미지는 캐릭터 설정집 전체를 시각화하는 화면이 아니라 작품 판매용 표지다.
-        - 위의 "커버에 직접 등장시킬 핵심 인물"만 화면에 인물로 배치한다.
-        - "참고용 인물"은 관계, 갈등, 분위기를 잡는 데만 사용하고 화면에 직접 등장시키지 않는다.
-        - 사용자가 단체 구도를 명시하지 않았다면 인물 수를 늘리지 않는다.
-        - 사용자 추가 요청에는 표지에 넣고 싶은 문구와 이미지 연출 요청이 함께 포함될 수 있다.
-        - 따옴표 안의 짧은 문구, 작품 제목처럼 보이는 문구, "문구는 ~" 형태의 요청은 표지 텍스트로 반영을 시도한다.
-        - 그 외 내용은 분위기, 구도, 배경, 소품, 인물 외형 요청으로 반영한다.
-        - 표지 텍스트는 짧고 크게 배치하되, AI 생성 특성상 글자가 정확하지 않거나 깨질 수 있다.
+        - 사용자 추가 요청을 최우선으로 반영하되, 원작 설정/장르/시대/관계 구조를 바꾸지 않는다.
+        - 사용자가 특정 캐릭터를 넣어달라고 하면 주인공/주연/조연 여부와 관계없이 보이는 인물로 포함한다.
+        - 사용자가 특정 캐릭터만 나오게 요청하면 그 캐릭터만 보이는 인물로 사용한다.
+        - 사용자가 특정 캐릭터를 제외해달라고 하면 그 캐릭터를 보이는 인물에서 제외한다.
+        - 사용자가 단체 구도를 요청하지 않았다면 기본적으로 한 명의 중심 인물 또는 중심 페어 위주로 구성한다.
+        - 추가 요청에 제목/문구 삽입 요청이 없으면 표지 안에는 작품명, 제목, 문구, 글자, 타이포그래피를 넣지 않는다.
+        - 제목/문구는 사용자가 추가 요청에 정확한 텍스트를 직접 적고 표지에 넣어달라고 요청한 경우에만 넣는다.
+        - 위치를 함께 적은 경우에는 가능한 한 해당 위치에 배치하고, 위치가 없으면 표지 구도에 어울리는 짧고 큰 제목 타이포그래피로 배치한다.
+        - 원문 작품명은 표지 텍스트로 자동 삽입하지 않는다.
         - 말풍선, 긴 설명 문장, 로고, 워터마크, 실존 브랜드는 넣지 않는다.
 
         [국가별 커버 스타일: {get_country_label(country)}]
@@ -188,6 +190,60 @@ def build_cover_prompt(
         {user_block}
         """
     ).strip()
+
+
+def refine_cover_prompt_with_llm(*, client: OpenAI, base_prompt: str) -> str:
+    """
+    작품 데이터, 국가별 스타일, 캐릭터 설정집, 사용자 추가 요청을 기반으로
+    이미지 생성 모델에 넘길 최종 프롬프트를 내부에서 작성한다.
+    실패하면 기존 base_prompt를 반환해 커버 생성 흐름을 유지한다.
+    """
+    system_prompt = dedent(
+        """
+        You are an internal prompt writer for a web novel cover image generator.
+        Read the source prompt and write one final English image-generation prompt.
+
+        Core rules:
+        - The user's additional request has the highest priority unless it breaks safety rules or contradicts the original story facts.
+        - Do not invent new characters, relationships, genres, eras, costumes, locations, or story settings.
+        - Preserve the original story setting, era, genre, character roles, relationship structure, and mood.
+        - Country-market style may affect only cover presentation, composition, rendering, lighting, and market appeal.
+        - If the user asks to include a specific character, include that character as a visible cover subject even if they are a supporting character.
+        - If the user asks for only a specific character to appear, show only that character as the visible subject.
+        - If the user asks to exclude a specific character, do not include that character as a visible subject.
+        - If the user asks for a group composition, include the requested group or character set.
+        - If no specific character composition is requested, use one main character or one strong focal pair based on the source prompt.
+        - Do not automatically add cover title text.
+        - Include title/text only when the user explicitly requested text insertion and provided the exact text.
+        - If placement is provided, follow it as closely as possible.
+        - If placement is not provided, place the exact text as short, large, simple cover typography in a visually appropriate area.
+        - If there is no explicit text insertion request or no exact text, clearly instruct: no text, no title, no typography.
+        - Keep the final prompt concise, visual, and directly usable by an image generation model.
+        - Include negative instructions against fake letters, logos, watermarks, real brands, speech bubbles, long text, unsafe sexual content, excessive violence, and unsafe depictions of minors.
+        - Return only the final image prompt. Do not include explanations, markdown, JSON, labels, or analysis.
+        """
+    ).strip()
+
+    user_content = dedent(
+        f"""
+        Source prompt:
+        {base_prompt}
+        """
+    ).strip()
+
+    try:
+        response = client.chat.completions.create(
+            model=COVER_PROMPT_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ],
+            temperature=0.2,
+        )
+        refined_prompt = (response.choices[0].message.content or "").strip()
+        return refined_prompt or base_prompt
+    except Exception:
+        return base_prompt
 
 
 def generate_cover_image(
@@ -201,7 +257,7 @@ def generate_cover_image(
     dry_run: bool = False,
 ) -> dict:
     country = normalize_country_code(target_country)
-    final_prompt = build_cover_prompt(
+    base_prompt = build_cover_prompt(
         work_title=work_title,
         genre=genre,
         synopsis=synopsis,
@@ -215,7 +271,7 @@ def generate_cover_image(
             "status": "dry_run",
             "target_country": country,
             "image_base64": "",
-            "final_prompt": final_prompt,
+            "final_prompt": base_prompt,
             "model_name": IMAGE_MODEL,
             "size": IMAGE_SIZE,
             "quality": IMAGE_QUALITY,
@@ -225,6 +281,7 @@ def generate_cover_image(
         }
 
     client = OpenAI()
+    final_prompt = refine_cover_prompt_with_llm(client=client, base_prompt=base_prompt)
     response = client.images.generate(
         model=IMAGE_MODEL,
         prompt=final_prompt,
