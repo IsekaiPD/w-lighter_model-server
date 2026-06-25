@@ -9,14 +9,14 @@ NORMAL_NODE_SIZE = (184, 84)
 MAIN_NODE_SIZE = (222, 100)
 
 STYLE_COLORS = {
-    "romance": "#b56b82",
-    "partnership": "#6c8a62",
-    "hierarchy": "#7562a0",
-    "rivalry": "#c95b4a",
-    "mentorship": "#8a6bbb",
-    "family": "#b8844c",
-    "organization": "#5d7c99",
-    "neutral": "#b99b72",
+    "romance": "#C94C7C",
+    "partnership": "#2F8F5B",
+    "hierarchy": "#5B3FA3",
+    "rivalry": "#D94A38",
+    "mentorship": "#2A9D8F",
+    "family": "#D17A22",
+    "organization": "#3F6FA3",
+    "neutral": "#7A8794",
 }
 
 STYLE_LABELS = {
@@ -170,7 +170,7 @@ def build_relation_html(*, work_title: str, relation_data: dict) -> str:
 
         dx, dy = x2 - x1, y2 - y1
         distance = max(math.hypot(dx, dy), 1)
-        curve_strength = 18 + (index % 3) * 5
+        curve_strength = 24 + (index % 3) * 6
         curve_direction = -1 if index % 2 else 1
         control_x = (x1 + x2) / 2 + (-dy / distance) * curve_strength * curve_direction
         control_y = (y1 + y2) / 2 + (dx / distance) * curve_strength * curve_direction
@@ -250,18 +250,18 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 .edge-both {{ stroke-width:3.1; opacity:.82; }}
 .content-grid {{ display:grid; grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr); gap:18px; margin-top:18px; }}
 .panel {{ background:rgba(254,249,247,.86); border:1px solid rgba(207,195,251,.38); border-radius:24px; padding:18px; box-shadow:0 10px 26px rgba(45,36,64,.08); }}
-.panel h2 {{ margin:0 0 12px; font-size:20px; color:var(--main); }}
+.panel h2 {{ margin:0 0 12px; font-size:22px; color:var(--main); }}
 .item {{ padding:12px 0; border-top:1px solid rgba(183,169,230,.28); }}
 .item:first-of-type {{ border-top:0; }}
-.item-title {{ font-weight:900; font-size:16px; }}
+.item-title {{ font-weight:900; font-size:18px; line-height:1.45; }}
 .relation-type {{ color:#A89BD4; font-weight:800; }}
-.item-meta {{ margin-top:4px; color:var(--muted); font-size:15px; line-height:1.55; }}
-.group-chip {{ display:inline-block; margin:4px 6px 0 0; padding:6px 10px; border-radius:999px; background:#E9E1FF; font-size:13px; font-weight:800; color:#6E5BB8; }}
-.legend {{ display:flex; flex-wrap:wrap; gap:8px 12px; margin-top:12px; color:var(--muted); font-size:13px; }}
+.item-meta {{ margin-top:7px; color:var(--muted); font-size:17px; line-height:1.65; }}
+.group-chip {{ display:inline-block; margin:4px 6px 0 0; padding:7px 11px; border-radius:999px; background:#E9E1FF; font-size:15px; font-weight:800; color:#6E5BB8; }}
+.legend {{ display:flex; flex-wrap:wrap; gap:8px 12px; margin-top:12px; color:var(--muted); font-size:15px; }}
 .legend-item {{ display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }}
 .legend-item i {{ width:18px; height:3px; border-radius:999px; display:inline-block; opacity:.88; }}
-.notice {{ margin-top:14px; color:var(--muted); font-size:13px; }}
-.warning {{ background:#F9E9FA; border:1px solid rgba(248,215,245,.90); color:#6E5BB8; padding:10px 12px; border-radius:14px; margin-top:8px; font-size:14px; line-height:1.5; }}
+.notice {{ margin-top:14px; color:var(--muted); font-size:14px; }}
+.warning {{ background:#F9E9FA; border:1px solid rgba(248,215,245,.90); color:#6E5BB8; padding:10px 12px; border-radius:14px; margin-top:8px; font-size:16px; line-height:1.6; }}
 @media(max-width:900px) {{ .header{{flex-direction:column;}} .content-grid{{grid-template-columns:1fr;}} }}
 </style>
 </head>
