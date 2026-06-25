@@ -56,7 +56,7 @@ class RevisionResult:
 
 
 def _compact_findings(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """reviewFindings(v3 issue dict) → 리바이저 프롬프트용 간결 뷰."""
+    """reviewFindings(issue dict) → 리바이저 프롬프트용 간결 뷰."""
     compact: list[dict[str, Any]] = []
     for finding in findings:
         compact.append(

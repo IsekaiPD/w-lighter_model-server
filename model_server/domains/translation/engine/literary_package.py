@@ -29,7 +29,7 @@ class WorkMemory:
 
 
 @dataclass(slots=True)
-class V3LiteraryPackageResult:
+class LiteraryPackageResult:
     pipeline: str
     finalTranslation: str
     qaIssues: list[dict[str, Any]] = field(default_factory=list)
@@ -97,7 +97,7 @@ def normalize_work_memory(work_memory: Any, target_locale: str) -> WorkMemory | 
 
 
 def build_sample_work_memory(target_locale: str, work_id: str | None = "sample_work") -> dict[str, Any]:
-    """Return a small in-memory WorkMemory payload for v3 lab/smoke testing."""
+    """Return a small in-memory WorkMemory payload for lab/smoke testing."""
     locale = _clean(target_locale) or "ko_ja"
     if locale == "ko_en_us":
         glossary = [

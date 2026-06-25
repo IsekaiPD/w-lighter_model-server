@@ -12,7 +12,7 @@ from .agents.direct_translator import DirectTranslationResult
 from .text_processing.terminology import extract_noun_terminology_candidates, render_terminology_context
 from .engine.literary_package import (
     GlossaryEntry,
-    V3LiteraryPackageResult,
+    LiteraryPackageResult,
     WorkMemory,
     build_sample_work_memory,
 )
@@ -61,7 +61,7 @@ __all__ = [
     "TranslationMode",
     "TranslationPipeline",
     "DirectTranslationResult",
-    "V3LiteraryPackageResult",
+    "LiteraryPackageResult",
     "WorkMemory",
     "TARGET_COUNTRY_TO_LOCALE",
     "TARGET_LOCALE_TO_COUNTRY",

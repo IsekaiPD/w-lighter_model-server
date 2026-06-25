@@ -1,6 +1,6 @@
 """번역 파이프라인 오케스트레이터.
 
-v3 문학 번역 그래프에 번역기·문화주석 RAG·각주 작성기·리뷰어를 조립해 실행하는 진입점.
+문학 번역 그래프에 번역기·문화주석 RAG·각주 작성기·리뷰어를 조립해 실행하는 진입점.
 """
 from __future__ import annotations
 
@@ -13,8 +13,8 @@ from .agents.revisor import RevisorAgent
 from .agents.residue_repairer import KoreanResidueRepairer
 from .config import PipelineConfig
 from .retrieval.annotation_retriever import AnnotationRetriever
-from .engine.graph_orchestrator import build_v3_graph_literary_package
-from .engine.literary_package import V3LiteraryPackageResult
+from .engine.graph_orchestrator import build_graph_literary_package
+from .engine.literary_package import LiteraryPackageResult
 from .glossary.store import normalize_category
 from .text_processing.glossary_normalize import canonical_ko_key, light_text
 
@@ -70,11 +70,11 @@ def _hard_glossary_context(work_memory: dict[str, Any] | None) -> str:
     )
 
 
-# 리뷰어 출력(reviewers.py) → v3 그래프 issue 형식 어댑터
+# 리뷰어 출력(reviewers.py) → 그래프 issue 형식 어댑터
 _SECTION_LABELS = {"voice": "말투", "naturalness": "자연스러움", "cultural": "문화권 유의사항", "glossary": "용어집"}
 
 
-def _review_issue_to_v3(reviewer_type: str, issue: Any) -> dict[str, Any]:
+def _review_issue_adapter(reviewer_type: str, issue: Any) -> dict[str, Any]:
     # advisory 전용: severity/priority 없이 사용자 취사선택 카드로만 다룬다.
     # (하류 _issue_priority가 priority 부재 시 P3로 폴백 → repair P0 트리거와 무관)
     return {
@@ -115,7 +115,7 @@ def build_residue_repair_hook(repairer: KoreanResidueRepairer) -> Callable[[dict
 
 
 def build_reviewer_hook(reviewers: dict[str, Any]) -> Callable[[dict[str, Any], str], list[dict[str, Any]]]:
-    """후보 번역을 voice/naturalness/cultural/glossary 리뷰어로 검토해 v3 issue 리스트를 만든다.
+    """후보 번역을 voice/naturalness/cultural/glossary 리뷰어로 검토해 issue 리스트를 만든다.
 
     등록되지 않은 reviewer_type과 빈 번역은 빈 리스트를 반환한다.
     glossary 리뷰어에는 확정 승인 용어집(state["approvedGlossary"])을 함께 넘긴다.
@@ -166,7 +166,7 @@ def build_reviewer_hook(reviewers: dict[str, Any]) -> Callable[[dict[str, Any], 
                 )
             if fresh:
                 state["glossaryCandidates"] = fresh
-        return [_review_issue_to_v3(reviewer_type, issue) for issue in (result.issues or [])]
+        return [_review_issue_adapter(reviewer_type, issue) for issue in (result.issues or [])]
 
     return _hook
 
@@ -197,7 +197,7 @@ class TranslationPipeline:
         max_iterations: int = 2,
         debug_capture_model_outputs: bool = False,
         debug_artifact_dir: str | None = None,
-    ) -> V3LiteraryPackageResult:
+    ) -> LiteraryPackageResult:
         memory_context = _hard_glossary_context(work_memory)
 
         def translate_once(strict_locale_retry: bool, retry_attempt: int, revision_context: str = "") -> tuple[str, dict[str, Any]]:
@@ -231,7 +231,7 @@ class TranslationPipeline:
             # 첫 번역가의 overview(번역가 노트)를 metadata에 실어 그래프→summary로 전달.
             return direct.final_translation, {**direct.metadata, "draftOverview": (direct.draft or {}).get("overview", "")}
 
-        return build_v3_graph_literary_package(
+        return build_graph_literary_package(
             source_text,
             self.config.resolved_resources().locale,
             genre=genre,
@@ -246,7 +246,7 @@ class TranslationPipeline:
         )
 
     # service가 호출하는 호환 별칭.
-    def run_v3_literary_package(
+    def run_literary_package(
         self,
         source_text: str,
         *,
@@ -255,7 +255,7 @@ class TranslationPipeline:
         max_iterations: int = 2,
         debug_capture_model_outputs: bool = False,
         debug_artifact_dir: str | None = None,
-    ) -> V3LiteraryPackageResult:
+    ) -> LiteraryPackageResult:
         return self.run(
             source_text,
             genre=genre,
@@ -275,7 +275,7 @@ def run_translation(
     max_iterations: int = 2,
     debug_capture_model_outputs: bool = False,
     debug_artifact_dir: str | None = None,
-) -> V3LiteraryPackageResult:
+) -> LiteraryPackageResult:
     """편의 함수: 1회성 호출용. (반복 호출은 TranslationPipeline 인스턴스 재사용 권장)"""
     pipeline = TranslationPipeline(config)
     return pipeline.run(

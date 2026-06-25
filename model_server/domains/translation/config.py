@@ -11,7 +11,7 @@ from .infra.project_paths import package_project_root
 
 class TranslationMode(str, Enum):
     # 단일 번역 모드.
-    V3_LITERARY_PACKAGE = "v3_literary_package"
+    LITERARY_PACKAGE = "literary_package"
 
 
 ALLOWED_TRANSLATION_MODELS = (
@@ -52,7 +52,7 @@ def validate_translation_model(model: str, *, field_name: str = "model") -> str:
 @dataclass(slots=True)
 class PipelineConfig:
     locale: str = KO_JA.locale
-    mode: TranslationMode | str = TranslationMode.V3_LITERARY_PACKAGE
+    mode: TranslationMode | str = TranslationMode.LITERARY_PACKAGE
     resources: LocaleResources | None = None
     rag_dataset_path: Path | None = None
     idiom_augmentation_paths: tuple[Path, ...] | list[Path] | None = None

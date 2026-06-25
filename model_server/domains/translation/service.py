@@ -44,7 +44,7 @@ def get_translation_pipeline(
         pipe = TranslationPipeline(
             PipelineConfig(
                 locale=locale,
-                mode=TranslationMode.V3_LITERARY_PACKAGE,
+                mode=TranslationMode.LITERARY_PACKAGE,
                 mock=mock,
                 model_override=model_override,
             )
@@ -87,7 +87,7 @@ def _blocked_response(*, country: str, locale: str, block_reason: str) -> dict[s
     return {
         "country": country,
         "locale": locale,
-        "pipeline": "v3_literary_package",
+        "pipeline": "literary_package",
         "finalTranslation": message,
         "readerEndnotes": [],
         "authorReviewCards": [],
@@ -133,7 +133,7 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
 
     pipeline = get_translation_pipeline(locale, model_override=model_override)
     result = asdict(
-        pipeline.run_v3_literary_package(
+        pipeline.run_literary_package(
             source_text,
             genre=genre,
             work_memory=work_memory,
@@ -146,7 +146,7 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
 
     final_translation = result.get("finalTranslation", "")
     metadata = {
-        "mode": TranslationMode.V3_LITERARY_PACKAGE.value,
+        "mode": TranslationMode.LITERARY_PACKAGE.value,
         "pipeline": result.get("pipeline"),
         "reader_endnote_count": len(result.get("readerEndnotes") or []),
         "work_memory_source": work_memory_source,

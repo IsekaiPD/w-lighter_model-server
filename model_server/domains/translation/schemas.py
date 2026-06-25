@@ -1,4 +1,4 @@
-"""Translation 도메인 Pydantic 스키마 (v3 얇은 응답 계약).
+"""Translation 도메인 Pydantic 스키마 (얇은 응답 계약).
 
 중첩 구조(rationale/endnote/card 등)는 엔진 출력을 그대로 전달하도록 dict/list로 둔다.
 요구사항 기준으로 OpenAI 호출 전 입력 길이를 제한한다.
