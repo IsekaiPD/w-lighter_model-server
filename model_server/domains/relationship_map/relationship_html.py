@@ -9,14 +9,14 @@ NORMAL_NODE_SIZE = (184, 84)
 MAIN_NODE_SIZE = (222, 100)
 
 STYLE_COLORS = {
-    "romance": "#C94C7C",
-    "partnership": "#2F8F5B",
-    "hierarchy": "#5B3FA3",
-    "rivalry": "#D94A38",
-    "mentorship": "#2A9D8F",
-    "family": "#D17A22",
-    "organization": "#3F6FA3",
-    "neutral": "#7A8794",
+    "romance": "#D85C8A",
+    "partnership": "#5BAE5B",
+    "hierarchy": "#6A4FB3",
+    "rivalry": "#D6453D",
+    "mentorship": "#3A8FD8",
+    "family": "#D98A2B",
+    "organization": "#4B6FAE",
+    "neutral": "#8A8A8A",
 }
 
 STYLE_LABELS = {
