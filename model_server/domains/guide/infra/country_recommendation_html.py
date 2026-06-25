@@ -78,14 +78,11 @@ def _source_items(values: Any, *, categories: set[str] | None = None) -> str:
         raw_source_type = str(item.get("source_type") or "").strip()
         category = SOURCE_CATEGORY_LABELS.get(raw_category, raw_category)
         source_type = SOURCE_TYPE_LABELS.get(raw_source_type, raw_source_type)
-        summary = str(item.get("summary") or "").strip()
-        compact_summary = summary[:220].rstrip() + ("…" if len(summary) > 220 else "")
         meta = " · ".join(value for value in (domain, category, source_type) if value)
         entries.append(
             '<li class="wl-guide-source-item">'
             f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">{_esc(title)}</a>'
             f'{f"<small>{_esc(meta)}</small>" if meta else ""}'
-            f'{f"<details class=\"wl-guide-source-details\"><summary>근거 상세 보기</summary><p>{_esc(compact_summary)}</p></details>" if compact_summary else ""}'
             '</li>'
         )
     if not entries:
