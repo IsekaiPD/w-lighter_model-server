@@ -22,8 +22,6 @@ class DirectTranslationResult:
     final_translation: str
     draft: dict[str, Any]
     metadata: dict[str, Any]
-    delivery_status: str = "deliverable"
-    user_visible_error_code: str | None = None
 
 
 class DirectTranslator:
@@ -125,11 +123,6 @@ class DirectTranslator:
         else:
             retry_success = not self._translation_safety_is_hard_fail(final_metadata)
 
-        delivery_status = "deliverable"
-        if retry_attempted and retry_success is False:
-            delivery_status = "blocked_translation_safety"
-        user_visible_error_code = None if delivery_status == "deliverable" else "translation_safety_failed"
-
         final_result.metadata = {
             **final_metadata,
             "translation_safety_retry_attempted": retry_attempted,
@@ -145,11 +138,7 @@ class DirectTranslator:
             "retry_translation_model": retry_result.metadata["translation_model"] if retry_result else None,
             "retry_prompt_hash": retry_result.draft["prompt_debug"].get("prompt_hash") if retry_result else None,
             "retry_success": retry_success,
-            "delivery_status": delivery_status,
-            "user_visible_error_code": user_visible_error_code,
         }
-        final_result.delivery_status = delivery_status
-        final_result.user_visible_error_code = user_visible_error_code
         return final_result
 
     def _metadata(self, *, extra: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -478,7 +467,6 @@ class DirectTranslator:
             "residual_hangul_ratio": metadata.get("residual_hangul_ratio"),
             "residual_hangul_char_count": sum(len(str(span.get("text") or "")) for span in spans if isinstance(span, dict)),
             "hangul_span_count": len(spans),
-            "delivery_candidate": metadata.get("delivery_status") or result.delivery_status,
             "fallbackApplied": bool(metadata.get("fallback_applied") or metadata.get("fallbackApplied")),
             "fallbackReason": metadata.get("fallback_reason") or metadata.get("fallbackReason") or "",
             "candidateDiscarded": bool(metadata.get("candidate_discarded") or metadata.get("candidateDiscarded")),

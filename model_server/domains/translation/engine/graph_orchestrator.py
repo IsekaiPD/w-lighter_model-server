@@ -93,10 +93,8 @@ class TranslationGraphState(TypedDict, total=False):
     reviewFindings: Annotated[list[dict[str, Any]], _append_trace]
     aggregateReview: dict[str, Any]
     graphReviewTrace: Annotated[list[dict[str, Any]], _append_trace]
-    finalIntegrityCheck: dict[str, Any]
     finalTranslation: str
     qaIssues: list[dict[str, Any]]
-    deliveryStatus: str
     repairTrace: list[dict[str, Any]]
     revisionHistory: list[dict[str, Any]]
     graphRepairTrace: list[dict[str, Any]]
@@ -583,8 +581,6 @@ def revise_translation(state: TranslationGraphState) -> TranslationGraphState:
         judge=_judge([]),
         qaIssues=[],
         authorReviewCards=[],
-        deliveryStatus="deliverable",
-        userVisibleErrorCode=None,
     )
     state["_loop"] = loop
     state["draftTranslation"] = revised
@@ -692,15 +688,6 @@ def filter_rank_endnotes(state: TranslationGraphState) -> TranslationGraphState:
 
 
 def align_endnotes_to_final_translation(state: TranslationGraphState) -> TranslationGraphState:
-    if str(state.get("deliveryStatus") or "").startswith("blocked_translation_"):
-        state["readerEndnotes"] = []
-        return _trace(
-            state,
-            "align_endnotes_to_final_translation",
-            readerEndnotesCount=0,
-            blockedNoop=True,
-            finalTranslationChanged=False,
-        )
     # 말미 목록 스타일 미주 — 스팬 앵커링이 없어 노트별 변환은 없다.
     # A·B 분기 조인 지점으로만 유지하고, 차단 시(위)엔 미주를 비운다.
     return _trace(
@@ -780,7 +767,6 @@ def build_translation_package(state: TranslationGraphState) -> TranslationGraphS
             "executionFrame": state.get("graphExecutionFrame") or "stategraph_compatible",
             "nodes": [row["node"] for row in state.get("graphTrace", [])],
         },
-        "userVisibleErrorCode": loop.userVisibleErrorCode,
         "mockBoundaries": {
             "idiomDetector": "rule adapter by default; llm/ft adapters are placeholders",
             "sourceAnalyzer": "deterministic source-evidence adapter; no LLM call",
@@ -795,13 +781,11 @@ def build_translation_package(state: TranslationGraphState) -> TranslationGraphS
     author_review_cards = list(loop.authorReviewCards) + _review_cards_from_findings(state.get("reviewFindings") or [])
     package = V3LiteraryPackageResult(
         "v3_literary_package",
-        loop.deliveryStatus,
         loop.finalTranslation,
         loop.qaIssues,
         author_review_cards,
         internal,
         readerEndnotes=state.get("readerEndnotes") or [],
-        userVisibleErrorCode=loop.userVisibleErrorCode,
     )
     state["translationPackage"] = package
     return _trace(state, "build_translation_package", readerEndnotesCount=len(package.readerEndnotes))
@@ -813,7 +797,6 @@ def should_persist(state: TranslationGraphState) -> bool:
     return bool(
         request.get("saveTranslationResult")
         and package
-        and not package.deliveryStatus.startswith("blocked_translation_")
         and package.finalTranslation.strip()
     )
 
@@ -845,7 +828,7 @@ def skip_persist(state: TranslationGraphState) -> TranslationGraphState:
 def should_capture_glossary(state: TranslationGraphState) -> bool:
     request = state.get("normalizedRequest") or {}
     package = state.get("translationPackage")
-    return bool(request.get("captureGlossaryCandidates") and request.get("workId") is not None and state.get("targetLocale") and package and not package.deliveryStatus.startswith("blocked_translation_"))
+    return bool(request.get("captureGlossaryCandidates") and request.get("workId") is not None and state.get("targetLocale") and package)
 
 
 def capture_glossary_candidates(state: TranslationGraphState) -> TranslationGraphState:

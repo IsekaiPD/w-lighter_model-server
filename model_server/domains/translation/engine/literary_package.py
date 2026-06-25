@@ -49,13 +49,11 @@ class RAGPackets:
 @dataclass(slots=True)
 class V3LiteraryPackageResult:
     pipeline: str
-    deliveryStatus: str
     finalTranslation: str
     qaIssues: list[dict[str, Any]] = field(default_factory=list)
     authorReviewCards: list[dict[str, Any]] = field(default_factory=list)
     internal: dict[str, Any] = field(default_factory=dict)
     readerEndnotes: list[dict[str, Any]] = field(default_factory=list)
-    userVisibleErrorCode: str | None = None
 
 
 @dataclass(slots=True)
@@ -71,8 +69,6 @@ class TranslationLoopResult:
     judge: dict[str, Any]
     qaIssues: list[dict[str, Any]]
     authorReviewCards: list[dict[str, Any]]
-    deliveryStatus: str
-    userVisibleErrorCode: str | None = None
 
 
 _IDIOM_RULES: tuple[dict[str, Any], ...] = (
@@ -1371,44 +1367,6 @@ def _review_cards_from_issues(issues: list[dict[str, Any]], idiom_notes: list[Id
     return cards
 
 
-def run_translation_loop(source_text: str, target_locale: str, translator_guideline: str, editor_guideline: str, *, idiom_notes: list[IdiomNote] | None = None, max_iterations: int = 2, translate_once: Callable[[bool, int], tuple[str, dict[str, Any]]] | None = None, work_memory: Any = None) -> TranslationLoopResult:
-    del translator_guideline, editor_guideline
-    notes = idiom_notes or []
-    memory = normalize_work_memory(work_memory, target_locale)
-    max_rounds = max(1, min(int(max_iterations or 2), 2))
-    iterations = []
-    def call(strict: bool, attempt: int, revision_context: str = "") -> tuple[str, dict[str, Any]]:
-        if translate_once is None:
-            return _mock_literary_translation(source_text, target_locale, notes, work_memory=memory), {"mock_v3": True}
-        try:
-            return translate_once(strict, attempt, revision_context)  # type: ignore[misc]
-        except TypeError:
-            return translate_once(strict, attempt)
-    final, metadata = call(False, 0)
-    issues = _critic_issues(source_text=source_text, final_translation=final, target_locale=target_locale, idiom_notes=notes, safety_metadata=metadata, work_memory=memory)
-    judge = _judge(issues)
-    iterations.append({"iteration": 1, "action": "Literary Translator", "critique": issues, "judge": judge})
-    patch_meta = {"attempted": False, "patched": False, "replacements": [], "reason": "not_needed"}
-    revision_attempted = False
-    if judge["autoRevisionRequired"] and max_rounds > 1:
-        revision_attempted = True
-        revision_context, bracket_revision = _bracket_revision_context(source_text, final, issues)
-        final = _mock_literary_translation(source_text, target_locale, notes, work_memory=memory) if translate_once is None else call(True, 1, revision_context)[0]
-        metadata = {**metadata, "delivery_status": "deliverable", "v3_revision_strategy": "deterministic_integrity_retry"}
-        issues = _critic_issues(source_text=source_text, final_translation=final, target_locale=target_locale, idiom_notes=notes, safety_metadata=metadata, work_memory=memory)
-        judge = _judge(issues)
-        iterations.append({"iteration": 2, "action": "Deterministic QA Revision", "critique": issues, "judge": judge, "revisionScope": "Fix only hard glossary target mismatches, Hangul residue, and bracket/system-message integrity; preserve idioms, voice, and style unless directly affected.", "revisionContext": revision_context, "bracketRevision": bracket_revision})
-    if revision_attempted:
-        final, issues, judge = _maybe_apply_deterministic_system_ui_hangul_patch(source_text=source_text, final_translation=final, target_locale=target_locale, idiom_notes=notes, safety_metadata=metadata, work_memory=memory, issues=issues, iterations=iterations)
-        final, issues, judge = _maybe_apply_deterministic_known_person_residue_patch(source_text=source_text, final_translation=final, target_locale=target_locale, idiom_notes=notes, safety_metadata=metadata, work_memory=memory, issues=issues, iterations=iterations)
-        final, issues, judge = _maybe_apply_deterministic_hangul_residue_patch(source_text=source_text, final_translation=final, target_locale=target_locale, idiom_notes=notes, safety_metadata=metadata, work_memory=memory, issues=issues, iterations=iterations)
-        final, issues, judge, patch_meta = _maybe_apply_deterministic_glossary_patch(source_text=source_text, final_translation=final, target_locale=target_locale, idiom_notes=notes, safety_metadata=metadata, work_memory=memory, issues=issues, iterations=iterations)
-    final, issues, judge = _maybe_apply_deterministic_known_proper_noun_variant_patch(source_text=source_text, final_translation=final, target_locale=target_locale, idiom_notes=notes, safety_metadata=metadata, work_memory=memory, issues=issues, iterations=iterations)
-    final, issues, judge = _maybe_apply_deterministic_known_person_residue_patch(source_text=source_text, final_translation=final, target_locale=target_locale, idiom_notes=notes, safety_metadata=metadata, work_memory=memory, issues=issues, iterations=iterations)
-    status, error_code = classify_translation_delivery(issues)
-    return TranslationLoopResult("" if status.startswith("blocked_translation_") else final, iterations, judge, issues, _review_cards_from_issues(issues, notes), status, error_code)
-
-
 def _failure_signals(issues: list[dict[str, Any]]) -> list[str]:
     mapping = {"idiom_literal_risk_detected", "glossary_consistency", "glossary_forbidden_translation", "korean_residue_detected", "hangul_residue_integrity", "bracket_block_count_mismatch", "bracket_block_role_or_order_mismatch", "system_message_missing"}
     signals = []
@@ -1419,16 +1377,3 @@ def _failure_signals(issues: list[dict[str, Any]]) -> list[str]:
     return signals
 
 
-def build_v3_literary_package(source_text: str, target_locale: str, *, genre: str = "Modern Korean web novel", work_memory: Any = None, max_iterations: int = 2, translate_once: Callable[[bool, int], tuple[str, dict[str, Any]]] | None = None, idiom_detection_mode: str = "rule") -> V3LiteraryPackageResult:
-    memory = normalize_work_memory(work_memory, target_locale)
-    mode = _clean(idiom_detection_mode).lower() or "rule"
-    if mode not in _ALLOWED_IDIOM_MODES:
-        mode = "rule"
-    notes = detect_idiom_notes(source_text, target_locale, mode=mode)
-    source_evidence = analyze_source_references(source_text, target_locale)
-    rag = build_rag_packets(source_text, target_locale, genre, notes, work_memory=memory, source_evidence=source_evidence)
-    guidelines = build_v3_guidelines(source_text, target_locale, genre, notes, rag)
-    loop = run_translation_loop(source_text, target_locale, guidelines.translatorGuideline, guidelines.editorGuideline, idiom_notes=notes, max_iterations=max_iterations, translate_once=translate_once, work_memory=memory)
-    internal = {"idiomNotes": [asdict(n) for n in notes], "idiomDetection": {"mode": mode, "notes": [asdict(n) for n in notes], "ftEnabled": False}, "characterReferences": source_evidence.get("characterReferences") or [], "entityCandidates": source_evidence.get("entityCandidates") or [], "ragPackets": asdict(rag), "workMemory": asdict(memory) if memory else None, "guidelines": asdict(guidelines), "iterations": loop.iterations, "judge": loop.judge, "failureSignals": _failure_signals(loop.qaIssues), "maxIterations": min(max(1, int(max_iterations or 2)), 2), "maxRevisionPass": 1, "mockBoundaries": {"idiomDetector": "rule adapter by default; llm/ft adapters are placeholders", "sourceAnalyzer": "deterministic source-evidence adapter; no LLM call", "ragPackets": "static/mock packet builder", "workMemory": "in-memory payload only"}}
-    internal["userVisibleErrorCode"] = loop.userVisibleErrorCode
-    return V3LiteraryPackageResult("v3_literary_package", loop.deliveryStatus, loop.finalTranslation, loop.qaIssues, loop.authorReviewCards, internal, userVisibleErrorCode=loop.userVisibleErrorCode)
