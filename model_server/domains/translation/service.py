@@ -170,26 +170,15 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
     # 화면설계서 번역 리포트 — 웹 4요소(summary·glossary_can·annotation_can·inspection_report) 실데이터 기반.
     internal_data = result.get("internal") or {}
     revisor_decisions = list(internal_data.get("revisorDecisions") or [])
-    review_summaries = internal_data.get("reviewSummaries") or {}
     revisor_summary = str(internal_data.get("revisorSummary") or "")
-    # 번역가 overview = 첫 번역가(DirectTranslator)가 낸 실데이터(번역가 노트). internal로 전달됨.
-    draft_overview = str(internal_data.get("draftOverview") or "")
     # 각 용어 후보/주석에 UI 체크 상태용 applied 키(기본 0) 부여. 웹이 컨펌하면 1로 갱신.
     glossary_candidates = [{**c, "applied": 0} for c in (internal_data.get("glossaryCandidates") or [])]
     reader_endnotes = [{**e, "applied": 0} for e in (result.get("readerEndnotes") or [])]
     # inspectionReport = 리바이저 전체 적용/보류 결정(voice·naturalness·cultural·glossary).
     # 웹은 reviewerType=='cultural'만 필터해 "문화리스크"로 표시, 챗봇은 전체를 소비.
     inspection_report = list(revisor_decisions)
-    # summary(text) = 번역가 overview + 검수자 3종 총평 + 최종 수정 총평(\n 묶음).
-    summary_text = "\n".join([
-        f"번역가: {draft_overview}",
-        "",
-        f"말투 검수자 : {review_summaries.get('voice', '')}",
-        f"자연스러움 검수자 : {review_summaries.get('naturalness', '')}",
-        f"문화권 리스크 검수자 : {review_summaries.get('cultural', '')}",
-        "",
-        f"최종 수정 : {revisor_summary}",
-    ])
+    # summary(text) = 최종 수정가(revisor)의 총평만 그대로. (초벌가·3종 리뷰어 총평 합본 폐지)
+    summary_text = revisor_summary
     response["readerEndnotes"] = reader_endnotes  # top-level도 applied 포함으로 동기화
     response["translationReport"] = {
         "summary": summary_text,
