@@ -24,6 +24,7 @@ ALLOWED_TRANSLATION_MODELS = (
 
 # 텍스트(채팅) 모델 단일 노브 — guide/character/relationship과 같은 env(WLIGHTER_TEXT_MODEL) 공유.
 DEFAULT_TEXT_MODEL = os.getenv("WLIGHTER_TEXT_MODEL", "gpt-5.4-mini")
+DEFAULT_CHAT_INTENT_MODEL = os.getenv("WLIGHTER_CHAT_INTENT_MODEL", "gpt-5.4-nano")
 
 # Qdrant 접속: QDRANT_URL이 있으면 서버 모드(url=, self-host 컨테이너), 비면 임베디드(path=) 폴백.
 # core/config.py settings.qdrant_url(/health·lifespan용)과 같은 env를 공유한다.
@@ -61,6 +62,7 @@ class PipelineConfig:
     embedding_model: str = "nlpai-lab/KURE-v1"
     translation_model: str | None = None
     review_model: str | None = None
+    chat_intent_model: str | None = None
     allowed_models: tuple[str, ...] = ALLOWED_TRANSLATION_MODELS
     model_override: str | None = None
     idiom_top_k: int = 3
@@ -93,6 +95,17 @@ class PipelineConfig:
             self.review_model = override or DEFAULT_TEXT_MODEL
         else:
             self.review_model = validate_translation_model(self.review_model, field_name="review_model")
+
+        if self.chat_intent_model is None:
+            self.chat_intent_model = validate_translation_model(
+                DEFAULT_CHAT_INTENT_MODEL,
+                field_name="chat_intent_model",
+            )
+        else:
+            self.chat_intent_model = validate_translation_model(
+                self.chat_intent_model,
+                field_name="chat_intent_model",
+            )
 
     @property
     def model_override_used(self) -> bool:

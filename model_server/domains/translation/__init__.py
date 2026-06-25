@@ -4,7 +4,7 @@ from .config import (
     TranslationMode,
 )
 from .retrieval.annotation_retriever import AnnotationRetriever, AnnotationResult
-from .agents.chatbot import ChatbotAgent, ChatbotReply, ChatMessage
+from .agents.chatbot import ChatbotAgent, ChatbotReply, ChatMessage, ChatIntentClassification, ChatIntentClassifier
 from .text_processing.cultural_lexicon import CulturalLexicon, CulturalTermMatch
 from .agents.inspector import InspectionAgent, InspectionResult
 from .translation_pipeline import TranslationPipeline
@@ -44,6 +44,8 @@ __all__ = [
     "ChatbotAgent",
     "ChatbotReply",
     "ChatMessage",
+    "ChatIntentClassification",
+    "ChatIntentClassifier",
     "CulturalLexicon",
     "CulturalTermMatch",
     "InspectionAgent",

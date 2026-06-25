@@ -15,6 +15,8 @@ from db import repository as db_repo
 
 from . import (
     ChatbotAgent,
+    ChatIntentClassification,
+    ChatIntentClassifier,
     ChatMessage,
     PipelineConfig,
     TranslationMode,
@@ -59,6 +61,10 @@ def warmup(locales: list[str] | None = None) -> None:
 
 def _chatbot(locale: str) -> ChatbotAgent:
     return ChatbotAgent(PipelineConfig(locale=locale, mock=is_mock_mode()))
+
+
+def _chat_intent_classifier(locale: str) -> ChatIntentClassifier:
+    return ChatIntentClassifier(PipelineConfig(locale=locale, mock=is_mock_mode()))
 
 
 # ------------------------------------------------------------------ #
@@ -308,6 +314,7 @@ _CANCEL_PHRASES = {
     "보류",
 }
 _QUESTION_CUES = {"?", "왜", "뭐", "무엇", "어떻게", "맞아", "맞나요", "되나", "될까", "괜찮을까"}
+_EXPLANATION_QUESTION_CUES = {"왜", "뭐", "무엇", "어떻게", "어때", "맞아", "맞나요", "되나", "될까", "괜찮을까"}
 _UNCLEAR_CUES = {"아직", "근데", "그런데", "하지만", "일단", "말고", "음", "흠", "보이긴", "긴 한데", "하는데"}
 _ACTION_REQUEST_CUES = {
     "바꿔",
@@ -326,6 +333,14 @@ _ACTION_REQUEST_CUES = {
     "어색하지 않게",
     "말투",
     "톤",
+    "날카롭게",
+    "짧게",
+    "줄여",
+    "줄이",
+    "압축",
+    "간결",
+    "담백",
+    "건조",
     "용어집",
     "glossary",
     "앞으로",
@@ -388,9 +403,67 @@ def _looks_like_action_request(message: str) -> bool:
     text, _tokens = _normalize_decision_text(message)
     if not text:
         return False
-    if any(cue in text for cue in _QUESTION_CUES):
+    if any(cue in text for cue in _EXPLANATION_QUESTION_CUES):
         return False
     return any(cue in text for cue in _ACTION_REQUEST_CUES)
+
+
+def _fail_closed_intent(reason: str) -> ChatIntentClassification:
+    return ChatIntentClassification(
+        intent="ambiguous",
+        edit_scope="unknown",
+        source_grounding="unclear",
+        allow_pending_action=False,
+        allow_proposed_translation=False,
+        answer_strategy="ask_clarification",
+        reason=reason,
+        raw_response={"error": reason},
+    )
+
+
+def _classify_chat_intent(
+    *,
+    locale: str,
+    user_message: str,
+    source_text: str,
+    draft_translation: str,
+    reviewed_translation: str,
+    chat_history: list[ChatMessage],
+    pending_action: dict[str, Any] | None,
+    action_context: str,
+) -> ChatIntentClassification:
+    try:
+        return _chat_intent_classifier(locale).classify(
+            user_message=user_message,
+            source_text=source_text,
+            draft_translation=draft_translation,
+            reviewed_translation=reviewed_translation,
+            chat_history=chat_history,
+            pending_action=pending_action,
+            action_context=action_context,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("chat intent classification failed: %r", exc)
+        return _fail_closed_intent(f"{type(exc).__name__}: {exc}")
+
+
+def _intent_context(intent: ChatIntentClassification) -> str:
+    return (
+        "[시스템: chat_intent_classifier 결과입니다. "
+        "이 분류를 우선 신뢰하세요. allow_pending_action=false이면 pending_action을 만들지 마세요. "
+        "allow_proposed_translation=false이면 proposed_translation을 만들지 마세요. "
+        f"결과={intent.to_context()}]"
+    )
+
+
+def _guardrail_answer(intent: ChatIntentClassification, fallback: str) -> str:
+    if "error" in (intent.raw_response or {}):
+        return "수정 의도를 안전하게 확인하지 못해 저장용 수정안은 만들지 않았습니다. 다시 한 번 구체적으로 요청해 주세요."
+    if intent.answer_strategy == "ask_clarification":
+        return "요청하신 내용이 현재 원문/번역에 근거한 수정인지 확인이 필요합니다. 원문에서 누락된 부분인지, 기존 번역의 어느 부분을 바꾸려는 것인지 알려주세요."
+    if intent.answer_strategy == "refuse_unrelated":
+        return "현재 챗봇은 번역, 원문, 용어, 현지화, 검수 결과와 관련된 질문만 처리할 수 있습니다."
+    return fallback
 
 
 def _sanitize_pending_action(pending_action: Any) -> dict[str, Any] | None:
@@ -607,6 +680,7 @@ def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
         or workflow.get("inspectionReport")
         or []
     )
+    draft_translation = str(draft.get("translation", "") or "")
 
     # pendingAction 처리 — 이전 턴에서 제안된 액션에 대한 사용자 응답 판정
     incoming_pending_action = _sanitize_pending_action(payload.get("pendingAction"))
@@ -680,10 +754,22 @@ def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
                 "이전 액션을 실행하거나 재생성하지 말고 현재 메시지에만 답하세요.]"
             )
 
+    intent = _classify_chat_intent(
+        locale=locale,
+        user_message=question,
+        source_text=source_text,
+        draft_translation=draft_translation,
+        reviewed_translation=reviewed,
+        chat_history=chat_history,
+        pending_action=incoming_pending_action,
+        action_context=action_context,
+    )
+    action_context = "\n".join(part for part in [action_context, _intent_context(intent)] if part)
+
     reply = _chatbot(locale).reply(
         user_message=question,
         source_text=source_text,
-        draft_translation=draft.get("translation", ""),
+        draft_translation=draft_translation,
         reviewed_translation=reviewed,
         translation_rationale="",  # translationRationale 폐지 — 챗봇에 넘길 내용은 추후 재정의(팀원 협의).
         used_references=[],
@@ -700,21 +786,34 @@ def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
     proposed_translation = reply.proposed_translation
     change_summary = reply.change_summary
     needs_user_confirmation = reply.needs_user_confirmation
-    if (new_pending_action or proposed_translation) and not _looks_like_action_request(question):
+    guardrail_removed_action = False
+    if new_pending_action and not intent.allow_pending_action:
+        new_pending_action = None
+        needs_user_confirmation = False
+        guardrail_removed_action = True
+    if proposed_translation and not intent.allow_proposed_translation:
         new_pending_action = None
         proposed_translation = ""
         change_summary = ""
         needs_user_confirmation = False
+        guardrail_removed_action = True
+    if new_pending_action and not proposed_translation and str(new_pending_action.get("type") or "") == "update_translation":
+        new_pending_action = None
+        needs_user_confirmation = False
+        guardrail_removed_action = True
+    if new_pending_action:
+        needs_user_confirmation = True
+    answer = _guardrail_answer(intent, reply.answer) if guardrail_removed_action else reply.answer
 
     response: dict[str, Any] = {
-        "answer": reply.answer,
+        "answer": answer,
         "proposedTranslation": proposed_translation,
         "changeSummary": change_summary,
         "needsUserConfirmation": needs_user_confirmation,
         "pendingAction": new_pending_action,
     }
 
-    assistant_text = reply.answer or ""
+    assistant_text = answer or ""
     if proposed_translation:
         assistant_text = f"{assistant_text}\n\n[수정 제안 번역문]\n{proposed_translation}".strip()
     _persist_chat_turn_if_needed(

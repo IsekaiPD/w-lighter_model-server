@@ -48,6 +48,58 @@ CHATBOT_SCHEMA: dict[str, Any] = {
     ],
 }
 
+CHAT_INTENT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "intent": {
+            "type": "string",
+            "enum": [
+                "explain",
+                "evaluate",
+                "review_help",
+                "propose_edit",
+                "confirm",
+                "cancel",
+                "glossary",
+                "unrelated",
+                "ambiguous",
+            ],
+        },
+        "edit_scope": {
+            "type": "string",
+            "enum": ["current_translation", "glossary", "external_content", "unknown"],
+        },
+        "source_grounding": {
+            "type": "string",
+            "enum": ["grounded", "ungrounded", "unclear"],
+        },
+        "allow_pending_action": {"type": "boolean"},
+        "allow_proposed_translation": {"type": "boolean"},
+        "answer_strategy": {
+            "type": "string",
+            "enum": [
+                "explain",
+                "evaluate",
+                "review_help",
+                "propose_revision",
+                "ask_clarification",
+                "refuse_unrelated",
+            ],
+        },
+        "reason": {"type": "string"},
+    },
+    "required": [
+        "intent",
+        "edit_scope",
+        "source_grounding",
+        "allow_pending_action",
+        "allow_proposed_translation",
+        "answer_strategy",
+        "reason",
+    ],
+}
+
 
 @dataclass(slots=True)
 class ChatMessage:
@@ -66,6 +118,165 @@ class ChatbotReply:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass(slots=True)
+class ChatIntentClassification:
+    intent: str
+    edit_scope: str
+    source_grounding: str
+    allow_pending_action: bool
+    allow_proposed_translation: bool
+    answer_strategy: str
+    reason: str
+    raw_response: dict[str, Any]
+
+    def to_context(self) -> str:
+        payload = {
+            "intent": self.intent,
+            "edit_scope": self.edit_scope,
+            "source_grounding": self.source_grounding,
+            "allow_pending_action": self.allow_pending_action,
+            "allow_proposed_translation": self.allow_proposed_translation,
+            "answer_strategy": self.answer_strategy,
+            "reason": self.reason,
+        }
+        return json.dumps(payload, ensure_ascii=False)
+
+
+def _clip_text(value: str, limit: int = 1600) -> str:
+    text = str(value or "")
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit]}\n...[truncated]..."
+
+
+class ChatIntentClassifier:
+    """Small-model intent guard for translation chat actions."""
+
+    def __init__(self, config: PipelineConfig):
+        self.config = config
+        self.resources = config.resolved_resources()
+        self.prompt_template = load_runtime_prompt("CHATBOT_INTENT_PROMPT.md")
+
+    def classify(
+        self,
+        *,
+        user_message: str,
+        source_text: str,
+        draft_translation: str,
+        reviewed_translation: str,
+        chat_history: list[ChatMessage | dict[str, str]] | None = None,
+        pending_action: dict[str, Any] | None = None,
+        action_context: str = "",
+    ) -> ChatIntentClassification:
+        if self.config.mock:
+            return self._mock_classification(user_message)
+
+        client = get_openai_client()
+        schema_name = f"{self.resources.locale}_chat_intent".replace("-", "_")
+        prompt = self._build_prompt(
+            user_message=user_message,
+            source_text=source_text,
+            draft_translation=draft_translation,
+            reviewed_translation=reviewed_translation,
+            chat_history=chat_history or [],
+            pending_action=pending_action,
+            action_context=action_context,
+        )
+        response = client.responses.create(
+            model=self.config.chat_intent_model,
+            input=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You classify translation-review chat intent. "
+                        "Return compact JSON only and never draft translations."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            text={
+                "format": {
+                    "type": "json_schema",
+                    "name": schema_name,
+                    "schema": CHAT_INTENT_SCHEMA,
+                    "strict": True,
+                }
+            },
+        )
+        payload = json.loads(response.output_text)
+        return ChatIntentClassification(
+            intent=payload["intent"],
+            edit_scope=payload["edit_scope"],
+            source_grounding=payload["source_grounding"],
+            allow_pending_action=bool(payload["allow_pending_action"]),
+            allow_proposed_translation=bool(payload["allow_proposed_translation"]),
+            answer_strategy=payload["answer_strategy"],
+            reason=payload.get("reason", ""),
+            raw_response=payload,
+        )
+
+    def _mock_classification(self, user_message: str) -> ChatIntentClassification:
+        text = str(user_message or "")
+        if any(cue in text for cue in ("왜", "어떻게", "어때", "무슨")):
+            payload = {
+                "intent": "explain",
+                "edit_scope": "unknown",
+                "source_grounding": "unclear",
+                "allow_pending_action": False,
+                "allow_proposed_translation": False,
+                "answer_strategy": "explain",
+                "reason": "mock explanation intent",
+            }
+        elif any(cue in text for cue in ("수정", "바꿔", "다듬", "추가", "넣어")):
+            payload = {
+                "intent": "propose_edit",
+                "edit_scope": "current_translation",
+                "source_grounding": "unclear",
+                "allow_pending_action": True,
+                "allow_proposed_translation": True,
+                "answer_strategy": "propose_revision",
+                "reason": "mock edit intent",
+            }
+        else:
+            payload = {
+                "intent": "ambiguous",
+                "edit_scope": "unknown",
+                "source_grounding": "unclear",
+                "allow_pending_action": False,
+                "allow_proposed_translation": False,
+                "answer_strategy": "ask_clarification",
+                "reason": "mock ambiguous intent",
+            }
+        return ChatIntentClassification(raw_response=payload, **payload)
+
+    def _build_prompt(
+        self,
+        *,
+        user_message: str,
+        source_text: str,
+        draft_translation: str,
+        reviewed_translation: str,
+        chat_history: list[ChatMessage | dict[str, str]],
+        pending_action: dict[str, Any] | None,
+        action_context: str,
+    ) -> str:
+        normalized_history = [
+            asdict(row) if isinstance(row, ChatMessage) else row for row in chat_history
+        ]
+        return self.prompt_template.format(
+            locale=self.resources.locale,
+            target_language=self.resources.target_language,
+            source_language=self.resources.source_language,
+            source_text=_clip_text(source_text),
+            draft_translation=_clip_text(draft_translation),
+            reviewed_translation=_clip_text(reviewed_translation),
+            chat_history_json=json.dumps(normalized_history[-4:], ensure_ascii=False, indent=2),
+            pending_action_json=json.dumps(pending_action, ensure_ascii=False, indent=2),
+            action_context=action_context or "- none",
+            user_message=user_message,
+        )
 
 
 class ChatbotAgent:
