@@ -150,13 +150,13 @@ Current user message:
 Use for changing an existing persistent glossary entry.
 
 ```json
-{
+{{
   "type": "update_glossary",
   "original_word": "원어",
   "new_value": "새 번역어",
   "category": "glossary_type",
   "description": "사용자가 이해할 수 있는 한국어 설명"
-}
+}}
 ```
 
 ### add_glossary
@@ -164,13 +164,13 @@ Use for changing an existing persistent glossary entry.
 Use for adding a new persistent glossary entry.
 
 ```json
-{
+{{
   "type": "add_glossary",
   "original_word": "원어",
   "new_value": "번역어",
   "category": "glossary_type",
   "description": "사용자가 이해할 수 있는 한국어 설명"
-}
+}}
 ```
 
 ### delete_glossary
@@ -178,13 +178,13 @@ Use for adding a new persistent glossary entry.
 Use for removing a glossary entry.
 
 ```json
-{
+{{
   "type": "delete_glossary",
   "original_word": "삭제할 원어",
   "new_value": "",
   "category": "",
   "description": "사용자가 이해할 수 있는 한국어 설명"
-}
+}}
 ```
 
 ### update_translation
@@ -192,13 +192,13 @@ Use for removing a glossary entry.
 Use for saving the complete proposed translation of the current episode.
 
 ```json
-{
+{{
   "type": "update_translation",
   "original_word": "",
   "new_value": "proposed_translation과 동일한 최종 번역문 전체",
   "category": "",
   "description": "사용자가 이해할 수 있는 한국어 설명"
-}
+}}
 ```
 
 ## Output format
@@ -209,13 +209,13 @@ Do not add text before or after the JSON.
 Use double quotes for all JSON keys and string values.
 
 ```json
-{
+{{
   "answer": "사용자에게 보여줄 답변",
   "proposed_translation": "",
   "change_summary": "",
   "needs_user_confirmation": false,
   "pending_action": null
-}
+}}
 ```
 
 When `pending_action` is present, it must be one of the action objects defined above.
