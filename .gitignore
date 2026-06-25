@@ -28,6 +28,7 @@ Thumbs.db
 # 프로젝트 참고 파일
 CLAUDE.md
 project_docs/
+docs/TROUBLESHOOTING.md
 
 # aws / key files
 *.pem
