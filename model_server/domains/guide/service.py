@@ -76,16 +76,12 @@ def generate(payload: dict[str, Any]) -> dict[str, Any]:
 
     result = generate_guide(enriched_payload)
 
-    # A country-comparison report has no single target country to persist.
-    if (
-        work_id is not None
-        and _should_save(payload)
-        and result.get("reportMode") != "synopsis_country_recommendation"
-    ):
+    if work_id is not None and _should_save(payload):
         try:
+            is_multi_country = result.get("reportMode") == "synopsis_country_recommendation"
             result["persistedGuide"] = db_repo.save_localization_guide(
                 work_id=int(work_id),
-                target_country=_target_country(enriched_payload, result),
+                target_country=None if is_multi_country else _target_country(enriched_payload, result),
                 guide_content=_guide_content(result),
             )
         except Exception as exc:  # noqa: BLE001
