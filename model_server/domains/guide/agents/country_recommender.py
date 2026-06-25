@@ -513,7 +513,7 @@ def build_country_recommendation_evidence(
             "limitations": live_market.get("limitations") or [],
         },
         "contextPackDiagnosticsByCountry": diagnostics,
-        "comparisonRule": "국가 추천은 Tavily에서 수집한 최신 공개 근거가 4개국 모두에 존재하고 비교 가능한 국가가 2개 이상일 때만 생성합니다.",
+        "comparisonRule": "context pack 기반으로 4개국을 항상 분석하며, Tavily 최신 근거가 있으면 보조로 활용합니다.",
     }
 
 
@@ -774,17 +774,23 @@ def _canonicalize_country_analysis_result(
             if str(item).strip()
         ]
 
+        strengths = _dedupe_texts(list(model_item.get("strengths") or []), limit=2)
+        fit_level = str(model_item.get("fitLevel") or "분석 결과 참고")
         if sources:
-            strengths = _dedupe_texts(list(model_item.get("strengths") or []), limit=2)
             evidence_summary = [
                 f"최신 공개 근거 {len(sources)}건 확인 (공식·플랫폼 {trusted}건, 참고 {reference}건)",
                 f"확인 범위: {', '.join(categories) if categories else '플랫폼·장르 공개 자료'}",
             ]
-            fit_level = str(model_item.get("fitLevel") or f"근거 수준 {evidence_level}")
         else:
-            strengths = ["신뢰 가능한 최신 외부 근거를 확보하지 못해 작품과 해당 국가의 연결을 판단하지 않았습니다."]
-            evidence_summary = ["Tavily에서 주입 가능한 공식·참고 출처를 확보하지 못했습니다."]
-            fit_level = "검색 근거 부족"
+            platform_count = len(country.get("platformEvidence") or [])
+            matched_count = len(country.get("matchedSignals") or [])
+            if platform_count or matched_count:
+                evidence_summary = [
+                    f"플랫폼 관측 자료 {platform_count}건 · 작품 신호 {matched_count}건 활용",
+                    "Tavily 최신 웹 근거 없음 — context pack 기반 분석",
+                ]
+            else:
+                evidence_summary = ["외부 검색 근거 없음 — 작품 프로필 및 장르 기반 분석"]
 
         policy_risks = [
             str(item.get("message") or item.get("title"))
@@ -801,11 +807,7 @@ def _canonicalize_country_analysis_result(
                 "displayCountry": target["display"],
                 "targetCountry": target["targetCountry"],
                 "rank": None,
-                "assessment": (
-                    "insufficient_evidence"
-                    if not sources
-                    else "viable_with_cautions"
-                ),
+                "assessment": "viable_with_cautions",
                 "fitLevel": fit_level,
                 "evidenceLevel": evidence_level,
                 "strengths": strengths,
@@ -1135,7 +1137,9 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
             "당신은 한국 웹소설의 해외 현지화 적합성을 분석하는 편집자다. "
             "반드시 한국어 JSON 객체만 출력한다. 하나의 국가를 추천하거나 순위를 만들지 말고, "
             "미국/글로벌 영어, 중국, 일본, 태국을 각각 독립적으로 분석한다. "
-            "Tavily에서 수집된 실제 공개 출처와 작품 프로필만 사용하며 시장 규모, 흥행 확률, 독자 선호를 근거 없이 단정하지 않는다."
+            "platformEvidence·matchedSignals·matchedContextEvidence(context pack)를 주 근거로 사용하고, "
+            "liveMarketEvidence(Tavily)가 있으면 보조 근거로 추가 활용한다. "
+            "시장 규모, 흥행 확률, 독자 선호를 근거 없이 단정하지 않는다."
         )
         user = {
             "task": "현재 시놉시스를 기준으로 4개국 각각의 적합 요소, 주의 요소, 근거 범위와 현지화 난이도를 분석해 주세요.",
@@ -1149,9 +1153,10 @@ def generate_country_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
                 "현대 판타지, 로맨스처럼 장르명만 반복하는 일반론은 피하고, 민원·공무원 조직·산신·무당·재개발·실종 가족 등 해당 작품에 실제로 있는 고유 소재를 중심으로 작성하세요.",
                 "플랫폼 정책·운영 기준은 게시 가능 여부와 주의점의 근거일 뿐 작품 적합성의 근거로 사용하지 마세요.",
                 "각 국가의 risks는 작품의 구체 문화·제도·민속 신호와 연결된 현지화 부담, 문화적 전달 문제, 관련 정책 확인점을 최대 2개로 작성하세요.",
-                "Tavily 출처가 없는 국가는 시장 근거를 만들어내지 말고 자료 부족과 추가 확인 필요를 명시하세요.",
+                "platformEvidence·matchedSignals·matchedContextEvidence(context pack)를 주 근거로 분석하고, liveMarketEvidence(Tavily)가 있으면 최신 웹 동향 보조 근거로 활용하세요.",
+                "Tavily 결과가 없어도 context pack 데이터를 기반으로 각 국가의 strengths와 risks를 반드시 작성하세요.",
                 "evidenceSummary에는 어떤 종류의 공개 자료를 확인했는지와 근거의 한계를 함께 적으세요.",
-                "정적 context pack은 보조 관측 신호이며 실제 국가별 성과나 독자 선호의 증거로 표현하지 마세요.",
+                "context pack은 플랫폼 순위·장르 관측 기반의 정제된 자료이며 주요 근거로 활용하되, 실제 흥행 확률이나 독자 반응의 단정적 표현은 피하세요.",
                 *EVIDENCE_ANALYSIS_BOUNDARY_RULES,
                 "설명은 모두 한국어로 작성하세요.",
             ],
