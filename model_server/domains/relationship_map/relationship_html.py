@@ -143,7 +143,7 @@ def build_relation_html(*, work_title: str, relation_data: dict) -> str:
     character_by_id = {item["id"]: item for item in characters}
 
     marker_defs = "".join(
-        f'<marker id="arrow-{style}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">'
+        f'<marker id="arrow-{style}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">'
         f'<path d="M 0 0 L 10 5 L 0 10 z" fill="{color}" /></marker>'
         for style, color in STYLE_COLORS.items()
     )
@@ -232,7 +232,7 @@ body {{ margin:0; background:radial-gradient(circle at top left,#fff 0,#F6F1EB 4
 .header {{ display:flex; justify-content:space-between; gap:24px; align-items:flex-start; margin-bottom:18px; }}
 .kicker {{ color:#A89BD4; font-size:13px; letter-spacing:.08em; font-weight:800; }}
 h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
-.summary {{ margin:0; color:var(--muted); font-size:15px; line-height:1.55; }}
+.summary {{ margin:0; color:var(--muted); font-size:16px; line-height:1.6; }}
 .badge {{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(254,249,247,.86); border:1px solid rgba(207,195,251,.55); border-radius:999px; box-shadow:var(--shadow); color:var(--muted); font-size:13px; white-space:nowrap; }}
 .badge strong {{ color:var(--main); }}
 .graph-card {{ position:relative; width:100%; min-height:{GRAPH_HEIGHT}px; background:rgba(254,249,247,.80); border:1px solid rgba(207,195,251,.50); border-radius:32px; overflow:auto; box-shadow:var(--shadow); }}
@@ -240,28 +240,28 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 .lines {{ position:absolute; inset:0; width:{GRAPH_WIDTH}px; height:{GRAPH_HEIGHT}px; z-index:1; }}
 .node {{ position:absolute; width:{NORMAL_NODE_SIZE[0]}px; min-height:{NORMAL_NODE_SIZE[1]}px; transform:translate(-50%,-50%); z-index:2; background:linear-gradient(180deg,rgba(254,249,247,.98),rgba(249,233,250,.72)); border:1px solid rgba(207,195,251,.45); border-radius:20px; padding:15px 14px 13px; box-shadow:0 12px 28px rgba(45,36,64,.10); text-align:center; }}
 .node.main {{ width:{MAIN_NODE_SIZE[0]}px; min-height:{MAIN_NODE_SIZE[1]}px; background:linear-gradient(180deg,var(--lavender-pale),var(--lavender-light)); border:1px solid var(--lavender); box-shadow:0 18px 38px rgba(168,155,212,.34),0 8px 22px rgba(47,33,17,.10); }}
-.name {{ font-size:18px; font-weight:900; line-height:1.25; word-break:keep-all; }}
-.node.main .name {{ font-size:19px; color:var(--ink); }}
-.profile-label {{ display:inline-block; margin-top:9px; max-width:100%; padding:5px 10px; border-radius:999px; background:#E9E1FF; color:#6E5BB8; font-size:11px; font-weight:900; line-height:1.25; word-break:keep-all; }}
+.name {{ font-size:20px; font-weight:900; line-height:1.25; word-break:keep-all; }}
+.node.main .name {{ font-size:21px; color:var(--ink); }}
+.profile-label {{ display:inline-block; margin-top:9px; max-width:100%; padding:6px 12px; border-radius:999px; background:#E9E1FF; color:#6E5BB8; font-size:13px; font-weight:900; line-height:1.25; word-break:keep-all; }}
 .node.main .profile-label {{ background:var(--lavender); color:#2D2440; }}
 .profile-label:empty {{ display:none; }}
-.edge-line {{ fill:none; stroke-linecap:round; opacity:.9; }}
-.edge-one_way {{ stroke-width:2.45; }}
-.edge-both {{ stroke-width:2.6; opacity:.72; }}
+.edge-line {{ fill:none; stroke-linecap:round; opacity:.95; }}
+.edge-one_way {{ stroke-width:3.0; }}
+.edge-both {{ stroke-width:3.1; opacity:.82; }}
 .content-grid {{ display:grid; grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr); gap:18px; margin-top:18px; }}
 .panel {{ background:rgba(254,249,247,.86); border:1px solid rgba(207,195,251,.38); border-radius:24px; padding:18px; box-shadow:0 10px 26px rgba(45,36,64,.08); }}
-.panel h2 {{ margin:0 0 12px; font-size:18px; color:var(--main); }}
+.panel h2 {{ margin:0 0 12px; font-size:20px; color:var(--main); }}
 .item {{ padding:12px 0; border-top:1px solid rgba(183,169,230,.28); }}
 .item:first-of-type {{ border-top:0; }}
-.item-title {{ font-weight:900; }}
+.item-title {{ font-weight:900; font-size:16px; }}
 .relation-type {{ color:#A89BD4; font-weight:800; }}
-.item-meta {{ margin-top:4px; color:var(--muted); font-size:13px; line-height:1.45; }}
-.group-chip {{ display:inline-block; margin:4px 6px 0 0; padding:5px 8px; border-radius:999px; background:#E9E1FF; font-size:12px; font-weight:800; color:#6E5BB8; }}
-.legend {{ display:flex; flex-wrap:wrap; gap:8px 12px; margin-top:12px; color:var(--muted); font-size:12px; }}
+.item-meta {{ margin-top:4px; color:var(--muted); font-size:15px; line-height:1.55; }}
+.group-chip {{ display:inline-block; margin:4px 6px 0 0; padding:6px 10px; border-radius:999px; background:#E9E1FF; font-size:13px; font-weight:800; color:#6E5BB8; }}
+.legend {{ display:flex; flex-wrap:wrap; gap:8px 12px; margin-top:12px; color:var(--muted); font-size:13px; }}
 .legend-item {{ display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }}
 .legend-item i {{ width:18px; height:3px; border-radius:999px; display:inline-block; opacity:.88; }}
-.notice {{ margin-top:14px; color:var(--muted); font-size:12px; }}
-.warning {{ background:#F9E9FA; border:1px solid rgba(248,215,245,.90); color:#6E5BB8; padding:10px 12px; border-radius:14px; margin-top:8px; font-size:13px; }}
+.notice {{ margin-top:14px; color:var(--muted); font-size:13px; }}
+.warning {{ background:#F9E9FA; border:1px solid rgba(248,215,245,.90); color:#6E5BB8; padding:10px 12px; border-radius:14px; margin-top:8px; font-size:14px; line-height:1.5; }}
 @media(max-width:900px) {{ .header{{flex-direction:column;}} .content-grid{{grid-template-columns:1fr;}} }}
 </style>
 </head>
