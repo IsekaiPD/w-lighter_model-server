@@ -100,7 +100,7 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 | `country` / `locale` | string | 정규화된 목표 |
 | `pipeline` | string\|null | 사용 파이프라인 |
 | `finalTranslation` | string | 최종 번역문 (항상 deliver — 차단 상태 없음) |
-| `readerEndnotes` | array<object> | 독자용 문화 각주(없으면 `[]`). 각 항목 = `{keyword, koreanNote, targetNote, applied}` — 한국 문화 키워드 / 한국어 미주 / 대상언어 미주 / `applied`(0=미적용 기본, 웹 컨펌 시 1). **말미 목록 스타일**(번역문 위치 앵커링 없음, 스팬 필드 없음). `translationReport.readerEndnotes`도 동일 형태 |
+| `readerEndnotes` | array<object> | 독자용 문화 각주(없으면 `[]`). 각 항목 = `{keyword, targetKeyword, koreanNote, targetNote, targetSentence, applied}` — 한국 문화 키워드 / 대상언어 키워드(A, 본문 표면형) / 한국어 미주 / 대상언어 미주 / A가 든 번역문 문장(best-effort, 못 찾으면 `""`) / `applied`(0=미적용 기본, 웹 컨펌 시 1). 웹 표시 = `targetKeyword: targetNote`. **말미 목록 스타일**(인라인 앵커링/스팬 없음 — `targetSentence`는 미주↔문장 매칭용이며 verbatim은 best-effort). `translationReport.readerEndnotes`도 동일 형태 |
 | `translationReport` | object | **웹 번역 리포트 4요소** `{summary, glossaryCandidates, readerEndnotes, inspectionReport}`. DB 컬럼 `summary/glossary_can/annotation_can/inspection_report`와 1:1. 각 요소 상세·실제 JSON은 **아래 "번역 리포트 4요소" 절** 참조. |
 | `authorReviewCards` | array<object> | 작가 리뷰 카드(말투/자연스러움/문화) |
 | `metadata` | object | 빌드/모델 메타 |
@@ -119,10 +119,12 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 |---|---|---|---|
 | `summary` | `summary` | string(text) | 5단 총평: **번역가 overview**(첫 번역가 실데이터) + 말투/자연스러움/문화권 **검수자 총평** + **최종 수정 총평**(리바이저). `\n`으로 묶인 단일 텍스트 |
 | `glossaryCandidates` | `glossary_can` | array<object> | 신규 용어 후보. 항목 `{source, suggested_target, category, reason, applied}`. `applied`=0 기본(웹 컨펌 시 1) |
-| `readerEndnotes` | `annotation_can` | array<object> | 독자용 문화 각주(말미 목록). 항목 `{keyword, koreanNote, targetNote, applied}`. 앵커링/스팬 없음 |
+| `readerEndnotes` | `annotation_can` | array<object> | 독자용 문화 각주(말미 목록). 항목 `{keyword, targetKeyword, koreanNote, targetNote, targetSentence, applied}`. 표시=`targetKeyword: targetNote`, `targetSentence`=A가 든 번역문 문장(best-effort, 없으면 `""`) |
 | `inspectionReport` | `inspection_report` | array<object> | **리바이저 전체 적용/보류 결정**(voice·naturalness·cultural·glossary). 항목 `{reviewerType, sourceSpan, targetSpan, problem, action, reason, revisedSpan}`. **웹은 `reviewerType=='cultural'`만 필터해 "문화리스크"로 표시**, 챗봇 핸드오프는 전체 소비. `action` ∈ {`applied`,`deferred`}(glossary는 항상 applied), `revisedSpan`은 보류 시 빈 문자열 |
 
 > ⚠️ `inspectionReport` 변경(2026-06-24): 이전 `culturalRiskResult`(cultural만)에서 **전체 decisions로 확장 + 키명 변경**. 웹의 "문화리스크" 표시는 이제 **웹이 cultural을 필터**해야 함(이전엔 서버가 pre-filter). 옛 DB row의 `inspection_report`는 cultural-only 리스트라 읽을 때 모양 방어 권장.
+
+> ⚠️ `readerEndnotes` 변경(2026-06-26): `targetKeyword`(A=본문 표면형)·`targetSentence`(A가 든 번역문 문장, best-effort·없으면 `""`) **2필드 추가**. 미주 작성이 **최종 번역문 확정 뒤**로 이동해 A를 본문 표면형과 일치시킴(`targetKeyword: targetNote` 표시·미주↔문장 매칭 용도). 옛 `annotation_can` row엔 두 필드가 없을 수 있으니 읽을 때 모양 방어 권장.
 
 **실제 응답 예시** (`translationReport`):
 ```json
@@ -141,8 +143,10 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
     "readerEndnotes": [
       {
         "keyword": "삼복더위",
+        "targetKeyword": "三伏の暑さ",
         "koreanNote": "한여름 가장 더운 삼복 기간의 더위를 가리키는 한국 표현.",
         "targetNote": "韓国で真夏の最も暑い「三伏」の時期の暑さを指す表現。",
+        "targetSentence": "彼は三伏の暑さの中、塾へ向かった。",
         "applied": 0
       }
     ],

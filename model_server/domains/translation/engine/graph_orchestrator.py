@@ -39,8 +39,6 @@ GraphNodeName = Literal[
     "check_korean_residue",
     "retrieve_korean_culture_context",
     "write_reader_endnotes",
-    "filter_rank_endnotes",
-    "align_endnotes_to_final_translation",
     "build_translation_package",
 ]
 
@@ -79,7 +77,6 @@ class TranslationGraphState(TypedDict, total=False):
     revisionHistory: list[dict[str, Any]]
     graphRepairTrace: list[dict[str, Any]]
     annotationRetrievals: list[dict[str, Any]]
-    readerEndnotesDraft: list[dict[str, Any]]
     readerEndnotes: list[dict[str, Any]]
     annotationTrace: dict[str, Any]
     translationPackage: LiteraryPackageResult
@@ -485,54 +482,39 @@ def retrieve_korean_culture_context(state: TranslationGraphState) -> Translation
 
 
 def _normalize_reader_endnote(row: dict[str, Any], index: int) -> dict[str, Any]:
-    # 말미 목록 스타일 미주 3필드: 한국 문화 키워드 / 한국어 미주 / 대상언어 미주.
-    # (스팬·noteId·출처추적 제거 — 인라인 앵커링 안 함.)
     return {
         "keyword": str(row.get("keyword") or row.get("sourceSpan") or "").strip(),
+        "targetKeyword": str(row.get("targetKeyword") or "").strip(),
         "koreanNote": str(row.get("koreanNote") or "").strip(),
         "targetNote": str(row.get("targetNote") or row.get("note") or "").strip(),
+        "targetSentence": str(row.get("targetSentence") or "").strip(),
     }
 
 
 def write_reader_endnotes(state: TranslationGraphState) -> TranslationGraphState:
+    # LLM 미주 작성 + 결정적 후처리(정규화·dedup·필수필드 검증)를 한 노드에서 끝낸다.
     hook = state.get("readerEndnoteWriterHook")
-    if hook:
-        notes = hook(state)
-    else:
-        notes = []
-    state["readerEndnotesDraft"] = [_normalize_reader_endnote(note, index) for index, note in enumerate(notes or []) if isinstance(note, dict)]
-    return _trace(state, "write_reader_endnotes", readerEndnotesDraftCount=len(state["readerEndnotesDraft"]))
-
-
-def filter_rank_endnotes(state: TranslationGraphState) -> TranslationGraphState:
+    notes = hook(state) if hook else []
     seen: set[str] = set()
     kept: list[dict[str, Any]] = []
-    for note in state.get("readerEndnotesDraft") or []:
-        keyword = str(note.get("keyword") or "").strip()
-        korean = str(note.get("koreanNote") or "").strip()
-        target = str(note.get("targetNote") or "").strip()
-        if not keyword or not korean or not target:
-            continue  # 3필드 중 하나라도 비면 제거
+    for index, note in enumerate(notes or []):
+        if not isinstance(note, dict):
+            continue
+        row = _normalize_reader_endnote(note, index)
+        keyword = row["keyword"]
+        # 필수 4필드(keyword·targetKeyword·koreanNote·targetNote) 중 하나라도 비면 제거.
+        # targetSentence는 best-effort라 비어도 통과.
+        if not keyword or not row["targetKeyword"] or not row["koreanNote"] or not row["targetNote"]:
+            continue
         if keyword in seen:
             continue  # keyword 기준 dedup
         seen.add(keyword)
-        kept.append({"keyword": keyword, "koreanNote": korean, "targetNote": target})
+        kept.append(row)
     state["readerEndnotes"] = kept
     trace = dict(state.get("annotationTrace") or {})
     trace["keptCount"] = len(kept)
     state["annotationTrace"] = trace
-    return _trace(state, "filter_rank_endnotes", readerEndnotesCount=len(kept))
-
-
-def align_endnotes_to_final_translation(state: TranslationGraphState) -> TranslationGraphState:
-    # 말미 목록 스타일 미주 — 스팬 앵커링이 없어 노트별 변환은 없다.
-    # A·B 분기 조인 지점으로만 유지하고, 차단 시(위)엔 미주를 비운다.
-    return _trace(
-        state,
-        "align_endnotes_to_final_translation",
-        readerEndnotesCount=len(state.get("readerEndnotes") or []),
-        finalTranslationChanged=False,
-    )
+    return _trace(state, "write_reader_endnotes", readerEndnotesCount=len(kept))
 
 
 def _review_cards_from_findings(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -664,14 +646,13 @@ def _build_stategraph(max_iterations: int, translate_once: Callable[..., tuple[s
     builder.add_node("check_korean_residue", _as_langgraph_node(check_korean_residue))
     builder.add_node("retrieve_korean_culture_context", _as_langgraph_node(retrieve_korean_culture_context))
     builder.add_node("write_reader_endnotes", _as_langgraph_node(write_reader_endnotes))
-    builder.add_node("filter_rank_endnotes", _as_langgraph_node(filter_rank_endnotes))
-    builder.add_node("align_endnotes_to_final_translation", _as_langgraph_node(align_endnotes_to_final_translation))
     builder.add_node("build_translation_package", _as_langgraph_node(build_translation_package))
 
     builder.add_edge(START, "normalize_input")
     builder.add_edge("normalize_input", "load_work_memory")
-    builder.add_edge("normalize_input", "retrieve_korean_culture_context")
     builder.add_edge("load_work_memory", "run_literary_translation")
+    # retrieve는 sourceText만 쓰므로 번역과 병렬(같은 superstep).
+    builder.add_edge("load_work_memory", "retrieve_korean_culture_context")
     builder.add_edge("run_literary_translation", "review_voice")
     builder.add_edge("run_literary_translation", "review_naturalness")
     builder.add_edge("run_literary_translation", "review_cultural")
@@ -679,10 +660,9 @@ def _build_stategraph(max_iterations: int, translate_once: Callable[..., tuple[s
     builder.add_edge(["review_voice", "review_naturalness", "review_cultural", "review_glossary"], "aggregate_review")
     builder.add_edge("aggregate_review", "revise_translation")
     builder.add_edge("revise_translation", "check_korean_residue")
-    builder.add_edge("retrieve_korean_culture_context", "write_reader_endnotes")
-    builder.add_edge("write_reader_endnotes", "filter_rank_endnotes")
-    builder.add_edge(["check_korean_residue", "filter_rank_endnotes"], "align_endnotes_to_final_translation")
-    builder.add_edge("align_endnotes_to_final_translation", "build_translation_package")
+    # write는 최종 번역문(check_korean_residue)+검색결과(retrieve)가 둘 다 끝난 뒤 실행.
+    builder.add_edge(["check_korean_residue", "retrieve_korean_culture_context"], "write_reader_endnotes")
+    builder.add_edge("write_reader_endnotes", "build_translation_package")
     builder.add_edge("build_translation_package", END)
     return builder.compile(name="literary_package_graph")
 
@@ -706,8 +686,6 @@ def _run_compatible_runner(
     state = check_korean_residue(state)
     state = retrieve_korean_culture_context(state)
     state = write_reader_endnotes(state)
-    state = filter_rank_endnotes(state)
-    state = align_endnotes_to_final_translation(state)
     state = build_translation_package(state)
     return state
 
