@@ -10,6 +10,7 @@ import re as _re
 from dataclasses import asdict
 from typing import Any
 
+from core.logging import get_logger
 from db import repository as db_repo
 
 from . import (
@@ -25,6 +26,7 @@ from .text_processing.korean_output import is_korean_source
 
 _ALL_LOCALES = ["ko_ja", "ko_en_us", "ko_zh_cn", "ko_th_th"]
 _pipeline_cache: dict[tuple[str, bool], TranslationPipeline] = {}
+logger = get_logger("translation.service")
 
 
 # ------------------------------------------------------------------ #
@@ -216,18 +218,241 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
     return response
 
 
-_CONFIRM_TOKENS = {"네", "응", "ㅇㅇ", "예", "맞아", "해줘", "좋아", "ok", "yes", "수정해", "변경해", "적용해", "저장해", "ㅇ"}
-_CANCEL_TOKENS  = {"아니", "됐어", "취소", "no", "안해", "그냥둬", "ㄴㄴ", "괜찮아", "말아줘"}
+_PENDING_ACTION_FIELDS = {"type", "original_word", "new_value", "category", "description"}
+_PENDING_ACTION_TYPES = {"update_glossary", "add_glossary", "delete_glossary", "update_translation"}
+_PLACEHOLDER_VALUES = {"원어", "새 번역어", "번역어", "glossary_type", "proposed_translation"}
+
+_CONFIRM_EXACT = {
+    "네",
+    "응",
+    "ㅇ",
+    "ㅇㅇ",
+    "예",
+    "좋아",
+    "좋습니다",
+    "ok",
+    "yes",
+    "적용",
+    "적용해",
+    "적용해줘",
+    "반영",
+    "반영해",
+    "반영해줘",
+    "저장",
+    "저장해",
+    "저장해줘",
+    "진행",
+    "진행해",
+    "진행해줘",
+    "바꿔줘",
+    "수정해줘",
+    "변경해줘",
+    "고쳐줘",
+    "그걸로",
+    "그걸로 해",
+    "그대로 해",
+}
+_CONFIRM_TOKENS = {"네", "응", "ㅇ", "ㅇㅇ", "예", "좋아", "ok", "yes"}
+_CONFIRM_ACTION_PHRASES = {
+    "적용",
+    "적용해",
+    "적용해줘",
+    "반영",
+    "반영해",
+    "반영해줘",
+    "저장",
+    "저장해",
+    "저장해줘",
+    "진행",
+    "진행해",
+    "진행해줘",
+}
+_CONFIRM_PRONOUN_PHRASES = {"그걸로", "그대로", "이걸로", "저걸로"}
+_CHANGE_VERB_PHRASES = {"바꿔줘", "수정해줘", "변경해줘", "고쳐줘"}
+
+_CANCEL_EXACT = {
+    "아니",
+    "아뇨",
+    "됐어",
+    "취소",
+    "취소해",
+    "취소해줘",
+    "no",
+    "안해",
+    "안 해",
+    "하지마",
+    "하지 마",
+    "그냥둬",
+    "그냥 둬",
+    "ㄴㄴ",
+    "괜찮아",
+    "말아줘",
+    "보류",
+    "나중에",
+}
+_CANCEL_PHRASES = {
+    "취소",
+    "하지마",
+    "하지 마",
+    "안해",
+    "안 해",
+    "말아줘",
+    "그냥둬",
+    "그냥 둬",
+    "저장하지마",
+    "저장하지 마",
+    "반영하지마",
+    "반영하지 마",
+    "적용하지마",
+    "적용하지 마",
+    "보류",
+}
+_QUESTION_CUES = {"?", "왜", "뭐", "무엇", "어떻게", "맞아", "맞나요", "되나", "될까", "괜찮을까"}
+_UNCLEAR_CUES = {"아직", "근데", "그런데", "하지만", "일단", "말고", "음", "흠", "보이긴", "긴 한데", "하는데"}
+_ACTION_REQUEST_CUES = {
+    "바꿔",
+    "수정",
+    "변경",
+    "고쳐",
+    "교정",
+    "다시 써",
+    "rewrite",
+    "replace",
+    "change",
+    "fix",
+    "correct",
+    "자연스럽게",
+    "다듬",
+    "어색하지 않게",
+    "말투",
+    "톤",
+    "용어집",
+    "glossary",
+    "앞으로",
+    "항상",
+    "계속",
+    "통일",
+    "추가",
+    "삭제",
+}
+
+
+def _normalize_decision_text(message: str) -> tuple[str, set[str]]:
+    text = _re.sub(r"\s+", " ", str(message or "").strip().lower())
+    tokens = set(_re.sub(r"[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9]", " ", text).split())
+    return text, tokens
 
 
 def _classify_user_intent(message: str) -> str:
-    """'confirm' | 'cancel' | 'other' — pendingAction 처리 전 사용자 의도 판정."""
-    tokens = set(_re.sub(r"[^가-힣a-zA-Z0-9]", " ", message.lower()).split())
-    if tokens & _CONFIRM_TOKENS:
-        return "confirm"
-    if tokens & _CANCEL_TOKENS:
+    """'confirm' | 'cancel' | 'unclear' | 'other' — pendingAction 처리 전 보수적 의도 판정."""
+    text, tokens = _normalize_decision_text(message)
+    if not text:
+        return "unclear"
+
+    compact = text.replace(" ", "")
+    if text in _CANCEL_EXACT or compact in {v.replace(" ", "") for v in _CANCEL_EXACT}:
         return "cancel"
+    if any(phrase.replace(" ", "") in compact for phrase in _CANCEL_PHRASES):
+        return "cancel"
+
+    if any(cue in text for cue in _QUESTION_CUES):
+        return "other"
+
+    if text in _CONFIRM_EXACT or compact in {v.replace(" ", "") for v in _CONFIRM_EXACT}:
+        return "confirm"
+
+    has_unclear_cue = any(cue in text for cue in _UNCLEAR_CUES)
+    if has_unclear_cue:
+        return "unclear"
+
+    short_enough = len(text) <= 40 and len(tokens) <= 5
+    has_affirmation = bool(tokens & _CONFIRM_TOKENS)
+    has_action_phrase = any(phrase in text for phrase in _CONFIRM_ACTION_PHRASES)
+    has_pronoun = any(phrase in text for phrase in _CONFIRM_PRONOUN_PHRASES)
+    has_change_verb = any(phrase in text for phrase in _CHANGE_VERB_PHRASES)
+
+    if short_enough and (has_affirmation or has_action_phrase):
+        return "confirm"
+    if short_enough and has_pronoun and (has_action_phrase or has_change_verb or "해" in tokens):
+        return "confirm"
+
+    if has_change_verb and not (has_affirmation or has_pronoun or has_action_phrase):
+        return "other"
+    if has_change_verb or has_action_phrase or has_affirmation:
+        return "unclear"
     return "other"
+
+
+def _looks_like_action_request(message: str) -> bool:
+    """LLM이 DB 액션을 제안해도 되는 현재 사용자 요청인지 보수적으로 확인."""
+    text, _tokens = _normalize_decision_text(message)
+    if not text:
+        return False
+    if any(cue in text for cue in _QUESTION_CUES):
+        return False
+    return any(cue in text for cue in _ACTION_REQUEST_CUES)
+
+
+def _sanitize_pending_action(pending_action: Any) -> dict[str, Any] | None:
+    if not isinstance(pending_action, dict):
+        return None
+    return {key: pending_action.get(key, "") for key in _PENDING_ACTION_FIELDS}
+
+
+def _is_placeholder(value: Any) -> bool:
+    text = str(value or "").strip()
+    return not text or text in _PLACEHOLDER_VALUES
+
+
+def _safe_int(value: Any) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _validate_pending_action(
+    pending_action: dict[str, Any],
+    *,
+    work_id: str | None,
+    translation_id: int | None,
+) -> str | None:
+    action_type = str(pending_action.get("type") or "").strip()
+    if action_type not in _PENDING_ACTION_TYPES:
+        return f"알 수 없는 action type입니다: {action_type or '(empty)'}"
+
+    original_word = pending_action.get("original_word", "")
+    new_value = pending_action.get("new_value", "")
+    category = pending_action.get("category", "")
+
+    if action_type == "update_translation":
+        if not translation_id:
+            return "translationId가 없어 번역을 저장할 수 없습니다."
+        if _is_placeholder(new_value):
+            return "저장할 번역문이 비어 있거나 placeholder입니다."
+        return None
+
+    if action_type in {"add_glossary", "update_glossary"}:
+        if not work_id:
+            return "workId가 없어 glossary를 수정할 수 없습니다."
+        if _is_placeholder(original_word):
+            return "glossary 원어가 비어 있거나 placeholder입니다."
+        if _is_placeholder(new_value):
+            return "glossary 번역어가 비어 있거나 placeholder입니다."
+        if _is_placeholder(category):
+            return "glossary category가 비어 있거나 placeholder입니다."
+        return None
+
+    if action_type == "delete_glossary":
+        if not work_id:
+            return "workId가 없어 glossary를 삭제할 수 없습니다."
+        if _is_placeholder(original_word):
+            return "삭제할 glossary 원어가 비어 있거나 placeholder입니다."
+        return None
+
+    return None
 
 
 def _execute_pending_action(
@@ -283,6 +508,49 @@ def _should_save_chat(payload: dict[str, Any]) -> bool:
     if isinstance(value, bool):
         return value
     return str(value).strip().lower() not in {"0", "false", "no", "off"}
+
+
+def _persist_chat_turn_if_needed(
+    response: dict[str, Any],
+    *,
+    payload: dict[str, Any],
+    translation_id: Any,
+    question: str,
+    assistant_text: str,
+) -> None:
+    if translation_id is None or not _should_save_chat(payload):
+        return
+    try:
+        response["persistedChatMessages"] = db_repo.save_chat_messages(
+            translation_id=int(translation_id),
+            messages=[
+                {"senderType": "USER", "messageText": question},
+                {"senderType": "ASSISTANT", "messageText": assistant_text},
+            ],
+        )
+    except Exception as exc:  # noqa: BLE001
+        response["persistedChatMessages"] = {"saved": False, "reason": f"{type(exc).__name__}: {exc}"}
+
+
+def _chat_response(
+    *,
+    answer: str,
+    proposed_translation: str = "",
+    change_summary: str = "",
+    needs_user_confirmation: bool = False,
+    pending_action: dict[str, Any] | None = None,
+    action_executed: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    response: dict[str, Any] = {
+        "answer": answer,
+        "proposedTranslation": proposed_translation,
+        "changeSummary": change_summary,
+        "needsUserConfirmation": needs_user_confirmation,
+        "pendingAction": pending_action,
+    }
+    if action_executed is not None:
+        response["actionExecuted"] = action_executed
+    return response
 
 
 def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
@@ -341,25 +609,76 @@ def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
     )
 
     # pendingAction 처리 — 이전 턴에서 제안된 액션에 대한 사용자 응답 판정
-    incoming_pending_action: dict[str, Any] | None = payload.get("pendingAction")
-    action_executed: dict[str, Any] | None = None
+    incoming_pending_action = _sanitize_pending_action(payload.get("pendingAction"))
     action_context = ""
 
     if incoming_pending_action:
         intent = _classify_user_intent(question)
         if intent == "confirm":
-            action_executed = _execute_pending_action(
+            safe_translation_id = _safe_int(translation_id)
+            validation_error = _validate_pending_action(
                 incoming_pending_action,
                 work_id=work_id,
-                target_country=target_country,
-                translation_id=int(translation_id) if translation_id is not None else None,
+                translation_id=safe_translation_id,
             )
-            desc = incoming_pending_action.get("description", "")
-            status = "성공" if action_executed.get("saved") else f"실패({action_executed.get('reason', '')})"
-            action_context = f"[시스템: 사용자가 '{desc}' 액션을 승인하여 실행. 결과: {status}]"
+            if validation_error:
+                action_executed = {
+                    "type": incoming_pending_action.get("type", ""),
+                    "saved": False,
+                    "reason": validation_error,
+                }
+            else:
+                action_executed = _execute_pending_action(
+                    incoming_pending_action,
+                    work_id=work_id,
+                    target_country=target_country,
+                    translation_id=safe_translation_id,
+                )
+            if action_executed.get("saved"):
+                answer = "요청하신 변경을 적용했습니다."
+            else:
+                answer = f"변경을 적용하지 못했습니다: {action_executed.get('reason', '알 수 없는 오류')}"
+            response = _chat_response(answer=answer, action_executed=action_executed)
+            _persist_chat_turn_if_needed(
+                response,
+                payload=payload,
+                translation_id=translation_id,
+                question=question,
+                assistant_text=answer,
+            )
+            return response
         elif intent == "cancel":
             desc = incoming_pending_action.get("description", "")
-            action_context = f"[시스템: 사용자가 '{desc}' 액션을 취소했습니다.]"
+            answer = f"'{desc}' 변경 제안을 취소했습니다. 적용된 변경은 없습니다." if desc else "변경 제안을 취소했습니다. 적용된 변경은 없습니다."
+            response = _chat_response(answer=answer)
+            _persist_chat_turn_if_needed(
+                response,
+                payload=payload,
+                translation_id=translation_id,
+                question=question,
+                assistant_text=answer,
+            )
+            return response
+        elif intent == "unclear":
+            answer = "이전 수정 제안을 적용할까요? 적용하려면 '적용해줘', 취소하려면 '취소'라고 답해주세요."
+            response = _chat_response(
+                answer=answer,
+                needs_user_confirmation=True,
+                pending_action=incoming_pending_action,
+            )
+            _persist_chat_turn_if_needed(
+                response,
+                payload=payload,
+                translation_id=translation_id,
+                question=question,
+                assistant_text=answer,
+            )
+            return response
+        else:
+            action_context = (
+                "[시스템: 이전 pendingAction이 있으나 현재 메시지는 명확한 확인/취소가 아닙니다. "
+                "이전 액션을 실행하거나 재생성하지 말고 현재 메시지에만 답하세요.]"
+            )
 
     reply = _chatbot(locale).reply(
         user_message=question,
@@ -377,32 +696,33 @@ def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
         action_context=action_context,
     )
 
-    # 액션 실행 완료 후엔 새 pendingAction을 내보내지 않음
-    new_pending_action = reply.pending_action if action_executed is None else None
+    new_pending_action = reply.pending_action
+    proposed_translation = reply.proposed_translation
+    change_summary = reply.change_summary
+    needs_user_confirmation = reply.needs_user_confirmation
+    if (new_pending_action or proposed_translation) and not _looks_like_action_request(question):
+        new_pending_action = None
+        proposed_translation = ""
+        change_summary = ""
+        needs_user_confirmation = False
 
     response: dict[str, Any] = {
         "answer": reply.answer,
-        "proposedTranslation": reply.proposed_translation,
-        "changeSummary": reply.change_summary,
-        "needsUserConfirmation": reply.needs_user_confirmation,
+        "proposedTranslation": proposed_translation,
+        "changeSummary": change_summary,
+        "needsUserConfirmation": needs_user_confirmation,
         "pendingAction": new_pending_action,
     }
-    if action_executed is not None:
-        response["actionExecuted"] = action_executed
 
-    if translation_id is not None and _should_save_chat(payload):
-        assistant_text = reply.answer or ""
-        if reply.proposed_translation:
-            assistant_text = f"{assistant_text}\n\n[수정 제안 번역문]\n{reply.proposed_translation}".strip()
-        try:
-            response["persistedChatMessages"] = db_repo.save_chat_messages(
-                translation_id=int(translation_id),
-                messages=[
-                    {"senderType": "USER", "messageText": question},
-                    {"senderType": "ASSISTANT", "messageText": assistant_text},
-                ],
-            )
-        except Exception as exc:  # noqa: BLE001
-            response["persistedChatMessages"] = {"saved": False, "reason": f"{type(exc).__name__}: {exc}"}
+    assistant_text = reply.answer or ""
+    if proposed_translation:
+        assistant_text = f"{assistant_text}\n\n[수정 제안 번역문]\n{proposed_translation}".strip()
+    _persist_chat_turn_if_needed(
+        response,
+        payload=payload,
+        translation_id=translation_id,
+        question=question,
+        assistant_text=assistant_text,
+    )
 
     return response
