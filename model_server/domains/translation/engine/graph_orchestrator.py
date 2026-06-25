@@ -10,7 +10,7 @@ except Exception:  # pragma: no cover - exercised only when dependency is absent
     END = START = StateGraph = None
 
 from .literary_package import (
-    V3LiteraryPackageResult,
+    LiteraryPackageResult,
     normalize_work_memory,
     TranslationLoopResult,
     _failure_signals,
@@ -42,10 +42,6 @@ GraphNodeName = Literal[
     "filter_rank_endnotes",
     "align_endnotes_to_final_translation",
     "build_translation_package",
-    "persist_result",
-    "skip_persist",
-    "capture_glossary_candidates",
-    "skip_capture",
 ]
 
 
@@ -86,10 +82,7 @@ class TranslationGraphState(TypedDict, total=False):
     readerEndnotesDraft: list[dict[str, Any]]
     readerEndnotes: list[dict[str, Any]]
     annotationTrace: dict[str, Any]
-    translationPackage: V3LiteraryPackageResult
-    savedTranslationId: Any
-    glossarySavedCount: int
-    glossaryCandidateCapture: dict[str, Any]
+    translationPackage: LiteraryPackageResult
     glossaryCandidates: list[dict[str, Any]]  # glossary 리뷰어가 추출한 신규 용어 후보(승인 dedup 후)
     revisorDecisions: list[dict[str, Any]]    # 리바이저의 finding별 적용/기각 결정
     revisorSummary: str                       # 리바이저의 수정 방향성 짧은 평(revisor_summary)
@@ -100,14 +93,11 @@ class TranslationGraphState(TypedDict, total=False):
     _loop: Any
     errors: list[dict[str, Any]]
     graphTrace: Annotated[list[dict[str, Any]], _append_trace]
-    persistHook: Callable[[TranslationGraphState], dict[str, Any]] | None
-    captureHook: Callable[[TranslationGraphState], dict[str, Any]] | None
-    annotationCandidateHook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None
     annotationRetrievalHook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None
     revisorHook: Callable[[TranslationGraphState], dict[str, Any]] | None
     residueRepairHook: Callable[[TranslationGraphState, list[dict[str, Any]]], dict[int, str]] | None
     readerEndnoteWriterHook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None
-    # LLM 리뷰어 hook: (state, reviewer_type) -> list[v3 issue dict]. 없으면 결정론적 리뷰만.
+    # LLM 리뷰어 hook: (state, reviewer_type) -> list[issue dict]. 없으면 결정론적 리뷰만.
     reviewerHook: Callable[[TranslationGraphState, str], list[dict[str, Any]]] | None
 
 
@@ -133,13 +123,12 @@ def normalize_input(state: TranslationGraphState) -> TranslationGraphState:
         "sourceText": source_text,
         "targetLocale": target_locale,
         "targetCountry": state.get("targetCountry") or request.get("targetCountry") or request.get("target_country"),
-        "mode": request.get("mode") or request.get("pipeline") or "v3_literary_package",
+        "mode": request.get("mode") or request.get("pipeline") or "literary_package",
         "title": state.get("title") or request.get("title") or "",
         "genre": genre,
         "workId": state.get("workId", request.get("workId") or request.get("work_id")),
         "episodeId": state.get("episodeId", request.get("episodeId") or request.get("episode_id")),
         "saveTranslationResult": bool(request.get("saveTranslationResult") or request.get("save_translation_result")),
-        "captureGlossaryCandidates": bool(request.get("captureGlossaryCandidates") or request.get("capture_glossary_candidates")),
     }
     state.update(
         {
@@ -210,7 +199,7 @@ def _graph_translate_once(
     revision_context: str,
 ) -> tuple[str, dict[str, Any]]:
     if translate_once is None:
-        return _mock_literary_translation(source_text, target_locale, work_memory=work_memory), {"mock_v3": True, "draftOverview": "목 모드: 번역가 노트(초벌)."}
+        return _mock_literary_translation(source_text, target_locale, work_memory=work_memory), {"mock": True, "draftOverview": "목 모드: 번역가 노트(초벌)."}
     try:
         return translate_once(strict, attempt, revision_context)  # type: ignore[misc]
     except TypeError:
@@ -319,7 +308,7 @@ def _record_review_trace(
 def _llm_reviewer_findings(state: TranslationGraphState, reviewer_type: str) -> list[dict[str, Any]]:
     """주입된 LLM 리뷰어 hook으로 advisory findings를 만든다.
 
-    hook 시그니처: (state, reviewer_type) -> list[v3 issue dict].
+    hook 시그니처: (state, reviewer_type) -> list[issue dict].
     리뷰 실패가 그래프를 막지 않도록 예외는 빈 리스트로 흡수한다(fail-soft).
     """
     hook = state.get("reviewerHook")
@@ -561,7 +550,7 @@ def _review_cards_from_findings(findings: list[dict[str, Any]]) -> list[dict[str
         suggestion = finding.get("suggestion") or issue.get("suggestion") or ""
         cards.append(
             {
-                "id": f"v3-review-card-{index}",
+                "id": f"review-card-{index}",
                 "priority": finding.get("priority") or "P2",
                 "status": "pending",
                 "section": section,
@@ -613,8 +602,8 @@ def build_translation_package(state: TranslationGraphState) -> TranslationGraphS
     internal["draftOverview"] = str((state.get("draftMetadata") or {}).get("draftOverview") or "")
     # 결정론적 critic 카드 + LLM 리뷰어(말투/자연스러움/문화) 카드 합류.
     author_review_cards = list(loop.authorReviewCards) + _review_cards_from_findings(state.get("reviewFindings") or [])
-    package = V3LiteraryPackageResult(
-        "v3_literary_package",
+    package = LiteraryPackageResult(
+        "literary_package",
         loop.finalTranslation,
         loop.qaIssues,
         author_review_cards,
@@ -623,66 +612,6 @@ def build_translation_package(state: TranslationGraphState) -> TranslationGraphS
     )
     state["translationPackage"] = package
     return _trace(state, "build_translation_package", readerEndnotesCount=len(package.readerEndnotes))
-
-
-def should_persist(state: TranslationGraphState) -> bool:
-    request = state.get("normalizedRequest") or {}
-    package = state.get("translationPackage")
-    return bool(
-        request.get("saveTranslationResult")
-        and package
-        and package.finalTranslation.strip()
-    )
-
-
-def persist_result(state: TranslationGraphState) -> TranslationGraphState:
-    hook = state.get("persistHook")
-    result = hook(state) if hook else {"enabled": bool((state.get("normalizedRequest") or {}).get("saveTranslationResult")), "saved": False, "reason": "no_persist_hook"}
-    result.setdefault("scope", "graph_orchestrator_pre_service_persistence")
-    state["savedTranslationId"] = result.get("savedTranslationId") or result.get("translation_id")
-    package = state.get("translationPackage")
-    if package:
-        package.internal["translationPersistence"] = result
-    return _trace(state, "persist_result", saved=bool(result.get("saved")), savedTranslationId=state.get("savedTranslationId"))
-
-
-def skip_persist(state: TranslationGraphState) -> TranslationGraphState:
-    package = state.get("translationPackage")
-    if package:
-        package.internal["translationPersistence"] = {
-            "enabled": bool((state.get("normalizedRequest") or {}).get("saveTranslationResult")),
-            "saved": False,
-            "skipped": True,
-            "scope": "graph_orchestrator_pre_service_persistence",
-            "reason": "service_layer_handles_http_persistence_when_no_graph_hook_is_installed",
-        }
-    return _trace(state, "skip_persist", skipped=True)
-
-
-def should_capture_glossary(state: TranslationGraphState) -> bool:
-    request = state.get("normalizedRequest") or {}
-    package = state.get("translationPackage")
-    return bool(request.get("captureGlossaryCandidates") and request.get("workId") is not None and state.get("targetLocale") and package)
-
-
-def capture_glossary_candidates(state: TranslationGraphState) -> TranslationGraphState:
-    hook = state.get("captureHook")
-    result = hook(state) if hook else {"enabled": bool((state.get("normalizedRequest") or {}).get("captureGlossaryCandidates")), "savedCount": 0, "reason": "no_capture_hook"}
-    state["glossaryCandidateCapture"] = result
-    state["glossarySavedCount"] = int(result.get("savedCount") or 0)
-    package = state.get("translationPackage")
-    if package:
-        package.internal["glossaryCandidateCapture"] = result
-    return _trace(state, "capture_glossary_candidates", savedCount=state["glossarySavedCount"])
-
-
-def skip_capture(state: TranslationGraphState) -> TranslationGraphState:
-    result = {"enabled": bool((state.get("normalizedRequest") or {}).get("captureGlossaryCandidates")), "skipped": True}
-    state["glossaryCandidateCapture"] = result
-    package = state.get("translationPackage")
-    if package:
-        package.internal["glossaryCandidateCapture"] = result
-    return _trace(state, "skip_capture", skipped=True)
 
 
 def _node_delta(before: TranslationGraphState, after: TranslationGraphState, trace_start: int) -> dict[str, Any]:
@@ -738,10 +667,6 @@ def _build_stategraph(max_iterations: int, translate_once: Callable[..., tuple[s
     builder.add_node("filter_rank_endnotes", _as_langgraph_node(filter_rank_endnotes))
     builder.add_node("align_endnotes_to_final_translation", _as_langgraph_node(align_endnotes_to_final_translation))
     builder.add_node("build_translation_package", _as_langgraph_node(build_translation_package))
-    builder.add_node("persist_result", _as_langgraph_node(persist_result))
-    builder.add_node("skip_persist", _as_langgraph_node(skip_persist))
-    builder.add_node("capture_glossary_candidates", _as_langgraph_node(capture_glossary_candidates))
-    builder.add_node("skip_capture", _as_langgraph_node(skip_capture))
 
     builder.add_edge(START, "normalize_input")
     builder.add_edge("normalize_input", "load_work_memory")
@@ -758,12 +683,8 @@ def _build_stategraph(max_iterations: int, translate_once: Callable[..., tuple[s
     builder.add_edge("write_reader_endnotes", "filter_rank_endnotes")
     builder.add_edge(["check_korean_residue", "filter_rank_endnotes"], "align_endnotes_to_final_translation")
     builder.add_edge("align_endnotes_to_final_translation", "build_translation_package")
-    builder.add_conditional_edges("build_translation_package", should_persist, {True: "persist_result", False: "skip_persist"})
-    builder.add_conditional_edges("persist_result", should_capture_glossary, {True: "capture_glossary_candidates", False: "skip_capture"})
-    builder.add_conditional_edges("skip_persist", should_capture_glossary, {True: "capture_glossary_candidates", False: "skip_capture"})
-    builder.add_edge("capture_glossary_candidates", END)
-    builder.add_edge("skip_capture", END)
-    return builder.compile(name="v3_literary_package_graph")
+    builder.add_edge("build_translation_package", END)
+    return builder.compile(name="literary_package_graph")
 
 
 def _run_compatible_runner(
@@ -788,8 +709,6 @@ def _run_compatible_runner(
     state = filter_rank_endnotes(state)
     state = align_endnotes_to_final_translation(state)
     state = build_translation_package(state)
-    state = persist_result(state) if should_persist(state) else skip_persist(state)
-    state = capture_glossary_candidates(state) if should_capture_glossary(state) else skip_capture(state)
     return state
 
 
@@ -837,7 +756,7 @@ def run_graph_orchestrator(
     return state
 
 
-def build_v3_graph_literary_package(
+def build_graph_literary_package(
     source_text: str,
     target_locale: str,
     *,
@@ -845,22 +764,20 @@ def build_v3_graph_literary_package(
     work_memory: Any = None,
     max_iterations: int = 2,
     translate_once: Callable[..., tuple[str, dict[str, Any]]] | None = None,
-    annotation_candidate_hook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None = None,
     annotation_retrieval_hook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None = None,
     reader_endnote_writer_hook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None = None,
     reviewer_hook: Callable[[TranslationGraphState, str], list[dict[str, Any]]] | None = None,
     revisor_hook: Callable[[TranslationGraphState], dict[str, Any]] | None = None,
     residue_repair_hook: Callable[[TranslationGraphState, list[dict[str, Any]]], dict[int, str]] | None = None,
-) -> V3LiteraryPackageResult:
+) -> LiteraryPackageResult:
     state = run_graph_orchestrator(
         {
-            "request": {"sourceText": source_text, "targetLocale": target_locale, "mode": "v3_literary_package", "genre": genre},
+            "request": {"sourceText": source_text, "targetLocale": target_locale, "mode": "literary_package", "genre": genre},
             "sourceText": source_text,
             "targetLocale": target_locale,
             "genre": genre,
             "workMemory": work_memory,
             "workMemorySource": "request_payload" if work_memory is not None else "none",
-            "annotationCandidateHook": annotation_candidate_hook,
             "annotationRetrievalHook": annotation_retrieval_hook,
             "readerEndnoteWriterHook": reader_endnote_writer_hook,
             "reviewerHook": reviewer_hook,

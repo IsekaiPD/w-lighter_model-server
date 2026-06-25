@@ -1,6 +1,6 @@
 """독자용 각주(reader endnote) 작성 에이전트 (LLM 스텝).
 
-v3 그래프 주석 갈래의 마지막 단계인 `write_reader_endnotes` 노드에 hook으로 주입된다.
+그래프 주석 갈래의 마지막 단계인 `write_reader_endnotes` 노드에 hook으로 주입된다.
 kculture RAG(`AnnotationRetriever`)가 찾아낸 한국 문화 표현을, 해당 장면의 맥락에
 자연스럽게 녹여 "목표 독자 언어"로 서술한 독자용 각주로 만든다.
 
@@ -134,7 +134,7 @@ class EndnoteWriter:
 
 
 def build_reader_endnote_hook(writer: EndnoteWriter) -> Callable[[dict[str, Any]], list[dict[str, Any]]]:
-    """v3 그래프 readerEndnoteWriterHook 용 클로저.
+    """그래프 readerEndnoteWriterHook 용 클로저.
 
     state 에서 sourceText/finalTranslation/annotationRetrievals 를 꺼내
     EndnoteWriter 로 각주를 작성한다.

@@ -1,7 +1,7 @@
 """직접 번역 엔진 부품 (순수 스텝).
 
 원문을 한 번 번역하고 번역 안전성(잔류 한글/소스 카피/locale 준수)을
-점검한 뒤, 필요하면 strict 재시도까지 수행한다. v3 그래프의 `translate_once`
+점검한 뒤, 필요하면 strict 재시도까지 수행한다. 그래프의 `translate_once`
 콜백이 호출한다.
 """
 from __future__ import annotations
