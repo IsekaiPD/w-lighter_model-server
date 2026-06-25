@@ -53,11 +53,6 @@ def _clean(value: Any) -> str:
     return str(value or "").strip()
 
 
-def _clip(value: str, limit: int = 220) -> str:
-    text = re.sub(r"\s+", " ", _clean(value))
-    return text if len(text) <= limit else text[: limit - 1].rstrip() + "..."
-
-
 def _as_dict(value: Any) -> dict[str, Any]:
     if value is None:
         return {}
@@ -154,11 +149,6 @@ def _mock_literary_translation(source_text: str, target_locale: str, work_memory
             translated = "Localized Japanese mock translation: 物語の感情線."
         return translated
     return f"[mock literary translation] {text}"
-
-
-def _hangul_ratio(text: str) -> float:
-    chars = [ch for ch in (text or "") if not ch.isspace()]
-    return 0.0 if not chars else sum(1 for ch in chars if _HANGUL_RE.match(ch)) / len(chars)
 
 
 def _glossary_source_set(work_memory: WorkMemory | None) -> set[str]:
