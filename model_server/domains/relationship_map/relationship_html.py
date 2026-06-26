@@ -415,10 +415,13 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
       }});
     }});
 
-    updateCards();
-    overlay.style.opacity = '1';
-    // PDF 캡처 타이밍용 신호 + 위치 초기화 신호
-    window.parent.postMessage({{ type: 'rel-ready' }}, '*');
+    // preset/breadthfirst 둘 다 fit 후 프레임 대기 → 카드 위치 정확하게
+    cy.fit(cy.nodes(), 80);
+    requestAnimationFrame(function() {{
+      updateCards();
+      overlay.style.opacity = '1';
+      window.parent.postMessage({{ type: 'rel-ready' }}, '*');
+    }});
   }});
 
   // 드래그 완료 시 부모에 위치 데이터 전달
