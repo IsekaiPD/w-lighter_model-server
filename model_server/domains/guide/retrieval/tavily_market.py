@@ -628,8 +628,8 @@ def build_multi_country_live_market_evidence(
         "liveMarketInjectedCount": total_items,
         "recommendationAllowed": recommendation_allowed,
         "reportMode": report_mode,
-        "genre": genre,
-        "signalsByCountry": signals_by_country,
+        "genre": "",
+        "signalsByCountry": {},
         "countries": country_payloads,
         "limitations": [
             "Tavily 결과는 검색 시점의 공개 웹 자료이며 전체 시장 통계가 아닙니다.",
