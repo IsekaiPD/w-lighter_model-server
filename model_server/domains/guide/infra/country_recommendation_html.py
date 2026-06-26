@@ -64,6 +64,8 @@ SOURCE_TYPE_LABELS = {
 
 def _source_items(values: Any, *, categories: set[str] | None = None) -> str:
     entries: list[str] = []
+    seen_urls: set[str] = set()
+    seen_domains: set[str] = set()
     for item in values or []:
         if not isinstance(item, dict):
             continue
@@ -74,7 +76,14 @@ def _source_items(values: Any, *, categories: set[str] | None = None) -> str:
         title = str(item.get("title") or item.get("domain") or "공개 근거").strip()
         if not url or not url.lower().startswith(("http://", "https://")):
             continue
+        if url in seen_urls:
+            continue
         domain = str(item.get("domain") or "").strip()
+        if domain and domain in seen_domains:
+            continue
+        seen_urls.add(url)
+        if domain:
+            seen_domains.add(domain)
         raw_source_type = str(item.get("source_type") or "").strip()
         category = SOURCE_CATEGORY_LABELS.get(raw_category, raw_category)
         source_type = SOURCE_TYPE_LABELS.get(raw_source_type, raw_source_type)
@@ -127,8 +136,6 @@ def render_country_recommendation_html(result: dict[str, Any]) -> str:
   <span class="wl-guide-risk-level">{_esc(fit_level)}</span>
   <h3>{_esc(country)}</h3>{evidence_level_html}
   <h4>작품에서 잘 전달될 요소</h4>{_items(item.get('strengths'))}
-  {f'<h4>작품 적합성 근거</h4>{market_source_html}' if market_source_html else ''}
-  {f'<h4>게시·정책 검토 근거</h4>{policy_source_html}' if policy_source_html else ''}
   <h4>현지화에서 주의할 요소</h4>{_items(item.get('risks'))}
   <h4>현지화 난이도</h4><p>{_esc(item.get('localizationDifficulty') or '추가 확인 필요')}</p>
 </article>'''
@@ -142,7 +149,7 @@ def render_country_recommendation_html(result: dict[str, Any]) -> str:
 
     body = f'''<main class="wl-guide-page">
   <section class="wl-guide-hero">
-    <div class="wl-guide-eyebrow">Synopsis country analysis</div>
+    <div class="wl-guide-eyebrow">시놉시스 현지화 분석</div>
     <h1>{_esc(title)}</h1>
     <p>{_esc(message)}</p>
     <div class="wl-guide-meta-grid">

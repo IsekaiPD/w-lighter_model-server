@@ -93,15 +93,15 @@ QUERY_CONFIG = {
     },
     "US": {
         "platform_reference": "Royal Road content guidelines fiction tags AI sexual violence",
-        "k_content_reception": "Korean webtoon manhwa web novel US English readers popularity reception 2024",
+        "k_content_reception": "Korean webtoon manhwa growing popularity US readers Webtoon Tapas LINE",
     },
     "CN": {
         "platform_reference": "起点中文网 晋江文学城 番茄小说 投稿 规则 内容规范",
-        "k_content_reception": "韩国 漫画 条漫 网络小说 中国 读者 流行 受众 反应",
+        "k_content_reception": "Korean webtoon manhwa Chinese market popularity overseas",
     },
     "TH": {
         "platform_reference": "ReadAWrite Dek-D กฎการลงนิยาย เนื้อหาต้องห้าม",
-        "k_content_reception": "Korean webtoon manhwa web novel Thailand Thai readers popular reception",
+        "k_content_reception": "เว็บตูน เกาหลี ไทย ความนิยม นักอ่าน มังฮวา",
     },
 }
 
