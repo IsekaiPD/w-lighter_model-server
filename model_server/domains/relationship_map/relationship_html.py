@@ -350,7 +350,7 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 
   // HTML 오버레이 카드 생성 (opacity 애니메이션 제거 — zoom:0.7 환경 대응)
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;';
+  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;';
   document.getElementById('cy').appendChild(overlay);
 
   cy.nodes().forEach(function(node) {{
