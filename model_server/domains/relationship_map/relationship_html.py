@@ -292,7 +292,8 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
       {{
         selector: 'node',
         style: {{
-          'opacity': 0,
+          'background-opacity': 0,
+          'border-width': 0,
           'label': '',
           'width': 152,
           'height': 78,
