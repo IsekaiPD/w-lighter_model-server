@@ -348,9 +348,9 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
     autounselectify: true,
   }});
 
-  // HTML 오버레이 카드 생성
+  // HTML 오버레이 카드 생성 (opacity 애니메이션 제거 — zoom:0.7 환경 대응)
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0;';
+  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;';
   document.getElementById('cy').appendChild(overlay);
 
   cy.nodes().forEach(function(node) {{
@@ -415,17 +415,17 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
       }});
     }});
 
-    // preset/breadthfirst 둘 다 fit 후 프레임 대기 → 카드 위치 정확하게
+    // preset/breadthfirst 둘 다 fit 후 카드 위치 갱신
     cy.fit(cy.nodes(), 80);
-    requestAnimationFrame(function() {{
+    updateCards();
+    setTimeout(function() {{
       updateCards();
-      overlay.style.opacity = '1';
-      // 브라우저 페인트 완료 후 PDF 캡처 신호 (트랜지션 없이도 50ms 여유)
-      setTimeout(function() {{
-        window.parent.postMessage({{ type: 'rel-ready' }}, '*');
-      }}, 50);
-    }});
+      window.parent.postMessage({{ type: 'rel-ready' }}, '*');
+    }}, 100);
   }});
+
+  // render 이벤트마다 카드 위치 동기화 (zoom:0.7 환경 대응)
+  cy.on('render', updateCards);
 
   // 드래그 완료 시 부모에 위치 데이터 전달
   cy.on('free', 'node', function() {{
