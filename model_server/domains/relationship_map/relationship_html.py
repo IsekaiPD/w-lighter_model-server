@@ -292,8 +292,7 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
       {{
         selector: 'node',
         style: {{
-          'background-opacity': 0,
-          'border-width': 0,
+          'opacity': 0,
           'label': '',
           'width': 152,
           'height': 78,
@@ -443,3 +442,4 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 </script>
 </body>
 </html>"""
+    
