@@ -119,14 +119,14 @@ def render_country_recommendation_html(result: dict[str, Any]) -> str:
         country = item.get("displayCountry") or item.get("country") or "국가"
         fit_level = item.get("fitLevel") or "추가 확인 필요"
         evidence_level = item.get("evidenceLevel") or "확인 필요"
-        market_source_html = _source_items(item.get("liveEvidence"), categories={"genre_trend", "title_synopsis_style", "reader_hook"})
+        market_source_html = _source_items(item.get("liveEvidence"), categories={"k_content_reception"})
         policy_source_html = _source_items(item.get("liveEvidence"), categories={"platform_reference"})
+        evidence_level_html = f'<p>근거 수준 · {_esc(evidence_level)}</p>' if evidence_level and evidence_level not in ("없음", "확인 필요") else ""
         cards.append(
             f'''<article class="wl-guide-card">
   <span class="wl-guide-risk-level">{_esc(fit_level)}</span>
-  <h3>{_esc(country)}</h3><p>근거 수준 · {_esc(evidence_level)}</p>
+  <h3>{_esc(country)}</h3>{evidence_level_html}
   <h4>작품에서 잘 전달될 요소</h4>{_items(item.get('strengths'))}
-  <div class="wl-guide-rationale"><h4>근거 요약</h4>{_items(item.get('evidenceSummary'))}</div>
   {f'<h4>작품 적합성 근거</h4>{market_source_html}' if market_source_html else ''}
   {f'<h4>게시·정책 검토 근거</h4>{policy_source_html}' if policy_source_html else ''}
   <h4>현지화에서 주의할 요소</h4>{_items(item.get('risks'))}

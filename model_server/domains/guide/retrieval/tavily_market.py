@@ -89,36 +89,26 @@ REFERENCE_DOMAINS = {
 QUERY_CONFIG = {
     "JP": {
         "platform_reference": "小説家になろう カクヨム 投稿 ガイドライン コンテンツ規定",
-        "genre_trend": "site:kakuyomu.jp OR site:syosetu.com {genre} {signals} Web小説",
-        "title_synopsis_style": "日本 Web小説 {genre} {signals} 現代ファンタジー 怪異 恋愛",
-        "reader_hook": "日本 Web小説 読者 タグ {genre} {signals}",
+        "k_content_reception": "韓国 ウェブ漫画 マンファ ウェブ小説 日本 人気 流行 受容 読者",
     },
     "US": {
         "platform_reference": "Royal Road content guidelines fiction tags AI sexual violence",
-        "genre_trend": "site:royalroad.com fiction {genre} {signals}",
-        "title_synopsis_style": "English web fiction {genre} {signals} urban fantasy mystery romance",
-        "reader_hook": "English web fiction reader tags {genre} {signals}",
+        "k_content_reception": "Korean webtoon manhwa web novel US English readers popularity reception 2024",
     },
     "CN": {
         "platform_reference": "起点中文网 晋江文学城 番茄小说 投稿 规则 内容规范",
-        "genre_trend": "中国 网络文学 {genre} {signals} 热门题材 标签",
-        "title_synopsis_style": "起点 晋江 番茄 小说 {genre} {signals} 简介 标签",
-        "reader_hook": "中国 网络小说 读者 标签 {genre} {signals}",
+        "k_content_reception": "韩国 漫画 条漫 网络小说 中国 读者 流行 受众 反应",
     },
     "TH": {
         "platform_reference": "ReadAWrite Dek-D กฎการลงนิยาย เนื้อหาต้องห้าม",
-        "genre_trend": "นิยายออนไลน์ ไทย {genre} {signals} แนวโน้ม แท็ก",
-        "title_synopsis_style": "ReadAWrite Dek-D นิยาย {genre} {signals} คำโปรย แท็ก",
-        "reader_hook": "นักอ่านนิยายออนไลน์ไทย แท็ก {genre} {signals}",
+        "k_content_reception": "Korean webtoon manhwa web novel Thailand Thai readers popular reception",
     },
 }
 
 
 REQUIRED_CATEGORIES = [
     "platform_reference",
-    "genre_trend",
-    "title_synopsis_style",
-    "reader_hook",
+    "k_content_reception",
 ]
 
 
@@ -131,9 +121,7 @@ SOURCE_PRIORITY = {
 
 CATEGORY_PRIORITY = {
     "platform_reference": 1,
-    "title_synopsis_style": 2,
-    "reader_hook": 3,
-    "genre_trend": 4,
+    "k_content_reception": 2,
 }
 
 
@@ -573,19 +561,16 @@ def build_multi_country_live_market_evidence(
     max_chars = int(os.getenv("WLIGHTER_TAVILY_CONTENT_CHARS", "420"))
     min_score = float(os.getenv("WLIGHTER_TAVILY_MIN_SCORE", "0.20"))
     search_depth = os.getenv("WLIGHTER_TAVILY_SEARCH_DEPTH", "basic")
-    genre = clean_text(str(story_profile.get("genre") or payload.get("genre") or "web novel"))
-    signals_by_country = {country: _story_search_signals(story_profile, country) for country in countries}
-
     rows_by_country: dict[str, list[dict[str, Any]]] = {}
     with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {
             executor.submit(
                 collect_live_market_rows,
                 country=country,
-                genre=genre,
+                genre="",
                 max_results=max_results,
                 search_depth=search_depth,
-                signals=signals_by_country[country],
+                signals=[],
             ): country
             for country in countries
         }
