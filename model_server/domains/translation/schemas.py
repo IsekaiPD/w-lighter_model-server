@@ -71,7 +71,7 @@ class InspectChatResponse(BaseModel):
     model_config = {"extra": "allow"}
 
     answer: str
-    proposedTranslation: str | None = None
+    edits: list[dict[str, Any]] | None = None
     changeSummary: str | None = None
     needsUserConfirmation: bool = False
     pendingAction: dict[str, Any] | None = None
