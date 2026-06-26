@@ -132,7 +132,7 @@ def node_positions(characters: list[dict]) -> dict[str, tuple[float, float]]:
     return positions
 
 
-def build_relation_html(*, work_title: str, relation_data: dict) -> str:
+def build_relation_html(*, work_title: str, relation_data: dict, positions: dict | None = None) -> str:
     title = esc(relation_data.get("work_title") or work_title)
     summary = esc(relation_data.get("summary", ""))
     main_character = esc(relation_data.get("main_character", ""))
@@ -142,7 +142,10 @@ def build_relation_html(*, work_title: str, relation_data: dict) -> str:
     warnings = relation_data.get("warnings") or []
     character_by_id = {item["id"]: item for item in characters}
 
-    # --- Cytoscape 노드: label은 비워두고 HTML 오버레이가 렌더링 ---
+    # 저장된 노드 위치 (있으면 preset 레이아웃, 없으면 breadthfirst)
+    positions_json = json.dumps(positions or {}, ensure_ascii=False)
+
+    # --- Cytoscape 노드 ---
     cy_nodes = []
     for char in characters:
         cy_nodes.append({
@@ -204,6 +207,7 @@ def build_relation_html(*, work_title: str, relation_data: dict) -> str:
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>{title} - 인물 관계도</title>
+<script id="__rel-pos-data">window.__REL_POSITIONS__={positions_json};</script>
 <style>
 :root {{ --panel:#FEF9F7; --ink:#2D2440; --muted:#6E638C; --main:#6E5BB8; --lavender:#CFC3FB; --lavender-light:#E9E1FF; --shadow:0 14px 36px rgba(45,36,64,.12); }}
 * {{ box-sizing:border-box; }}
@@ -216,7 +220,6 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 .badge {{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(254,249,247,.86); border:1px solid rgba(207,195,251,.55); border-radius:999px; box-shadow:var(--shadow); color:var(--muted); font-size:13px; white-space:nowrap; }}
 .badge strong {{ color:var(--main); }}
 #cy {{ position:relative; width:100%; height:{GRAPH_HEIGHT}px; background:rgba(254,249,247,.80); border:1px solid rgba(207,195,251,.50); border-radius:32px; box-shadow:var(--shadow); overflow:hidden; }}
-/* HTML 오버레이 노드 카드 */
 .nc {{ position:absolute; width:152px; transform:translate(-50%,-50%); transform-origin:center center; pointer-events:none; background:linear-gradient(180deg,rgba(254,249,247,.98),rgba(249,233,250,.72)); border:1px solid rgba(207,195,251,.45); border-radius:20px; padding:13px 12px 11px; box-shadow:0 12px 28px rgba(45,36,64,.10); text-align:center; user-select:none; }}
 .nc.main {{ width:180px; background:linear-gradient(180deg,#F3EEFF,#E9E1FF); border:1.5px solid #CFC3FB; box-shadow:0 18px 38px rgba(168,155,212,.34),0 8px 22px rgba(47,33,17,.10); }}
 .nc-name {{ font-size:18px; font-weight:900; color:#2D2440; line-height:1.25; word-break:keep-all; }}
@@ -257,6 +260,30 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
   function escHtml(s) {{
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }}
+
+  // 저장된 위치 확인: 있으면 preset, 없으면 breadthfirst
+  var savedPos = window.__REL_POSITIONS__ || {{}};
+  var usePreset = Object.keys(savedPos).length > 0;
+
+  var layoutConfig = usePreset
+    ? {{
+        name: 'preset',
+        positions: function(node) {{ return savedPos[node.id()] || {{x: 0, y: 0}}; }},
+        fit: true,
+        padding: 80,
+        animate: false,
+      }}
+    : {{
+        name: 'breadthfirst',
+        root: '[?is_main]',
+        directed: false,
+        spacingFactor: 1.6,
+        padding: 80,
+        animate: true,
+        animationDuration: 600,
+        fit: true,
+        avoidOverlap: true,
+      }};
 
   var cy = cytoscape({{
     container: document.getElementById('cy'),
@@ -314,24 +341,14 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
         }}
       }},
     ],
-    layout: {{
-      name: 'breadthfirst',
-      root: '[?is_main]',
-      directed: false,
-      spacingFactor: 1.6,
-      padding: 80,
-      animate: true,
-      animationDuration: 600,
-      fit: true,
-      avoidOverlap: true,
-    }},
+    layout: layoutConfig,
     userZoomingEnabled: true,
     userPanningEnabled: true,
     boxSelectionEnabled: false,
     autounselectify: true,
   }});
 
-  // --- HTML 오버레이 카드 생성 ---
+  // HTML 오버레이 카드 생성
   var overlay = document.createElement('div');
   overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .3s;';
   document.getElementById('cy').appendChild(overlay);
@@ -361,53 +378,59 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
   }}
 
   cy.on('layoutstop', function() {{
-    // 같은 레벨(Y좌표 기준) 노드들을 교대로 위아래 어긋나게 → 일렬 정렬 해소
-    var yGroups = {{}};
-    cy.nodes().forEach(function(node) {{
-      var y = Math.round(node.position().y / 80) * 80;
-      if (!yGroups[y]) yGroups[y] = [];
-      yGroups[y].push(node);
-    }});
-    Object.keys(yGroups).forEach(function(y) {{
-      var group = yGroups[y];
-      if (group.length < 2) return;
-      group.forEach(function(node, i) {{
-        if (node.data('is_main')) return;
-        var stagger = (i % 2 === 0 ? -1 : 1) * (30 + (i % 3) * 10);
-        node.position({{ x: node.position().x, y: node.position().y + stagger }});
+    // 저장된 위치 없을 때만 stagger 적용
+    if (!usePreset) {{
+      var yGroups = {{}};
+      cy.nodes().forEach(function(node) {{
+        var y = Math.round(node.position().y / 80) * 80;
+        if (!yGroups[y]) yGroups[y] = [];
+        yGroups[y].push(node);
       }});
-    }});
-    cy.fit(cy.nodes(), 80);
+      Object.keys(yGroups).forEach(function(y) {{
+        var group = yGroups[y];
+        if (group.length < 2) return;
+        group.forEach(function(node, i) {{
+          if (node.data('is_main')) return;
+          var stagger = (i % 2 === 0 ? -1 : 1) * (30 + (i % 3) * 10);
+          node.position({{ x: node.position().x, y: node.position().y + stagger }});
+        }});
+      }});
+      cy.fit(cy.nodes(), 80);
+    }}
 
-    // 엣지 길이에 따라 곡률 조정: 긴 엣지일수록 크게 휘어서 중간 노드를 우회
+    // 엣지 길이 기반 곡률 적용
     cy.edges().forEach(function(edge, i) {{
       var src = edge.source().position();
       var tgt = edge.target().position();
       var edgeLen = Math.sqrt(Math.pow(tgt.x - src.x, 2) + Math.pow(tgt.y - src.y, 2));
-
       var baseDist = 55 + (i % 4) * 18;
       var curveFactor = Math.min(3.5, edgeLen / 220);
       var dist = (i % 2 === 0 ? 1 : -1) * baseDist * curveFactor;
-
-      // 긴 엣지는 라벨을 중앙 말고 양 끝 쪽에 배치 → 혼잡한 중간 구간 회피
-      var weight;
-      if (edgeLen > 380) {{
-        weight = (i % 2 === 0) ? 0.22 : 0.78;
-      }} else {{
-        weight = 0.33 + (i % 5) * 0.085;
-      }}
-
-      var marginY = (i % 2 === 0 ? -10 : 10);
+      var weight = edgeLen > 380 ? (i % 2 === 0 ? 0.22 : 0.78) : 0.33 + (i % 5) * 0.085;
       edge.style({{
         'curve-style': 'unbundled-bezier',
         'control-point-distances': dist,
         'control-point-weights': weight,
-        'text-margin-y': marginY,
+        'text-margin-y': (i % 2 === 0 ? -10 : 10),
       }});
     }});
+
     updateCards();
     overlay.style.opacity = '1';
+    // PDF 캡처 타이밍용 신호 + 위치 초기화 신호
+    window.parent.postMessage({{ type: 'rel-ready' }}, '*');
   }});
+
+  // 드래그 완료 시 부모에 위치 데이터 전달
+  cy.on('free', 'node', function() {{
+    var positions = {{}};
+    cy.nodes().forEach(function(node) {{
+      var p = node.position();
+      positions[node.id()] = {{ x: Math.round(p.x), y: Math.round(p.y) }};
+    }});
+    window.parent.postMessage({{ type: 'rel-positions', positions: positions }}, '*');
+  }});
+
   cy.on('pan zoom', updateCards);
   cy.on('position', 'node', updateCards);
 }})();
