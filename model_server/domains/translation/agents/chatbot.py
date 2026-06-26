@@ -15,7 +15,18 @@ CHATBOT_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
     "properties": {
         "answer": {"type": "string"},
-        "proposed_translation": {"type": "string"},
+        "edits": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "original": {"type": "string"},
+                    "replacement": {"type": "string"},
+                },
+                "required": ["original", "replacement"],
+            },
+        },
         "change_summary": {"type": "string"},
         "needs_user_confirmation": {"type": "boolean"},
         "pending_action": {
@@ -26,7 +37,7 @@ CHATBOT_SCHEMA: dict[str, Any] = {
                     "properties": {
                         "type": {
                             "type": "string",
-                            "enum": ["update_glossary", "add_glossary", "delete_glossary", "update_translation"],
+                            "enum": ["update_glossary", "add_glossary", "delete_glossary"],
                         },
                         "description": {"type": "string"},
                         "original_word": {"type": "string"},
@@ -41,7 +52,7 @@ CHATBOT_SCHEMA: dict[str, Any] = {
     },
     "required": [
         "answer",
-        "proposed_translation",
+        "edits",
         "change_summary",
         "needs_user_confirmation",
         "pending_action",
@@ -110,10 +121,10 @@ class ChatMessage:
 @dataclass(slots=True)
 class ChatbotReply:
     answer: str
-    proposed_translation: str
     change_summary: str
     needs_user_confirmation: bool
     pending_action: dict[str, Any] | None
+    edits: list[dict[str, Any]]
     raw_response: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
@@ -308,10 +319,10 @@ class ChatbotAgent:
             payload = chatbot_payload(user_message, source_text, reviewed_translation)
             return ChatbotReply(
                 answer=payload["answer"],
-                proposed_translation=payload["proposed_translation"],
                 change_summary=payload["change_summary"],
                 needs_user_confirmation=payload["needs_user_confirmation"],
                 pending_action=None,
+                edits=payload.get("edits") or [],
                 raw_response=payload["raw_response"],
             )
 
@@ -360,10 +371,10 @@ class ChatbotAgent:
         payload = json.loads(response.output_text)
         return ChatbotReply(
             answer=payload["answer"],
-            proposed_translation=payload["proposed_translation"],
             change_summary=payload["change_summary"],
             needs_user_confirmation=payload["needs_user_confirmation"],
             pending_action=payload.get("pending_action"),
+            edits=payload.get("edits") or [],
             raw_response=payload,
         )
 

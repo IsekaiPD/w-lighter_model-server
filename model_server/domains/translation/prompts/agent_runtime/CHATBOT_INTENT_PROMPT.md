@@ -66,7 +66,7 @@ Decision rules:
 Allow flags:
 
 * `allow_pending_action` must be true only when the chatbot may create or preserve a DB-changing `pending_action`.
-* `allow_proposed_translation` must be true only when the chatbot may return a complete revised translation.
+* `allow_proposed_translation` must be true only when the chatbot may return translation `edits`.
 * For `explain`, `evaluate`, `review_help`, `unrelated`, and `ambiguous`, both allow flags should normally be false.
 * For `propose_edit` with `edit_scope=current_translation` and source grounding not `ungrounded`, both allow flags should normally be true.
 * For `glossary`, `allow_pending_action` may be true only when the persistent terminology request is concrete.

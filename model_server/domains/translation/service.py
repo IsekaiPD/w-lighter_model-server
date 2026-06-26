@@ -214,7 +214,7 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 _PENDING_ACTION_FIELDS = {"type", "original_word", "new_value", "category", "description"}
-_PENDING_ACTION_TYPES = {"update_glossary", "add_glossary", "delete_glossary", "update_translation"}
+_PENDING_ACTION_TYPES = {"update_glossary", "add_glossary", "delete_glossary"}
 _PLACEHOLDER_VALUES = {"원어", "새 번역어", "번역어", "glossary_type", "proposed_translation"}
 
 _CONFIRM_EXACT = {
@@ -489,13 +489,6 @@ def _validate_pending_action(
     new_value = pending_action.get("new_value", "")
     category = pending_action.get("category", "")
 
-    if action_type == "update_translation":
-        if not translation_id:
-            return "translationId가 없어 번역을 저장할 수 없습니다."
-        if _is_placeholder(new_value):
-            return "저장할 번역문이 비어 있거나 placeholder입니다."
-        return None
-
     if action_type in {"add_glossary", "update_glossary"}:
         if not work_id:
             return "workId가 없어 glossary를 수정할 수 없습니다."
@@ -552,12 +545,6 @@ def _execute_pending_action(
         )
         return {"type": action_type, **result}
 
-    if action_type == "update_translation":
-        if not translation_id:
-            return {"type": action_type, "saved": False, "reason": "translationId가 없어 번역을 저장할 수 없습니다."}
-        result = db_repo.update_translation_text(translation_id, new_value)
-        return {"type": action_type, **result}
-
     return {"type": action_type, "saved": False, "reason": f"알 수 없는 action type: {action_type}"}
 
 
@@ -597,7 +584,6 @@ def _persist_chat_turn_if_needed(
 def _chat_response(
     *,
     answer: str,
-    proposed_translation: str = "",
     change_summary: str = "",
     needs_user_confirmation: bool = False,
     pending_action: dict[str, Any] | None = None,
@@ -605,7 +591,6 @@ def _chat_response(
 ) -> dict[str, Any]:
     response: dict[str, Any] = {
         "answer": answer,
-        "proposedTranslation": proposed_translation,
         "changeSummary": change_summary,
         "needsUserConfirmation": needs_user_confirmation,
         "pendingAction": pending_action,
@@ -772,39 +757,31 @@ def inspect_chat(payload: dict[str, Any]) -> dict[str, Any]:
     )
 
     new_pending_action = reply.pending_action
-    proposed_translation = reply.proposed_translation
+    edits = reply.edits or []
     change_summary = reply.change_summary
-    needs_user_confirmation = reply.needs_user_confirmation
     guardrail_removed_action = False
     if new_pending_action and not intent.allow_pending_action:
         new_pending_action = None
-        needs_user_confirmation = False
         guardrail_removed_action = True
-    if proposed_translation and not intent.allow_proposed_translation:
-        new_pending_action = None
-        proposed_translation = ""
+    if edits and not intent.allow_proposed_translation:
+        edits = []
         change_summary = ""
-        needs_user_confirmation = False
         guardrail_removed_action = True
-    if new_pending_action and not proposed_translation and str(new_pending_action.get("type") or "") == "update_translation":
-        new_pending_action = None
-        needs_user_confirmation = False
-        guardrail_removed_action = True
-    if new_pending_action:
-        needs_user_confirmation = True
+    # 번역 수정은 edits(프론트 버튼 적용)로만 처리 → 확인이 필요한 것은 glossary pending_action뿐.
+    needs_user_confirmation = bool(new_pending_action)
     answer = _guardrail_answer(intent, reply.answer) if guardrail_removed_action else reply.answer
 
     response: dict[str, Any] = {
         "answer": answer,
-        "proposedTranslation": proposed_translation,
+        "edits": edits,
         "changeSummary": change_summary,
         "needsUserConfirmation": needs_user_confirmation,
         "pendingAction": new_pending_action,
     }
 
     assistant_text = answer or ""
-    if proposed_translation:
-        assistant_text = f"{assistant_text}\n\n[수정 제안 번역문]\n{proposed_translation}".strip()
+    if edits:
+        assistant_text = f"{assistant_text}\n\n[수정 제안: {len(edits)}곳]".strip()
     _persist_chat_turn_if_needed(
         response,
         payload=payload,

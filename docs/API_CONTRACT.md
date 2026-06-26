@@ -228,7 +228,7 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 
 ## POST /api/v1/translation/inspect-chat
 
-번역 검수 챗봇 — 질문 답변 + 선택적 수정 제안 + glossary/번역 DB 편집(사용자 확인 후).
+번역 검수 챗봇 — 질문 답변 + 선택적 번역 수정 제안(`edits`, 프론트 버튼 적용) + glossary DB 편집(사용자 확인 후).
 
 **요청** (`question` 필수)
 
@@ -251,7 +251,7 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 | 필드 | 타입 | 설명 |
 |---|---|---|
 | `answer` | string | 챗봇 답변 |
-| `proposedTranslation` | string\|null | 번역 수정 제안(있으면) |
+| `edits` | array<object>\|null | 번역 수정 제안. 각 원소 `{original, replacement}` — 프론트가 번역본에서 `original`을 정확 문자열 매칭으로 찾아 `replacement`로 교체(적용 버튼). 수정 없으면 `[]` |
 | `changeSummary` | string\|null | 변경 요약 |
 | `needsUserConfirmation` | bool | 사용자 확인 필요 여부 |
 | `pendingAction` | object\|null | 챗봇이 제안하는 DB 액션. 다음 요청 시 그대로 `pendingAction` 필드에 실어 전송. null이면 대기 액션 없음 |
@@ -275,7 +275,8 @@ AI 산출물을 DB(MySQL/SQLite)에 저장하는 엔드포인트는 **공통 규
 | `update_glossary` | 기존 glossary 항목 번역어 수정 | `original_word`, `new_value`, `category` + 요청의 `workId` |
 | `add_glossary` | glossary 신규 추가 | `original_word`, `new_value`, `category` + 요청의 `workId` |
 | `delete_glossary` | glossary 항목 삭제 | `original_word` + 요청의 `workId` |
-| `update_translation` | 번역문 전체를 DB에 저장 | `new_value`(전체 번역문) + 요청의 `translationId` |
+
+> 번역문 수정은 `pendingAction`이 아니라 응답의 `edits`로 내려가며, **프론트 '번역 제안 적용' 버튼**이 처리한다(서버가 번역본 DB를 직접 쓰지 않음). `pendingAction`은 glossary(용어집) 편집 전용이다.
 
 **pendingAction 플로우 (프론트 구현 규약)**
 
