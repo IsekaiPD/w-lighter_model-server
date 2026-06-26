@@ -1,4 +1,5 @@
 import html
+import json
 import math
 from datetime import datetime
 
@@ -139,56 +140,37 @@ def build_relation_html(*, work_title: str, relation_data: dict) -> str:
     relations = merge_duplicate_relations(relation_data.get("relations") or [])
     groups = relation_data.get("groups") or []
     warnings = relation_data.get("warnings") or []
-    positions = node_positions(characters)
     character_by_id = {item["id"]: item for item in characters}
 
-    marker_defs = "".join(
-        f'<marker id="arrow-{style}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">'
-        f'<path d="M 0 0 L 10 5 L 0 10 z" fill="{color}" /></marker>'
-        for style, color in STYLE_COLORS.items()
-    )
+    # --- Cytoscape 노드: label은 비워두고 HTML 오버레이가 렌더링 ---
+    cy_nodes = []
+    for char in characters:
+        cy_nodes.append({
+            "data": {
+                "id": str(char["id"]),
+                "name": str(char.get("name") or ""),
+                "profile": str(char.get("profile_label") or ""),
+                "is_main": bool(char.get("is_main")),
+            }
+        })
 
-    edge_paths: list[str] = []
-    for index, relation in enumerate(relations):
-        source_point = positions.get(relation.get("source"))
-        target_point = positions.get(relation.get("target"))
-        if not source_point or not target_point:
-            continue
+    # --- Cytoscape 엣지 ---
+    cy_edges = []
+    for rel in relations:
+        style = rel.get("style") if rel.get("style") in STYLE_COLORS else "neutral"
+        cy_edges.append({
+            "data": {
+                "source": str(rel.get("source") or ""),
+                "target": str(rel.get("target") or ""),
+                "label": str(rel.get("relation") or "")[:16],
+                "color": STYLE_COLORS[style],
+                "direction": relation_direction(rel.get("direction")),
+            }
+        })
 
-        raw_x1, raw_y1 = source_point
-        raw_x2, raw_y2 = target_point
-        source_item = character_by_id.get(relation.get("source"))
-        target_item = character_by_id.get(relation.get("target"))
-        x1, y1 = point_near_node_edge(raw_x1, raw_y1, raw_x2, raw_y2, source_item)
-        x2, y2 = point_near_node_edge(raw_x2, raw_y2, raw_x1, raw_y1, target_item)
-        style = relation.get("style") if relation.get("style") in STYLE_COLORS else "neutral"
-        color = STYLE_COLORS[style]
-        direction = relation_direction(relation.get("direction"))
-        marker = f' marker-end="url(#arrow-{style})"'
-        if direction == "both":
-            marker = f' marker-start="url(#arrow-{style})" marker-end="url(#arrow-{style})"'
+    elements_json = json.dumps(cy_nodes + cy_edges, ensure_ascii=False)
 
-        dx, dy = x2 - x1, y2 - y1
-        distance = max(math.hypot(dx, dy), 1)
-        curve_strength = 24 + (index % 3) * 6
-        curve_direction = -1 if index % 2 else 1
-        control_x = (x1 + x2) / 2 + (-dy / distance) * curve_strength * curve_direction
-        control_y = (y1 + y2) / 2 + (dx / distance) * curve_strength * curve_direction
-        edge_paths.append(
-            f'<path class="edge-line edge-{direction}" d="M {x1:.1f} {y1:.1f} Q {control_x:.1f} {control_y:.1f} {x2:.1f} {y2:.1f}" stroke="{color}"{marker}></path>'
-        )
-
-    node_cards: list[str] = []
-    for item in characters:
-        x, y = positions.get(item["id"], (GRAPH_WIDTH / 2, 430.0))
-        class_name = "node main" if item.get("is_main") else "node"
-        node_cards.append(
-            f'<article class="{class_name}" style="left:{x:.1f}px; top:{y:.1f}px;">'
-            f'<div class="name">{esc(item.get("name"))}</div>'
-            f'<div class="profile-label">{esc(item.get("profile_label"))}</div>'
-            f"</article>"
-        )
-
+    # --- 하단 패널 ---
     relation_items: list[str] = []
     for relation in relations:
         source = character_by_id.get(relation.get("source"), {}).get("name", relation.get("source"))
@@ -211,12 +193,10 @@ def build_relation_html(*, work_title: str, relation_data: dict) -> str:
             f'<div>{chips}</div><div class="item-meta">{esc(group.get("description"))}</div></div>'
         )
 
-    legend_items = "".join(
-        f'<span class="legend-item"><i style="background:{color};"></i>{esc(STYLE_LABELS.get(style, style))}</span>'
-        for style, color in STYLE_COLORS.items()
-    )
     warning_items = "".join(f'<div class="warning">{esc(item)}</div>' for item in warnings)
     created_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    relation_panel = "".join(relation_items) or '<p class="notice">추출된 관계가 없습니다.</p>'
+    group_panel = "".join(group_items) or '<p class="notice">추출된 그룹이 없습니다.</p>'
 
     return f"""<!doctype html>
 <html lang="ko">
@@ -225,7 +205,7 @@ def build_relation_html(*, work_title: str, relation_data: dict) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>{title} - 인물 관계도</title>
 <style>
-:root {{ --bg:#F6F1EB; --panel:#FEF9F7; --ink:#2D2440; --muted:#6E638C; --main:#6E5BB8; --lavender:#CFC3FB; --lavender-light:#E9E1FF; --lavender-pale:#F3EEFF; --pink-white:#F9E9FA; --shadow:0 14px 36px rgba(45,36,64,.12); }}
+:root {{ --panel:#FEF9F7; --ink:#2D2440; --muted:#6E638C; --main:#6E5BB8; --lavender:#CFC3FB; --lavender-light:#E9E1FF; --shadow:0 14px 36px rgba(45,36,64,.12); }}
 * {{ box-sizing:border-box; }}
 body {{ margin:0; background:radial-gradient(circle at top left,#fff 0,#F6F1EB 45%,#F3EEFF 100%); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR","Malgun Gothic",sans-serif; }}
 .page {{ max-width:1280px; margin:0 auto; padding:32px 24px 48px; }}
@@ -235,19 +215,15 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 .summary {{ margin:0; color:var(--muted); font-size:16px; line-height:1.6; }}
 .badge {{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(254,249,247,.86); border:1px solid rgba(207,195,251,.55); border-radius:999px; box-shadow:var(--shadow); color:var(--muted); font-size:13px; white-space:nowrap; }}
 .badge strong {{ color:var(--main); }}
-.graph-card {{ position:relative; width:100%; min-height:{GRAPH_HEIGHT}px; background:rgba(254,249,247,.80); border:1px solid rgba(207,195,251,.50); border-radius:32px; overflow:auto; box-shadow:var(--shadow); }}
-.graph-inner {{ position:relative; width:{GRAPH_WIDTH}px; height:{GRAPH_HEIGHT}px; transform-origin:top left; }}
-.lines {{ position:absolute; inset:0; width:{GRAPH_WIDTH}px; height:{GRAPH_HEIGHT}px; z-index:1; }}
-.node {{ position:absolute; width:{NORMAL_NODE_SIZE[0]}px; min-height:{NORMAL_NODE_SIZE[1]}px; transform:translate(-50%,-50%); z-index:2; background:linear-gradient(180deg,rgba(254,249,247,.98),rgba(249,233,250,.72)); border:1px solid rgba(207,195,251,.45); border-radius:20px; padding:15px 14px 13px; box-shadow:0 12px 28px rgba(45,36,64,.10); text-align:center; }}
-.node.main {{ width:{MAIN_NODE_SIZE[0]}px; min-height:{MAIN_NODE_SIZE[1]}px; background:linear-gradient(180deg,var(--lavender-pale),var(--lavender-light)); border:1px solid var(--lavender); box-shadow:0 18px 38px rgba(168,155,212,.34),0 8px 22px rgba(47,33,17,.10); }}
-.name {{ font-size:20px; font-weight:900; line-height:1.25; word-break:keep-all; }}
-.node.main .name {{ font-size:21px; color:var(--ink); }}
-.profile-label {{ display:inline-block; margin-top:9px; max-width:100%; padding:6px 12px; border-radius:999px; background:#E9E1FF; color:#6E5BB8; font-size:13px; font-weight:900; line-height:1.25; word-break:keep-all; }}
-.node.main .profile-label {{ background:var(--lavender); color:#2D2440; }}
-.profile-label:empty {{ display:none; }}
-.edge-line {{ fill:none; stroke-linecap:round; opacity:.95; }}
-.edge-one_way {{ stroke-width:3.0; }}
-.edge-both {{ stroke-width:3.1; opacity:.82; }}
+#cy {{ position:relative; width:100%; height:{GRAPH_HEIGHT}px; background:rgba(254,249,247,.80); border:1px solid rgba(207,195,251,.50); border-radius:32px; box-shadow:var(--shadow); overflow:hidden; }}
+/* HTML 오버레이 노드 카드 */
+.nc {{ position:absolute; width:152px; transform:translate(-50%,-50%); transform-origin:center center; pointer-events:none; background:linear-gradient(180deg,rgba(254,249,247,.98),rgba(249,233,250,.72)); border:1px solid rgba(207,195,251,.45); border-radius:20px; padding:13px 12px 11px; box-shadow:0 12px 28px rgba(45,36,64,.10); text-align:center; user-select:none; }}
+.nc.main {{ width:180px; background:linear-gradient(180deg,#F3EEFF,#E9E1FF); border:1.5px solid #CFC3FB; box-shadow:0 18px 38px rgba(168,155,212,.34),0 8px 22px rgba(47,33,17,.10); }}
+.nc-name {{ font-size:18px; font-weight:900; color:#2D2440; line-height:1.25; word-break:keep-all; }}
+.nc.main .nc-name {{ font-size:20px; }}
+.nc-profile {{ display:inline-block; margin-top:7px; padding:4px 10px; border-radius:999px; background:#E9E1FF; color:#6E5BB8; font-size:11px; font-weight:900; line-height:1.3; word-break:keep-all; }}
+.nc.main .nc-profile {{ background:#CFC3FB; color:#2D2440; }}
+.nc-profile:empty {{ display:none; }}
 .content-grid {{ display:grid; grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr); gap:18px; margin-top:18px; }}
 .panel {{ background:rgba(254,249,247,.86); border:1px solid rgba(207,195,251,.38); border-radius:24px; padding:18px; box-shadow:0 10px 26px rgba(45,36,64,.08); }}
 .panel h2 {{ margin:0 0 12px; font-size:22px; color:var(--main); }}
@@ -257,9 +233,6 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 .relation-type {{ color:#A89BD4; font-weight:800; }}
 .item-meta {{ margin-top:7px; color:var(--muted); font-size:17px; line-height:1.65; }}
 .group-chip {{ display:inline-block; margin:4px 6px 0 0; padding:7px 11px; border-radius:999px; background:#E9E1FF; font-size:15px; font-weight:800; color:#6E5BB8; }}
-.legend {{ display:flex; flex-wrap:wrap; gap:8px 12px; margin-top:12px; color:var(--muted); font-size:15px; }}
-.legend-item {{ display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }}
-.legend-item i {{ width:18px; height:3px; border-radius:999px; display:inline-block; opacity:.88; }}
 .notice {{ margin-top:14px; color:var(--muted); font-size:14px; }}
 .warning {{ background:#F9E9FA; border:1px solid rgba(248,215,245,.90); color:#6E5BB8; padding:10px 12px; border-radius:14px; margin-top:8px; font-size:16px; line-height:1.6; }}
 @media(max-width:900px) {{ .header{{flex-direction:column;}} .content-grid{{grid-template-columns:1fr;}} }}
@@ -271,13 +244,173 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
     <div><div class="kicker">HTML RELATION MAP</div><h1>{title}</h1><p class="summary">{summary}</p></div>
     <div class="badge">중심 인물 <strong>{main_character}</strong></div>
   </div>
-  <section class="graph-card"><div class="graph-inner"><svg class="lines" viewBox="0 0 {GRAPH_WIDTH} {GRAPH_HEIGHT}" aria-hidden="true"><defs>{marker_defs}</defs>{''.join(edge_paths)}</svg>{''.join(node_cards)}</div></section>
-  <div class="legend" aria-label="관계 색상 범례">{legend_items}</div>
+  <div id="cy"></div>
   <div class="content-grid">
-    <section class="panel"><h2>관계 목록</h2>{''.join(relation_items) or '<p class="notice">추출된 관계가 없습니다.</p>'}</section>
-    <section class="panel"><h2>그룹/소속</h2>{''.join(group_items) or '<p class="notice">추출된 그룹이 없습니다.</p>'}{warning_items}<p class="notice">관계도 내용은 캐릭터 설정집을 기반으로 자동 요약됩니다.</p></section>
+    <section class="panel"><h2>관계 목록</h2>{relation_panel}</section>
+    <section class="panel"><h2>그룹/소속</h2>{group_panel}{warning_items}<p class="notice">관계도 내용은 캐릭터 설정집을 기반으로 자동 요약됩니다.</p></section>
   </div>
   <p class="notice">생성일: {created_at}</p>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+<script>
+(function () {{
+  function escHtml(s) {{
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }}
+
+  var cy = cytoscape({{
+    container: document.getElementById('cy'),
+    elements: {elements_json},
+    style: [
+      {{
+        selector: 'node',
+        style: {{
+          'background-opacity': 0,
+          'border-width': 0,
+          'label': '',
+          'width': 152,
+          'height': 78,
+          'shape': 'round-rectangle',
+        }}
+      }},
+      {{
+        selector: 'node[?is_main]',
+        style: {{
+          'width': 180,
+          'height': 88,
+        }}
+      }},
+      {{
+        selector: 'edge',
+        style: {{
+          'curve-style': 'unbundled-bezier',
+          'control-point-distances': 60,
+          'control-point-weights': 0.5,
+          'line-color': 'data(color)',
+          'target-arrow-color': 'data(color)',
+          'target-arrow-shape': 'triangle',
+          'arrow-scale': 1.2,
+          'width': 2.5,
+          'opacity': 0.88,
+          'label': 'data(label)',
+          'font-size': 11,
+          'font-weight': 'bold',
+          'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif',
+          'color': 'data(color)',
+          'text-background-color': '#F6F1EB',
+          'text-background-opacity': 1,
+          'text-background-padding': '5px',
+          'text-background-shape': 'roundrectangle',
+          'text-outline-color': '#F6F1EB',
+          'text-outline-width': 3,
+          'text-rotation': 'autorotate',
+        }}
+      }},
+      {{
+        selector: 'edge[direction="both"]',
+        style: {{
+          'source-arrow-shape': 'triangle',
+          'source-arrow-color': 'data(color)',
+        }}
+      }},
+    ],
+    layout: {{
+      name: 'breadthfirst',
+      root: '[?is_main]',
+      directed: false,
+      spacingFactor: 1.6,
+      padding: 80,
+      animate: true,
+      animationDuration: 600,
+      fit: true,
+      avoidOverlap: true,
+    }},
+    userZoomingEnabled: true,
+    userPanningEnabled: true,
+    boxSelectionEnabled: false,
+    autounselectify: true,
+  }});
+
+  // --- HTML 오버레이 카드 생성 ---
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .3s;';
+  document.getElementById('cy').appendChild(overlay);
+
+  cy.nodes().forEach(function(node) {{
+    var d = node.data();
+    var card = document.createElement('div');
+    card.id = 'nc-' + node.id();
+    card.className = d.is_main ? 'nc main' : 'nc';
+    card.innerHTML =
+      '<div class="nc-name">' + escHtml(d.name) + '</div>' +
+      (d.profile ? '<div class="nc-profile">' + escHtml(d.profile) + '</div>' : '');
+    overlay.appendChild(card);
+  }});
+
+  function updateCards() {{
+    var zoom = cy.zoom();
+    cy.nodes().forEach(function(node) {{
+      var pos = node.renderedPosition();
+      var card = document.getElementById('nc-' + node.id());
+      if (card) {{
+        card.style.left = pos.x + 'px';
+        card.style.top = pos.y + 'px';
+        card.style.transform = 'translate(-50%,-50%) scale(' + zoom + ')';
+      }}
+    }});
+  }}
+
+  cy.on('layoutstop', function() {{
+    // 같은 레벨(Y좌표 기준) 노드들을 교대로 위아래 어긋나게 → 일렬 정렬 해소
+    var yGroups = {{}};
+    cy.nodes().forEach(function(node) {{
+      var y = Math.round(node.position().y / 80) * 80;
+      if (!yGroups[y]) yGroups[y] = [];
+      yGroups[y].push(node);
+    }});
+    Object.keys(yGroups).forEach(function(y) {{
+      var group = yGroups[y];
+      if (group.length < 2) return;
+      group.forEach(function(node, i) {{
+        if (node.data('is_main')) return;
+        var stagger = (i % 2 === 0 ? -1 : 1) * (30 + (i % 3) * 10);
+        node.position({{ x: node.position().x, y: node.position().y + stagger }});
+      }});
+    }});
+    cy.fit(cy.nodes(), 80);
+
+    // 엣지 길이에 따라 곡률 조정: 긴 엣지일수록 크게 휘어서 중간 노드를 우회
+    cy.edges().forEach(function(edge, i) {{
+      var src = edge.source().position();
+      var tgt = edge.target().position();
+      var edgeLen = Math.sqrt(Math.pow(tgt.x - src.x, 2) + Math.pow(tgt.y - src.y, 2));
+
+      var baseDist = 55 + (i % 4) * 18;
+      var curveFactor = Math.min(3.5, edgeLen / 220);
+      var dist = (i % 2 === 0 ? 1 : -1) * baseDist * curveFactor;
+
+      // 긴 엣지는 라벨을 중앙 말고 양 끝 쪽에 배치 → 혼잡한 중간 구간 회피
+      var weight;
+      if (edgeLen > 380) {{
+        weight = (i % 2 === 0) ? 0.22 : 0.78;
+      }} else {{
+        weight = 0.33 + (i % 5) * 0.085;
+      }}
+
+      var marginY = (i % 2 === 0 ? -10 : 10);
+      edge.style({{
+        'curve-style': 'unbundled-bezier',
+        'control-point-distances': dist,
+        'control-point-weights': weight,
+        'text-margin-y': marginY,
+      }});
+    }});
+    updateCards();
+    overlay.style.opacity = '1';
+  }});
+  cy.on('pan zoom', updateCards);
+  cy.on('position', 'node', updateCards);
+}})();
+</script>
 </body>
 </html>"""
