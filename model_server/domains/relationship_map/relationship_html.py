@@ -369,15 +369,13 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 
   function updateCards() {{
     var zoom = cy.zoom();
-    // detailFrame에 zoom:0.7 CSS가 주입되므로 좌표 보정
-    var cssZoom = parseFloat(document.documentElement.style.zoom || getComputedStyle(document.documentElement).zoom) || 1;
     cy.nodes().forEach(function(node) {{
       var pos = node.renderedPosition();
       var card = document.getElementById('nc-' + node.id());
       if (card) {{
-        card.style.left = (pos.x / cssZoom) + 'px';
-        card.style.top = (pos.y / cssZoom) + 'px';
-        card.style.transform = 'translate(-50%,-50%) scale(' + (zoom / cssZoom) + ')';
+        card.style.left = pos.x + 'px';
+        card.style.top = pos.y + 'px';
+        card.style.transform = 'translate(-50%,-50%) scale(' + zoom + ')';
       }}
     }});
   }}
@@ -443,4 +441,3 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 </script>
 </body>
 </html>"""
-    
