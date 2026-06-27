@@ -346,6 +346,9 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
     userPanningEnabled: true,
     boxSelectionEnabled: false,
     autounselectify: true,
+    wheelSensitivity: 0.2,
+    minZoom: 0.3,
+    maxZoom: 3,
   }});
 
   // HTML 오버레이 카드 생성 (opacity 애니메이션 제거 — zoom:0.7 환경 대응)
@@ -366,13 +369,15 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 
   function updateCards() {{
     var zoom = cy.zoom();
+    // detailFrame에 zoom:0.7 CSS가 주입되므로 좌표 보정
+    var cssZoom = parseFloat(document.documentElement.style.zoom || getComputedStyle(document.documentElement).zoom) || 1;
     cy.nodes().forEach(function(node) {{
       var pos = node.renderedPosition();
       var card = document.getElementById('nc-' + node.id());
       if (card) {{
-        card.style.left = pos.x + 'px';
-        card.style.top = pos.y + 'px';
-        card.style.transform = 'translate(-50%,-50%) scale(' + zoom + ')';
+        card.style.left = (pos.x / cssZoom) + 'px';
+        card.style.top = (pos.y / cssZoom) + 'px';
+        card.style.transform = 'translate(-50%,-50%) scale(' + (zoom / cssZoom) + ')';
       }}
     }});
   }}
@@ -438,3 +443,4 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 </script>
 </body>
 </html>"""
+    
