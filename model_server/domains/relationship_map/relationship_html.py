@@ -346,14 +346,11 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
     userPanningEnabled: true,
     boxSelectionEnabled: false,
     autounselectify: true,
-    wheelSensitivity: 0.2,
-    minZoom: 0.3,
-    maxZoom: 3,
   }});
 
   // HTML 오버레이 카드 생성 (opacity 애니메이션 제거 — zoom:0.7 환경 대응)
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;';
+  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;visibility:hidden;';
   document.getElementById('cy').appendChild(overlay);
 
   cy.nodes().forEach(function(node) {{
@@ -380,8 +377,67 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
     }});
   }}
 
-  cy.on('layoutstop', function() {{
-    // 저장된 위치 없을 때만 stagger 적용
+  // preset 레이아웃은 Cytoscape 생성 직후 매우 빨리 끝날 수 있어서
+  // layoutstop 이벤트를 놓치면 카드 위치 갱신이 사용자 pan/zoom 전까지 실행되지 않는다.
+  // 그래서 카드 동기화와 rel-ready 전송을 별도 안정화 함수로 분리한다.
+  var layoutHandled = false;
+  var relReadySent = false;
+
+  function applyEdgeCurves() {{
+    cy.edges().forEach(function(edge, i) {{
+      var src = edge.source().position();
+      var tgt = edge.target().position();
+      var edgeLen = Math.sqrt(Math.pow(tgt.x - src.x, 2) + Math.pow(tgt.y - src.y, 2));
+      var baseDist = 55 + (i % 4) * 18;
+      var curveFactor = Math.min(3.5, edgeLen / 220);
+      var dist = (i % 2 === 0 ? 1 : -1) * baseDist * curveFactor;
+      var weight = edgeLen > 380 ? (i % 2 === 0 ? 0.22 : 0.78) : 0.33 + (i % 5) * 0.085;
+      edge.style({{
+        'curve-style': 'unbundled-bezier',
+        'control-point-distances': dist,
+        'control-point-weights': weight,
+        'text-margin-y': (i % 2 === 0 ? -10 : 10),
+      }});
+    }});
+  }}
+
+  function runCardSyncQueue() {{
+    updateCards();
+
+    if (window.requestAnimationFrame) {{
+      window.requestAnimationFrame(function() {{
+        updateCards();
+        window.requestAnimationFrame(function() {{
+          updateCards();
+        }});
+      }});
+    }}
+
+    [50, 150, 300, 600].forEach(function(delay) {{
+      setTimeout(updateCards, delay);
+    }});
+  }}
+
+  function sendReadyAfterCardsStable() {{
+    if (relReadySent) return;
+
+    runCardSyncQueue();
+    setTimeout(function() {{
+      runCardSyncQueue();
+      setTimeout(function() {{
+        updateCards();
+        overlay.style.visibility = 'visible';
+        relReadySent = true;
+        window.parent.postMessage({{ type: 'rel-ready' }}, '*');
+      }}, 140);
+    }}, usePreset ? 700 : 260);
+  }}
+
+  function finalizeLayoutOnce() {{
+    if (layoutHandled) return;
+    layoutHandled = true;
+
+    // 저장된 위치 없을 때만 stagger 적용. 저장된 위치가 있으면 사용자가 옮긴 좌표를 건드리지 않는다.
     if (!usePreset) {{
       var yGroups = {{}};
       cy.nodes().forEach(function(node) {{
@@ -398,36 +454,32 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
           node.position({{ x: node.position().x, y: node.position().y + stagger }});
         }});
       }});
-      cy.fit(cy.nodes(), 80);
     }}
 
-    // 엣지 길이 기반 곡률 적용
-    cy.edges().forEach(function(edge, i) {{
-      var src = edge.source().position();
-      var tgt = edge.target().position();
-      var edgeLen = Math.sqrt(Math.pow(tgt.x - src.x, 2) + Math.pow(tgt.y - src.y, 2));
-      var baseDist = 55 + (i % 4) * 18;
-      var curveFactor = Math.min(3.5, edgeLen / 220);
-      var dist = (i % 2 === 0 ? 1 : -1) * baseDist * curveFactor;
-      var weight = edgeLen > 380 ? (i % 2 === 0 ? 0.22 : 0.78) : 0.33 + (i % 5) * 0.085;
-      edge.style({{
-        'curve-style': 'unbundled-bezier',
-        'control-point-distances': dist,
-        'control-point-weights': weight,
-        'text-margin-y': (i % 2 === 0 ? -10 : 10),
-      }});
-    }});
-
-    // preset/breadthfirst 둘 다 fit 후 카드 위치 갱신
+    applyEdgeCurves();
     cy.fit(cy.nodes(), 80);
-    updateCards();
-    setTimeout(function() {{
-      updateCards();
-      window.parent.postMessage({{ type: 'rel-ready' }}, '*');
-    }}, 100);
+    runCardSyncQueue();
+    sendReadyAfterCardsStable();
+  }}
+
+  cy.on('layoutstop', finalizeLayoutOnce);
+
+  cy.ready(function() {{
+    // preset은 layoutstop을 놓치는 경우가 있어 ready 이후 강제로 한 번 안정화한다.
+    if (usePreset) {{
+      setTimeout(finalizeLayoutOnce, 0);
+      setTimeout(function() {{
+        if (!relReadySent) finalizeLayoutOnce();
+      }}, 350);
+    }} else {{
+      // breadthfirst가 혹시 layoutstop을 못 보낸 경우의 마지막 안전장치
+      setTimeout(function() {{
+        if (!relReadySent) finalizeLayoutOnce();
+      }}, 1500);
+    }}
   }});
 
-  cy.on('pan zoom', updateCards);
+  cy.on('pan zoom render', updateCards);
   cy.on('position', 'node', updateCards);
   cy.on('free', 'node', function() {{
     var positions = {{}};
