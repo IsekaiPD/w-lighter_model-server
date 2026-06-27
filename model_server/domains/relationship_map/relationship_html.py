@@ -350,7 +350,7 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
 
   // HTML 오버레이 카드 생성 (opacity 애니메이션 제거 — zoom:0.7 환경 대응)
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;';
+  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;';
   document.getElementById('cy').appendChild(overlay);
 
   cy.nodes().forEach(function(node) {{
@@ -424,10 +424,8 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
     }}, 100);
   }});
 
-  // render 이벤트마다 카드 위치 동기화 (zoom:0.7 환경 대응)
-  cy.on('render', updateCards);
-
-  // 드래그 완료 시 부모에 위치 데이터 전달
+  cy.on('pan zoom', updateCards);
+  cy.on('position', 'node', updateCards);
   cy.on('free', 'node', function() {{
     var positions = {{}};
     cy.nodes().forEach(function(node) {{
@@ -436,11 +434,7 @@ h1 {{ margin:6px 0 8px; font-size:34px; line-height:1.15; }}
     }});
     window.parent.postMessage({{ type: 'rel-positions', positions: positions }}, '*');
   }});
-
-  cy.on('pan zoom', updateCards);
-  cy.on('position', 'node', updateCards);
 }})();
 </script>
 </body>
 </html>"""
-    
