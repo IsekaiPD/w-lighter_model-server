@@ -27,7 +27,6 @@ from ..text_processing.korean_output import (
 
 
 GraphNodeName = Literal[
-    "normalize_input",
     "load_work_memory",
     "run_literary_translation",
     "review_voice",
@@ -54,7 +53,6 @@ def _last_write_str(left: str | None, right: str | None) -> str:
 
 class TranslationGraphState(TypedDict, total=False):
     request: dict[str, Any]
-    normalizedRequest: dict[str, Any]
     targetCountry: str | None
     targetLocale: str
     workId: Any
@@ -72,10 +70,6 @@ class TranslationGraphState(TypedDict, total=False):
     aggregateReview: dict[str, Any]
     graphReviewTrace: Annotated[list[dict[str, Any]], _append_trace]
     finalTranslation: str
-    qaIssues: list[dict[str, Any]]
-    repairTrace: list[dict[str, Any]]
-    revisionHistory: list[dict[str, Any]]
-    graphRepairTrace: list[dict[str, Any]]
     annotationRetrievals: list[dict[str, Any]]
     readerEndnotes: list[dict[str, Any]]
     annotationTrace: dict[str, Any]
@@ -88,7 +82,6 @@ class TranslationGraphState(TypedDict, total=False):
     maxIterations: int
     graphExecutionFrame: str
     _loop: Any
-    errors: list[dict[str, Any]]
     graphTrace: Annotated[list[dict[str, Any]], _append_trace]
     annotationRetrievalHook: Callable[[TranslationGraphState], list[dict[str, Any]]] | None
     revisorHook: Callable[[TranslationGraphState], dict[str, Any]] | None
@@ -109,37 +102,6 @@ def _trace(state: TranslationGraphState, node: GraphNodeName, **data: Any) -> Tr
     row.update(data)
     state.setdefault("graphTrace", []).append(row)
     return state
-
-
-def normalize_input(state: TranslationGraphState) -> TranslationGraphState:
-    request = dict(state.get("request") or {})
-    source_text = str(state.get("sourceText") or request.get("sourceText") or request.get("source_text") or "").strip()
-    target_locale = str(state.get("targetLocale") or request.get("targetLocale") or request.get("target_locale") or "ko_ja").strip()
-    genre = str(state.get("genre") or request.get("genre") or request.get("workGenre") or "Modern Korean web novel")
-    normalized = {
-        "sourceText": source_text,
-        "targetLocale": target_locale,
-        "targetCountry": state.get("targetCountry") or request.get("targetCountry") or request.get("target_country"),
-        "mode": request.get("mode") or request.get("pipeline") or "literary_package",
-        "title": state.get("title") or request.get("title") or "",
-        "genre": genre,
-        "workId": state.get("workId", request.get("workId") or request.get("work_id")),
-        "episodeId": state.get("episodeId", request.get("episodeId") or request.get("episode_id")),
-        "saveTranslationResult": bool(request.get("saveTranslationResult") or request.get("save_translation_result")),
-    }
-    state.update(
-        {
-            "normalizedRequest": normalized,
-            "sourceText": source_text,
-            "targetLocale": target_locale,
-            "targetCountry": normalized["targetCountry"],
-            "title": normalized["title"],
-            "genre": genre,
-            "workId": normalized["workId"],
-            "episodeId": normalized["episodeId"],
-        }
-    )
-    return _trace(state, "normalize_input")
 
 
 def load_work_memory(state: TranslationGraphState) -> TranslationGraphState:
@@ -565,7 +527,6 @@ def build_translation_package(state: TranslationGraphState) -> TranslationGraphS
         "aggregateReview": state.get("aggregateReview") or {},
         "reviewSummaries": state.get("reviewSummaries") or {},   # 관점별 LLM 총평 {voice/naturalness/cultural: summary}
         "revisorSummary": state.get("revisorSummary") or "",     # 리바이저 수정 방향성 짧은 평
-        "graphRepairTrace": state.get("graphRepairTrace") or [],
         "maxIterations": min(max(1, int(state.get("maxIterations") or 2)), 2),
         "maxRevisionPass": 1,
         "readerEndnotes": state.get("readerEndnotes") or [],
@@ -634,7 +595,6 @@ def _build_stategraph(max_iterations: int, translate_once: Callable[..., tuple[s
     if StateGraph is None or START is None or END is None:
         return None
     builder = StateGraph(TranslationGraphState)
-    builder.add_node("normalize_input", _as_langgraph_node(normalize_input))
     builder.add_node("load_work_memory", _as_langgraph_node(load_work_memory))
     builder.add_node("run_literary_translation", _as_langgraph_node(run_literary_translation, translate_once=translate_once))
     builder.add_node("review_voice", _as_langgraph_node(review_voice))
@@ -648,8 +608,7 @@ def _build_stategraph(max_iterations: int, translate_once: Callable[..., tuple[s
     builder.add_node("write_reader_endnotes", _as_langgraph_node(write_reader_endnotes))
     builder.add_node("build_translation_package", _as_langgraph_node(build_translation_package))
 
-    builder.add_edge(START, "normalize_input")
-    builder.add_edge("normalize_input", "load_work_memory")
+    builder.add_edge(START, "load_work_memory")
     builder.add_edge("load_work_memory", "run_literary_translation")
     # retrieve는 sourceText만 쓰므로 번역과 병렬(같은 superstep).
     builder.add_edge("load_work_memory", "retrieve_korean_culture_context")
@@ -674,7 +633,6 @@ def _run_compatible_runner(
     translate_once: Callable[..., tuple[str, dict[str, Any]]] | None,
 ) -> TranslationGraphState:
     state["graphExecutionFrame"] = "stategraph_compatible"
-    state = normalize_input(state)
     state = load_work_memory(state)
     state = run_literary_translation(state, translate_once=translate_once)
     state = review_voice(state)
@@ -711,7 +669,6 @@ def run_graph_orchestrator(
     translate_once: Callable[..., tuple[str, dict[str, Any]]] | None = None,
 ) -> TranslationGraphState:
     state["maxIterations"] = max_iterations
-    state.setdefault("errors", [])
     graph = _build_stategraph(max_iterations, translate_once)
     if graph is not None:
         state["graphExecutionFrame"] = "langgraph_stategraph"
