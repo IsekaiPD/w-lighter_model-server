@@ -114,6 +114,31 @@ def build_residue_repair_hook(repairer: KoreanResidueRepairer) -> Callable[[dict
     return _hook
 
 
+# glossary 신규 용어 후보 sanity 가드 — LLM이 인물/지명이 든 '문장'을 통째로 source로
+# 인용하는 오류를 결정론적으로 차단한다(고유명사 용어만 통과). raw source(공백·부호 보존) 기준 평가.
+_MAX_GLOSSARY_SOURCE_LEN = 20                                  # 원어 표면 길이 상한(고유명사는 보통 ≤8자)
+_GLOSSARY_SOURCE_SENTENCE_PUNCT = tuple(".?!。？！…\"'“”")       # 문장종결/대사 신호
+_MAX_GLOSSARY_SOURCE_EOJEOL = 3                                # 3어절까지 허용, 4↑은 구/문장으로 간주
+
+
+def _looks_like_sentence(source: str) -> bool:
+    """고유명사 후보 source가 문장·구절이면 True(→ 후보 제외).
+
+    셋 중 하나라도 해당하면 문장으로 본다: ① 20자 초과 ② 문장종결부호/따옴표 포함 ③ 4어절 이상.
+    정상 고유명사(짧음·부호 없음·≤3어절)는 모두 통과한다.
+    """
+    s = (source or "").strip()
+    if not s:
+        return True
+    if len(s) > _MAX_GLOSSARY_SOURCE_LEN:
+        return True
+    if any(punct in s for punct in _GLOSSARY_SOURCE_SENTENCE_PUNCT):
+        return True
+    if len(s.split()) > _MAX_GLOSSARY_SOURCE_EOJEOL:
+        return True
+    return False
+
+
 def build_reviewer_hook(reviewers: dict[str, Any]) -> Callable[[dict[str, Any], str], list[dict[str, Any]]]:
     """후보 번역을 voice/naturalness/cultural/glossary 리뷰어로 검토해 issue 리스트를 만든다.
 
@@ -141,9 +166,10 @@ def build_reviewer_hook(reviewers: dict[str, Any]) -> Callable[[dict[str, Any], 
         state["currentReviewerSummary"] = str(getattr(result, "summary", "") or "")
         if reviewer_type == "glossary":
             # 신규 용어 후보를 state로 표면화. 결정론적 정규화 후 dedup·export:
-            # - 한국어 source는 canonical_ko_key로 통일 — 비교키 = 저장값(공백·조사·NFC 변형을 하나로).
-            #   이미 승인된 source는 확실히 제외되고, 저장값도 깨끗한 정규형이 된다.
-            # - suggested_target은 light_text(외국어라 한국어 조사 로직 비적용), category는 enum 보정.
+            # - dedup 비교: canonical_ko_key(공백·조사·NFC 변형을 하나로) — 이미 승인된 source 확실히 제외.
+            # - 저장·표시값: light_text(공백·조사 보존). 비교키(canonical)를 그대로 표시하면 띄어쓰기가
+            #   사라지므로(웹 노출 버그) 역할 분리: dedup=canonical / 저장·표시=light_text.
+            # - 문장/구절이 source로 오는 LLM 오류는 _looks_like_sentence로 사전 차단(고유명사만 통과).
             approved_keys = {
                 canonical_ko_key((row or {}).get("source") or "")
                 for row in (state.get("approvedGlossary") or [])
@@ -152,13 +178,16 @@ def build_reviewer_hook(reviewers: dict[str, Any]) -> Callable[[dict[str, Any], 
             fresh: list[dict[str, Any]] = []
             seen_keys: set[str] = set()
             for cand in (getattr(result, "candidates", None) or []):
-                key = canonical_ko_key(cand.get("source") or "")
+                raw_source = str(cand.get("source") or "").strip()
+                if _looks_like_sentence(raw_source):
+                    continue  # 문장·구절·과길이 → 고유명사 후보 아님
+                key = canonical_ko_key(raw_source)
                 if not key or key in approved_keys or key in seen_keys:
                     continue  # 빈 키·이미 승인됨·이번 배치 내 중복 → 제외
                 seen_keys.add(key)
                 fresh.append(
                     {
-                        "source": key,  # 비교키 = 저장값 (canonical 통일)
+                        "source": light_text(raw_source),  # 저장·표시값(공백 보존). 비교는 canonical(key).
                         "suggested_target": light_text(cand.get("suggested_target") or ""),
                         "category": normalize_category(cand.get("category") or ""),
                         "reason": str(cand.get("reason") or "").strip(),
