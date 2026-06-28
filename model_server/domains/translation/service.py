@@ -120,12 +120,23 @@ def translate(payload: dict[str, Any]) -> dict[str, Any]:
     max_iterations = int(payload.get("maxIterations") or 2)
 
     work_id = _payload_value(payload, "workId", "work_id", "canonicalWorkKey")
+    # 번역 요청은 workId를 안 보낼 수 있음(django는 episodeId만 전송) → episode로 work_id 역추적.
+    # 이게 없으면 아래 hydrate 조건(work_id is not None)이 거짓이라 hydrate가 호출조차 안 돼
+    # 승인 glossary dedup이 전부 무력화된다(확정 용어 재추천 버그의 실제 원인). inspect_chat와 동일 패턴.
+    if work_id is None:
+        episode_id = _payload_value(payload, "episodeId", "episode_id")
+        if episode_id is not None:
+            try:
+                derived = db_repo.get_work_id_by_episode(int(episode_id))
+                if derived is not None:
+                    work_id = derived
+            except Exception as exc:  # noqa: BLE001 — 역추적 실패가 번역을 막지 않도록
+                logger.warning("get_work_id_by_episode failed (episode_id=%s): %r", episode_id, exc)
     request_wm = payload.get("workMemory") or payload.get("work_memory")
     work_memory = request_wm if isinstance(request_wm, dict) else None
     work_memory_source = "request_payload" if work_memory is not None else "none"
     work_memory_fallback = ""
     if work_memory is None and work_id is not None and locale:
-        # TODO: db_repo.hydrate_work_memory 가 RDB 연동되면 승인 glossary로 hydrate.
         hydrated = db_repo.hydrate_work_memory(str(work_id), country)
         if hydrated is not None:
             work_memory = hydrated
