@@ -3,20 +3,21 @@
 rdb 비활성(content_store_backend=memory)이면 쓰기는 graceful no-op, 읽기는 빈 결과.
 glossary hydrate는 `domains/translation/glossary/` 추상화에 위임한다.
 """
+
 from __future__ import annotations
 
-from dataclasses import asdict
 import json
 import re
+from dataclasses import asdict
 from typing import Any
 
-from core.logging import get_logger
 from common.limits import (
     MAX_COVERS_PER_WORK,
     MAX_GUIDES_PER_WORK,
     MAX_RELATION_MAPS_PER_WORK,
     MAX_TRANSLATION_VERSIONS,
 )
+from core.logging import get_logger
 
 from .session import get_session, rdb_enabled
 
@@ -50,7 +51,9 @@ def _bool_int(value: Any) -> int:
     return 1 if text in {"1", "true", "yes", "y", "on"} else 0
 
 
-def _prune_old_rows(session, model, filters: list[Any], order_column: Any, keep: int) -> None:
+def _prune_old_rows(
+    session, model, filters: list[Any], order_column: Any, keep: int
+) -> None:
     """최신 keep개만 남기고 오래된 저장 결과를 삭제한다.
 
     요구사항 기준 보관 개수 제한:
@@ -76,7 +79,9 @@ _PROFILE_DETAIL_INLINE_RE = re.compile(
     r"^\s*프로필\s*라벨\s*:\s*(?P<label>.*?)\s*세부\s*설정\s*:\s*(?P<detail>.*)\s*$",
     re.DOTALL,
 )
-_PROFILE_LABEL_RE = re.compile(r"^\s*프로필\s*라벨\s*:\s*(?P<label>.+?)\s*$", re.MULTILINE)
+_PROFILE_LABEL_RE = re.compile(
+    r"^\s*프로필\s*라벨\s*:\s*(?P<label>.+?)\s*$", re.MULTILINE
+)
 _DETAIL_PREFIX_RE = re.compile(r"^\s*세부\s*설정\s*:\s*", re.MULTILINE)
 
 
@@ -106,7 +111,9 @@ def format_profile_detail(profile_label: Any, detail_setting: Any) -> str:
     return _s(detail_setting)
 
 
-def normalize_profile_fields(profile_label: Any, detail_setting: Any) -> tuple[str, str]:
+def normalize_profile_fields(
+    profile_label: Any, detail_setting: Any
+) -> tuple[str, str]:
     """profile_label 컬럼값과 detail_setting 본문을 분리해 정규화한다."""
     label = _trunc(profile_label, 80)
     legacy_label, cleaned_detail = split_profile_label(detail_setting)
@@ -133,12 +140,16 @@ def normalize_gender(value: Any) -> str:
 
 def _map_character(raw: dict[str, Any]) -> dict[str, Any]:
     """character_extract 출력 1건 → CHARACTERS 컬럼 dict."""
-    profile_label, detail_setting = normalize_profile_fields(raw.get("profile_label"), raw.get("detail_setting"))
+    profile_label, detail_setting = normalize_profile_fields(
+        raw.get("profile_label"), raw.get("detail_setting")
+    )
     return {
         "char_name": _trunc(raw.get("char_name"), 30),
         "gender": normalize_gender(raw.get("gender")),
         "age": _trunc(raw.get("age"), 10),
-        "role": _trunc(raw.get("role"), 5),  # ERD VARCHAR(5) — extraction(≤10)보다 짧으므로 절단
+        "role": _trunc(
+            raw.get("role"), 5
+        ),  # ERD VARCHAR(5) — extraction(≤10)보다 짧으므로 절단
         "profile_label": profile_label,
         "appearance": _trunc(raw.get("appearance"), 300),
         "relationships": _trunc(raw.get("relationships"), 500),
@@ -150,19 +161,29 @@ def _map_character(raw: dict[str, Any]) -> dict[str, Any]:
 # works / episodes
 # ------------------------------------------------------------------ #
 def create_work(
-    *, title: str = "", genre: str = "", synopsis: str | None = None,
-    pen_name: str = "", user_id: int | None = None,
+    *,
+    title: str = "",
+    genre: str = "",
+    synopsis: str | None = None,
+    pen_name: str = "",
+    user_id: int | None = None,
 ) -> dict[str, Any]:
     """작품 1건 생성 → {work_id, ...}. rdb 비활성이면 saved=False."""
     if not rdb_enabled():
-        return {"saved": False, "reason": "persistence_disabled (content_store_backend=memory)"}
+        return {
+            "saved": False,
+            "reason": "persistence_disabled (content_store_backend=memory)",
+        }
     from .models import Work
 
     session = get_session()
     try:
         work = Work(
-            title=_trunc(title, 50), genre=_trunc(genre, 10),
-            synopsis=synopsis, pen_name=_trunc(pen_name, 10), user_id=user_id,
+            title=_trunc(title, 50),
+            genre=_trunc(genre, 10),
+            synopsis=synopsis,
+            pen_name=_trunc(pen_name, 10),
+            user_id=user_id,
         )
         session.add(work)
         session.commit()
@@ -197,14 +218,20 @@ def get_work(work_id: int) -> dict[str, Any] | None:
         session.close()
 
 
-def create_episode(*, work_id: int, title: str = "", original_text: str = "") -> dict[str, Any]:
+def create_episode(
+    *, work_id: int, title: str = "", original_text: str = ""
+) -> dict[str, Any]:
     if not rdb_enabled():
         return {"saved": False, "reason": "persistence_disabled"}
     from .models import Episode
 
     session = get_session()
     try:
-        ep = Episode(work_id=int(work_id), title=_trunc(title, 30), original_text=_trunc(original_text, 8000))
+        ep = Episode(
+            work_id=int(work_id),
+            title=_trunc(title, 30),
+            original_text=_trunc(original_text, 8000),
+        )
         session.add(ep)
         session.commit()
         session.refresh(ep)
@@ -225,7 +252,12 @@ def save_characters(work_id: int, characters: list[dict[str, Any]]) -> dict[str,
     work_id FK가 없으면 graceful 실패. gender/role/길이는 ERD에 맞춰 정규화.
     """
     if not rdb_enabled():
-        return {"saved": False, "count": 0, "character_ids": [], "reason": "persistence_disabled"}
+        return {
+            "saved": False,
+            "count": 0,
+            "character_ids": [],
+            "reason": "persistence_disabled",
+        }
     if not characters:
         return {"saved": True, "count": 0, "character_ids": []}
     from .models import Character, Work
@@ -233,8 +265,17 @@ def save_characters(work_id: int, characters: list[dict[str, Any]]) -> dict[str,
     session = get_session()
     try:
         if session.get(Work, int(work_id)) is None:
-            return {"saved": False, "count": 0, "character_ids": [], "reason": f"work_id {work_id} not found"}
-        rows = [Character(work_id=int(work_id), **_map_character(c)) for c in characters if isinstance(c, dict)]
+            return {
+                "saved": False,
+                "count": 0,
+                "character_ids": [],
+                "reason": f"work_id {work_id} not found",
+            }
+        rows = [
+            Character(work_id=int(work_id), **_map_character(c))
+            for c in characters
+            if isinstance(c, dict)
+        ]
         session.add_all(rows)
         session.commit()
         ids = [r.character_id for r in rows]
@@ -255,9 +296,15 @@ def get_characters(work_id: int) -> list[dict[str, Any]]:
 
     session = get_session()
     try:
-        rows = session.execute(
-            select(Character).where(Character.work_id == int(work_id)).order_by(Character.character_id)
-        ).scalars().all()
+        rows = (
+            session.execute(
+                select(Character)
+                .where(Character.work_id == int(work_id))
+                .order_by(Character.character_id)
+            )
+            .scalars()
+            .all()
+        )
         results: list[dict[str, Any]] = []
         for r in rows:
             legacy_label, cleaned_detail = split_profile_label(r.detail_setting)
@@ -275,7 +322,9 @@ def get_characters(work_id: int) -> list[dict[str, Any]]:
                     "appearance": r.appearance,
                     "relationships": r.relationships,
                     "detail_setting": detail_setting,
-                    "detail_setting_display": format_profile_detail(profile_label, detail_setting),
+                    "detail_setting_display": format_profile_detail(
+                        profile_label, detail_setting
+                    ),
                     "detail_setting_raw": r.detail_setting,
                 }
             )
@@ -295,7 +344,10 @@ def save_translation_result(payload: dict[str, Any]) -> dict[str, Any]:
     rdb 비활성/episode 부재/필수값 누락이면 graceful saved=False.
     """
     if not rdb_enabled():
-        return {"saved": False, "reason": "persistence_disabled (content_store_backend=memory)"}
+        return {
+            "saved": False,
+            "reason": "persistence_disabled (content_store_backend=memory)",
+        }
 
     episode_id = payload.get("episodeId") or payload.get("episode_id")
     country = _s(payload.get("targetCountry") or payload.get("target_country"))
@@ -315,8 +367,10 @@ def save_translation_result(payload: dict[str, Any]) -> dict[str, Any]:
             translated_text=str(translated or ""),
             summary=payload.get("summary"),
             glossary_can=payload.get("glossaryCan") or payload.get("glossary_can"),
-            annotation_can=payload.get("annotationCan") or payload.get("annotation_can"),
-            inspection_report=payload.get("inspectionReport") or payload.get("inspection_report"),
+            annotation_can=payload.get("annotationCan")
+            or payload.get("annotation_can"),
+            inspection_report=payload.get("inspectionReport")
+            or payload.get("inspection_report"),
         )
         session.add(row)
         session.flush()
@@ -389,7 +443,10 @@ def update_translation_text(translation_id: int, new_text: str) -> dict[str, Any
     try:
         row = session.get(TranslationResult, int(translation_id))
         if row is None:
-            return {"saved": False, "reason": f"translation_id {translation_id} not found"}
+            return {
+                "saved": False,
+                "reason": f"translation_id {translation_id} not found",
+            }
         row.translated_text = str(new_text)
         session.commit()
         return {"saved": True, "translation_id": translation_id}
@@ -412,7 +469,10 @@ def upsert_glossary_entry(
     try:
         repo = _glossary_repository()
         if not hasattr(repo, "upsert_entry"):
-            return {"saved": False, "reason": "glossary store does not support upsert (mysql 백엔드 필요)"}
+            return {
+                "saved": False,
+                "reason": "glossary store does not support upsert (mysql 백엔드 필요)",
+            }
         record = repo.upsert_entry(
             work_id=str(work_id),
             target_country=target_country,
@@ -440,7 +500,10 @@ def delete_glossary_entry_by_word(
         records = repo.list_glossary(str(work_id), target_country, limit=0)
         targets = [r for r in records if r.original_word == original_word]
         if not targets:
-            return {"saved": False, "reason": f"'{original_word}'을(를) glossary에서 찾을 수 없습니다."}
+            return {
+                "saved": False,
+                "reason": f"'{original_word}'을(를) glossary에서 찾을 수 없습니다.",
+            }
         for r in targets:
             repo.delete_entry(r.glossary_id)
         return {"saved": True, "deleted_count": len(targets)}
@@ -482,7 +545,9 @@ def save_relation_map(*, work_id: int, map_content: Any) -> dict[str, Any]:
         session.close()
 
 
-def save_localization_guide(*, work_id: int, target_country: str | None, guide_content: Any) -> dict[str, Any]:
+def save_localization_guide(
+    *, work_id: int, target_country: str | None, guide_content: Any
+) -> dict[str, Any]:
     """현지화 가이드 저장 → {saved, guide_id}."""
     if not rdb_enabled():
         return {"saved": False, "reason": "persistence_disabled"}
@@ -517,7 +582,9 @@ def save_localization_guide(*, work_id: int, target_country: str | None, guide_c
         session.close()
 
 
-def save_cover(*, work_id: int, target_country: str, cover_url: str, main_cover_yn: Any = False) -> dict[str, Any]:
+def save_cover(
+    *, work_id: int, target_country: str, cover_url: str, main_cover_yn: Any = False
+) -> dict[str, Any]:
     """표지 저장 → {saved, cover_id}. cover_url은 ERD상 VARCHAR(255)이므로 URL/파일 경로만 저장한다."""
     if not rdb_enabled():
         return {"saved": False, "reason": "persistence_disabled"}
@@ -554,10 +621,17 @@ def save_cover(*, work_id: int, target_country: str, cover_url: str, main_cover_
         session.close()
 
 
-def save_chat_messages(*, translation_id: int, messages: list[dict[str, Any]]) -> dict[str, Any]:
+def save_chat_messages(
+    *, translation_id: int, messages: list[dict[str, Any]]
+) -> dict[str, Any]:
     """검수 챗봇 메시지 묶음 저장 → {saved, count, message_ids}."""
     if not rdb_enabled():
-        return {"saved": False, "count": 0, "message_ids": [], "reason": "persistence_disabled"}
+        return {
+            "saved": False,
+            "count": 0,
+            "message_ids": [],
+            "reason": "persistence_disabled",
+        }
     if not messages:
         return {"saved": True, "count": 0, "message_ids": []}
     from .models import ChatMessage, TranslationResult
@@ -565,7 +639,12 @@ def save_chat_messages(*, translation_id: int, messages: list[dict[str, Any]]) -
     session = get_session()
     try:
         if session.get(TranslationResult, int(translation_id)) is None:
-            return {"saved": False, "count": 0, "message_ids": [], "reason": f"translation_id {translation_id} not found"}
+            return {
+                "saved": False,
+                "count": 0,
+                "message_ids": [],
+                "reason": f"translation_id {translation_id} not found",
+            }
         rows: list[ChatMessage] = []
         for item in messages:
             if not isinstance(item, dict):
@@ -573,10 +652,18 @@ def save_chat_messages(*, translation_id: int, messages: list[dict[str, Any]]) -
             sender = _s(item.get("sender_type") or item.get("senderType")).upper()
             if sender not in {"USER", "ASSISTANT"}:
                 continue
-            message_text = str(item.get("message_text") or item.get("messageText") or "").strip()
+            message_text = str(
+                item.get("message_text") or item.get("messageText") or ""
+            ).strip()
             if not message_text:
                 continue
-            rows.append(ChatMessage(translation_id=int(translation_id), sender_type=sender, message_text=message_text))
+            rows.append(
+                ChatMessage(
+                    translation_id=int(translation_id),
+                    sender_type=sender,
+                    message_text=message_text,
+                )
+            )
         if not rows:
             return {"saved": True, "count": 0, "message_ids": []}
         session.add_all(rows)
@@ -594,29 +681,21 @@ def save_chat_messages(*, translation_id: int, messages: list[dict[str, Any]]) -
 # glossary hydrate (기존 추상화에 위임)
 # ------------------------------------------------------------------ #
 def _glossary_repository():
-    """설정에 맞는 GlossaryRepository 선택.
+    """glossary 저장소 선택 — DATABASE_URL(또는 MYSQL_*)로 접속되면 MySQL, 아니면 in-memory.
 
-    - mysql: MySQLGlossaryRepository(raw PyMySQL, glossary 전용 스키마).
-    - 그 외(memory/rdb): 프로세스 메모리 기본 repo.
-    NOTE: glossary의 SQLite/ERD 정렬은 미해결(ERD 컬럼명 vs 기존 코드 충돌) — TODO #2 참고.
+    접속정보(DATABASE_URL/MYSQL_*)가 있으면 **항상 MySQL**을 쓰고, 없거나 드라이버/연결이 안 되면
+    (로컬·테스트) 자동으로 in-memory로 폴백한다. 즉 "DB가 있으면 DB, 없으면 메모리"를 코드가 결정.
     """
     from domains.translation.glossary import default_glossary_repository
 
-    backend = "memory"
     try:
-        from core.config import settings
+        from domains.translation.glossary.mysql_store import MySQLGlossaryRepository
 
-        backend = (settings.glossary_store_backend or "memory").strip().lower()
-    except Exception:  # noqa: BLE001
-        pass
-
-    if backend == "mysql":
-        try:
-            from domains.translation.glossary.mysql_store import MySQLGlossaryRepository
-
-            return MySQLGlossaryRepository.from_env()
-        except Exception as exc:  # noqa: BLE001 — 드라이버/설정 미비 → 메모리 폴백
-            logger.warning("MySQL glossary backend unavailable, fallback to memory: %r", exc)
+        return (
+            MySQLGlossaryRepository.from_env()
+        )  # DATABASE_URL/MYSQL_* 있으면 MySQL, 없으면 예외 → 폴백
+    except Exception as exc:  # noqa: BLE001 — 드라이버/접속정보 미비 → in-memory 폴백
+        logger.warning("glossary MySQL backend unavailable, using in-memory: %r", exc)
     return default_glossary_repository
 
 
