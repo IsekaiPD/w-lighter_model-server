@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import urllib.parse
 from contextlib import contextmanager
 from dataclasses import asdict
 from typing import Any, Iterator
@@ -53,6 +54,36 @@ def _load_driver() -> tuple[str, Any]:
         ) from exc
 
 
+def _mysql_params_from_database_url() -> dict[str, Any] | None:
+    """content store가 쓰는 DATABASE_URL을 PyMySQL 접속 파라미터로 변환.
+
+    glossary 전용 MYSQL_* 가 비어 있을 때, 번역본 저장과 **같은 RDS/같은 DB**를 재사용하기 위함
+    (glossary 테이블도 그 DB에 있음 → django가 쓴 행을 직접 읽음). mysql 계열 URL이 아니면
+    (예: 로컬 SQLite 폴백) None을 반환해 상위(_glossary_repository)가 memory로 폴백하게 둔다.
+    """
+    try:
+        from core.config import settings
+
+        url = (settings.database_url or "").strip()
+    except Exception:  # noqa: BLE001 — 설정 로드 실패는 폴백
+        url = ""
+    if not url:
+        return None
+    parsed = urllib.parse.urlparse(url)
+    if not parsed.scheme.startswith("mysql"):  # sqlite 등은 PyMySQL로 접속 불가
+        return None
+    database = (parsed.path or "").lstrip("/")
+    if not database or not parsed.username:
+        return None
+    return {
+        "host": parsed.hostname or "127.0.0.1",
+        "port": parsed.port or 3306,
+        "database": database,
+        "user": urllib.parse.unquote(parsed.username),
+        "password": urllib.parse.unquote(parsed.password or ""),
+    }
+
+
 class MySQLGlossaryRepository(GlossaryRepository):
     """MySQL 8.x implementation of the single-table glossary repository.
 
@@ -97,7 +128,14 @@ class MySQLGlossaryRepository(GlossaryRepository):
 
     @classmethod
     def from_env(cls) -> "MySQLGlossaryRepository":
-        return cls()
+        # MYSQL_* 가 명시돼 있으면 그걸 우선(override). 없으면 content store와 동일한
+        # DATABASE_URL을 재사용 → 운영에서 glossary용 env 추가 없이 같은 RDS의 glossary 테이블을 읽는다.
+        if os.getenv("MYSQL_DATABASE") and os.getenv("MYSQL_USER"):
+            return cls()
+        params = _mysql_params_from_database_url()
+        if params:
+            return cls(**params)
+        return cls()  # 둘 다 없음 → __init__ 필수검증 ValueError → 상위가 memory 폴백
 
     def ping(self) -> None:
         with self._connect() as conn, self._cursor(conn) as cur:
