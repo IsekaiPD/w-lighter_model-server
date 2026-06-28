@@ -44,10 +44,10 @@ class Settings(BaseSettings):
     # memory: 프로세스 메모리(휘발). rdb: SQLAlchemy(database_url; 비면 로컬 SQLite 파일).
     # 기본 rdb (안 B, 2026-06-21 결정): 실서비스 가정에서 "깜빡 memory→prod 데이터 증발" footgun 제거.
     #   로컬은 DATABASE_URL 비우면 SQLite 파일로 폴백(서버 불요). 테스트/CI는 CONTENT_STORE_BACKEND=memory 명시.
-    # 기본 mysql: 운영에서 glossary용 env 추가 없이 content store와 같은 DATABASE_URL(같은 RDS)을 재사용해
-    #   glossary 테이블을 직접 읽는다(승인 용어 dedup 정상화). MYSQL_* 가 채워져 있으면 그쪽이 override.
-    #   DB 접속 불가(로컬·테스트, DATABASE_URL 비거나 SQLite)면 _glossary_repository가 memory로 자동 폴백.
-    glossary_store_backend: str = "mysql"  # memory | mysql
+    # [DEPRECATED·무시됨] glossary 백엔드는 더 이상 이 토글로 고르지 않는다. _glossary_repository가
+    #   DATABASE_URL/MYSQL_* 접속 가능하면 MySQL, 아니면 in-memory로 **자동 결정**한다
+    #   (옛 .env의 GLOSSARY_STORE_BACKEND=memory 가 dedup을 깨던 footgun 제거). 필드는 구 .env 호환용으로만 남김.
+    glossary_store_backend: str = "mysql"  # (deprecated) 값 사용 안 함 — DATABASE_URL 유무로 자동 결정
     content_store_backend: str = "rdb"  # memory | rdb
     # SQLAlchemy 연결 URL. 비면 rdb일 때 로컬 SQLite 파일(model_server/wlighter_local.db)로 폴백.
     # MySQL 전환 예: mysql+pymysql://user:pw@host:3306/dbname?charset=utf8mb4
