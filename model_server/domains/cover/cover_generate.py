@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 from pathlib import Path
 from textwrap import dedent
@@ -48,6 +49,38 @@ BLOCKED_PROMPT_KEYWORDS = [
 ]
 
 
+TITLE_INSERTION_KEYWORDS = [
+    "제목",
+    "작품명",
+    "타이틀",
+    "표지 문구",
+    "문구",
+    "글자",
+    "텍스트",
+]
+
+TITLE_TRANSLATION_KEYWORDS = [
+    "번역",
+    "번역해서",
+    "영어로",
+    "일본어로",
+    "중국어로",
+    "태국어로",
+    "현지어로",
+]
+
+TEXT_INSERTION_ACTION_KEYWORDS = [
+    "넣어",
+    "넣고",
+    "추가",
+    "표시",
+    "삽입",
+    "써줘",
+    "적어줘",
+    "넣어줘",
+]
+
+
 def value(item: dict, key: str) -> str:
     return str(item.get(key) or "").strip()
 
@@ -65,6 +98,107 @@ def validate_user_prompt(user_prompt: str) -> None:
 def is_group_cover_requested(user_prompt: str) -> bool:
     prompt = user_prompt or ""
     return any(keyword in prompt for keyword in GROUP_COVER_HINT_KEYWORDS)
+
+
+
+def is_text_insertion_requested(user_prompt: str) -> bool:
+    prompt = user_prompt or ""
+    has_text_keyword = any(keyword in prompt for keyword in TITLE_INSERTION_KEYWORDS)
+    has_action_keyword = any(keyword in prompt for keyword in TEXT_INSERTION_ACTION_KEYWORDS)
+    return has_text_keyword and has_action_keyword
+
+
+def is_title_translation_requested(user_prompt: str) -> bool:
+    prompt = user_prompt or ""
+    return is_text_insertion_requested(prompt) and any(keyword in prompt for keyword in TITLE_TRANSLATION_KEYWORDS)
+
+
+def extract_quoted_cover_text(user_prompt: str) -> str:
+    """
+    사용자가 표지에 넣을 정확한 문구를 따옴표로 직접 제공한 경우에만 추출한다.
+    일반 명령문인 '제목 넣어줘'가 표지 문구로 오인되는 것을 막기 위한 보조 함수다.
+    """
+    prompt = user_prompt or ""
+    if not is_text_insertion_requested(prompt):
+        return ""
+
+    patterns = [
+        r'"([^"\n]{1,80})"',
+        r"'([^'\n]{1,80})'",
+        r"“([^”\n]{1,80})”",
+        r"‘([^’\n]{1,80})’",
+        r"「([^」\n]{1,80})」",
+        r"『([^』\n]{1,80})』",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, prompt)
+        if match:
+            return match.group(1).strip()
+    return ""
+
+
+def build_text_insertion_rules(*, work_title: str, user_prompt: str, has_user_prompt: bool) -> str:
+    title = (work_title or "").strip()
+    explicit_text = extract_quoted_cover_text(user_prompt)
+    wants_text = is_text_insertion_requested(user_prompt)
+    wants_translation = is_title_translation_requested(user_prompt)
+
+    if not has_user_prompt:
+        return dedent(
+            """
+            - 사용자 추가 요청이 비어 있으므로 표지 안에는 작품명, 제목, 문구, 글자, 타이포그래피를 넣지 않는다.
+            - 원문 작품명은 표지 텍스트로 자동 삽입하지 않는다.
+            - 글자가 없는 순수 커버 일러스트 이미지만 생성한다.
+            """
+        ).strip()
+
+    if explicit_text:
+        return dedent(
+            f"""
+            - 사용자가 표지에 넣을 정확한 문구를 따옴표로 직접 제공했다.
+            - 표지에 넣을 수 있는 텍스트는 정확히 "{explicit_text}" 하나뿐이다.
+            - 사용자 요청 문장 전체를 표지 텍스트로 사용하지 않는다.
+            - 작품 제목을 자동 번역하거나 새 제목을 만들지 않는다.
+            - 위치를 함께 적은 경우에는 가능한 한 해당 위치에 배치한다.
+            - 위치를 적지 않은 경우에는 표지 구도에 어울리는 짧고 큰 제목 타이포그래피로 배치한다.
+            """
+        ).strip()
+
+    if wants_text and title:
+        translation_note = (
+            "- 사용자가 제목 번역을 요청했더라도 현재 단계에서는 제목을 새로 번역하지 않는다. 번역 제목이 별도 값으로 제공되지 않았으므로 원문 작품 제목만 사용한다."
+            if wants_translation
+            else "- 사용자가 제목/작품명/타이틀 삽입을 요청했으므로 원문 작품 제목만 사용한다."
+        )
+        return dedent(
+            f"""
+            {translation_note}
+            - 표지에 넣을 수 있는 텍스트는 정확히 "{title}" 하나뿐이다.
+            - "제목 넣어줘", "타이틀 넣어줘", "작품명 넣어줘", "제목 번역해서 넣어줘" 같은 요청 문구 자체를 이미지 안에 절대 쓰지 않는다.
+            - 작품 제목을 임의로 번역하거나 의역하거나 새 제목으로 바꾸지 않는다.
+            - 위치를 함께 적은 경우에는 가능한 한 해당 위치에 배치한다.
+            - 위치를 적지 않은 경우에는 표지 구도에 어울리는 짧고 큰 제목 타이포그래피로 배치한다.
+            """
+        ).strip()
+
+    if wants_text and not title:
+        return dedent(
+            """
+            - 사용자가 제목/작품명/타이틀 삽입을 요청했지만 작품 제목 값이 비어 있다.
+            - 넣을 실제 제목이 없으므로 표지 안에는 제목, 문구, 글자, 타이포그래피를 넣지 않는다.
+            - "제목 넣어줘", "타이틀 넣어줘", "작품명 넣어줘", "제목 번역해서 넣어줘" 같은 요청 문구 자체를 이미지 안에 절대 쓰지 않는다.
+            - 작품 제목을 임의로 만들거나 번역하지 않는다.
+            """
+        ).strip()
+
+    return dedent(
+        """
+        - 사용자 추가 요청은 이미지 연출 요청으로만 반영한다.
+        - 표지에 넣을 정확한 제목/문구 삽입 요청이 없으므로 표지 안에는 제목, 문구, 글자, 타이포그래피를 넣지 않는다.
+        - 사용자 요청 문장 자체를 표지 텍스트로 사용하지 않는다.
+        - 원문 작품명은 표지 텍스트로 자동 삽입하지 않는다.
+        """
+    ).strip()
 
 
 def character_priority(character: dict, index: int) -> tuple[int, int]:
@@ -161,29 +295,18 @@ def build_cover_prompt(
     character_context = format_characters_for_cover(characters, user_prompt=user_prompt)
     user_block = (user_prompt or "").strip() or "별도 추가 요청 없음."
     has_user_prompt = bool((user_prompt or "").strip())
-    text_insertion_rules = dedent(
-        """
-        - 사용자 추가 요청이 비어 있으므로 표지 안에는 작품명, 제목, 문구, 글자, 타이포그래피를 넣지 않는다.
-        - 원문 작품명은 표지 텍스트로 자동 삽입하지 않는다.
-        - 글자가 없는 순수 커버 일러스트 이미지만 생성한다.
-        """
-        if not has_user_prompt
-        else """
-        - 원문 작품명은 표지 텍스트로 자동 삽입하지 않는다.
-        - 표지에 넣을 제목이나 문구는 사용자 추가 요청에 사용자가 직접 적은 텍스트만 사용할 수 있다.
-        - 사용자가 원하는 나라의 언어로 번역된 소설 제목이나 표지 문구를 추가 요청에 직접 적고, 표지에 넣어달라고 요청한 경우에만 표지 텍스트 삽입을 시도한다.
-        - 위치를 함께 적은 경우에는 가능한 한 해당 위치에 배치한다.
-        - 위치를 적지 않은 경우에는 표지 구도에 어울리는 짧고 큰 제목 타이포그래피로 배치한다.
-        - 추가 요청에 정확한 제목/문구 삽입 요청이 없으면 표지 텍스트를 넣지 말고, 이미지 연출 요청만 반영한다.
-        - 따옴표가 있더라도 사용자가 표지에 넣을 정확한 제목/문구로 명시한 경우에만 텍스트 삽입을 시도한다.
-        """
-    ).strip()
+    text_insertion_rules = build_text_insertion_rules(
+        work_title=work_title,
+        user_prompt=user_prompt,
+        has_user_prompt=has_user_prompt,
+    )
 
     return dedent(
         f"""
         {COMMON_COVER_RULES}
 
         [작품 정보]
+        작품 제목: {work_title.strip() or '제목 미입력'}
         작품 장르: {genre.strip() or '장르 미입력'}
 
         [시놉시스 요약/원문]
@@ -227,10 +350,14 @@ def refine_cover_prompt_with_llm(*, client: OpenAI, base_prompt: str) -> str:
         - Preserve the original story setting, era, genre, character roles, and mood.
         - Country-market style may affect only presentation, composition, rendering, lighting, and market appeal.
         - Do not automatically add cover title text.
-        - Include cover title/text only when the source prompt says the user explicitly requested text insertion and provided exact text.
+        - Include cover title/text only when the source prompt explicitly permits one exact text string.
+        - If the source prompt says the only allowed cover text is a quoted string, use exactly that string and no other text.
+        - Do not treat directive phrases such as "제목 넣어줘", "타이틀 넣어줘", "작품명 넣어줘", "제목 번역해서 넣어줘", "add title", or "put the title" as cover text.
+        - If the source prompt permits the original work title as cover text, use that original work title exactly as provided.
+        - Do not translate, localize, paraphrase, or invent a title unless the source prompt already provides the exact translated title text as the only allowed cover text.
         - If placement is provided, follow it as closely as possible.
         - If placement is not provided, place the text as short, large, simple cover typography in a visually appropriate area.
-        - If there is no explicit text insertion request or no exact text, clearly instruct: no text, no title, no typography.
+        - If the source prompt does not explicitly permit one exact text string, clearly instruct: no text, no title, no typography.
         - Keep the prompt concise, visual, and directly usable by an image generation model.
         - Include negative instructions for fake letters, logos, watermarks, real brands, speech bubbles, long text, and unsafe content.
         - Return only the final image prompt. Do not include explanations, markdown, JSON, or labels.
