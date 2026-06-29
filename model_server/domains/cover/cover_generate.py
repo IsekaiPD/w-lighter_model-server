@@ -137,8 +137,9 @@ def extract_quoted_cover_text(user_prompt: str) -> str:
     return ""
 
 
-def build_text_insertion_rules(*, work_title: str, user_prompt: str, has_user_prompt: bool) -> str:
+def build_text_insertion_rules(*, work_title: str, user_prompt: str, has_user_prompt: bool, target_country: str = "") -> str:
     title = (work_title or "").strip()
+    country = normalize_country_code(target_country) if target_country else ""
     explicit_text = extract_quoted_cover_text(user_prompt)
     wants_text = is_text_insertion_requested(user_prompt)
     wants_translation = is_title_translation_requested(user_prompt)
@@ -157,6 +158,7 @@ def build_text_insertion_rules(*, work_title: str, user_prompt: str, has_user_pr
             f"""
             - 사용자가 표지에 넣을 정확한 문구를 따옴표로 직접 제공했다.
             - 표지에 넣을 수 있는 텍스트는 정확히 "{explicit_text}" 하나뿐이다.
+            - 허용된 문구를 한 글자도 번역, 의역, 로마자화, 영어 제목화, 현지어 제목화하지 않는다.
             - 사용자 요청 문장 전체를 표지 텍스트로 사용하지 않는다.
             - 작품 제목을 자동 번역하거나 새 제목을 만들지 않는다.
             - 위치를 함께 적은 경우에는 가능한 한 해당 위치에 배치한다.
@@ -174,8 +176,10 @@ def build_text_insertion_rules(*, work_title: str, user_prompt: str, has_user_pr
             f"""
             {translation_note}
             - 표지에 넣을 수 있는 텍스트는 정확히 "{title}" 하나뿐이다.
+            - 허용된 제목을 한 글자도 번역, 의역, 로마자화, 영어 제목화, 현지어 제목화하지 않는다.
             - "제목 넣어줘", "타이틀 넣어줘", "작품명 넣어줘", "제목 번역해서 넣어줘" 같은 요청 문구 자체를 이미지 안에 절대 쓰지 않는다.
             - 작품 제목을 임의로 번역하거나 의역하거나 새 제목으로 바꾸지 않는다.
+            - 대상 국가가 JP, CN, TH, KR이어도 정확히 허용된 제목만 복사하고 영어 제목을 새로 만들지 않는다.
             - 위치를 함께 적은 경우에는 가능한 한 해당 위치에 배치한다.
             - 위치를 적지 않은 경우에는 표지 구도에 어울리는 짧고 큰 제목 타이포그래피로 배치한다.
             """
@@ -205,15 +209,19 @@ def character_priority(character: dict, index: int) -> tuple[int, int]:
     role = value(character, "role")
     relationships = value(character, "relationships")
     detail = value(character, "detail_setting")
-    joined = f"{relationships} {detail}"
+    profile_label = value(character, "profile_label")
+    joined = f"{relationships} {detail} {profile_label}"
 
     score = 0
-    if "주인공" in role:
-        score += 100
     if "주연" in role:
-        score += 80
-    if "히로인" in role or "남주" in role or "여주" in role:
-        score += 70
+        score += 100
+    elif "조연" in role:
+        score += 50
+    elif "단역" in role:
+        score += 10
+
+    if "주인공" in joined or "히로인" in joined or "남주" in joined or "여주" in joined:
+        score += 40
     if "중심" in joined or "핵심" in joined:
         score += 30
     if value(character, "appearance"):
@@ -299,6 +307,7 @@ def build_cover_prompt(
         work_title=work_title,
         user_prompt=user_prompt,
         has_user_prompt=has_user_prompt,
+        target_country=country,
     )
 
     return dedent(
@@ -351,7 +360,9 @@ def refine_cover_prompt_with_llm(*, client: OpenAI, base_prompt: str) -> str:
         - Country-market style may affect only presentation, composition, rendering, lighting, and market appeal.
         - Do not automatically add cover title text.
         - Include cover title/text only when the source prompt explicitly permits one exact text string.
-        - If the source prompt says the only allowed cover text is a quoted string, use exactly that string and no other text.
+        - If the source prompt says the only allowed cover text is a quoted string, copy exactly that string and no other text.
+        - Never translate, romanize, paraphrase, localize, rewrite, or convert the allowed cover text into an English title.
+        - For JP, CN, TH, and KR targets, never create an English title unless that exact English text is the only allowed cover text provided by the user.
         - Do not treat directive phrases such as "제목 넣어줘", "타이틀 넣어줘", "작품명 넣어줘", "제목 번역해서 넣어줘", "add title", or "put the title" as cover text.
         - If the source prompt permits the original work title as cover text, use that original work title exactly as provided.
         - Do not translate, localize, paraphrase, or invent a title unless the source prompt already provides the exact translated title text as the only allowed cover text.
