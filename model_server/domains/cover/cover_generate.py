@@ -69,6 +69,44 @@ TITLE_TRANSLATION_KEYWORDS = [
     "현지어로",
 ]
 
+TITLE_LANGUAGES = {
+    "KR": "Korean",
+    "US": "English",
+    "CN": "Simplified Chinese",
+    "JP": "Japanese",
+    "TH": "Thai",
+}
+
+NO_TITLE_KEYWORDS = [
+    "제목 없이",
+    "제목없이",
+    "제목 빼",
+    "제목 빼고",
+    "제목 제외",
+    "작품명 없이",
+    "작품명없이",
+    "작품명 빼",
+    "타이틀 없이",
+    "타이틀없이",
+    "타이틀 빼",
+    "문구 없이",
+    "문구없이",
+    "문구 빼",
+    "텍스트 없이",
+    "텍스트없이",
+    "텍스트 빼",
+    "글자 없이",
+    "글자없이",
+    "글자 빼",
+    "글씨 없이",
+    "글씨없이",
+    "글씨 빼",
+    "no title",
+    "without title",
+    "no text",
+    "without text",
+]
+
 TEXT_INSERTION_ACTION_KEYWORDS = [
     "넣어",
     "넣고",
@@ -113,13 +151,31 @@ def is_title_translation_requested(user_prompt: str) -> bool:
     return is_text_insertion_requested(prompt) and any(keyword in prompt for keyword in TITLE_TRANSLATION_KEYWORDS)
 
 
+def is_no_title_requested(user_prompt: str) -> bool:
+    prompt = (user_prompt or "").strip()
+    lowered = prompt.lower()
+    return any(keyword in prompt or keyword in lowered for keyword in NO_TITLE_KEYWORDS)
+
+
+def get_target_title_language(target_country: str) -> str:
+    country = normalize_country_code(target_country)
+    return TITLE_LANGUAGES.get(country, "English")
+
+
+def clean_cover_text_candidate(text: str) -> str:
+    candidate = (text or "").strip()
+    candidate = re.sub(r"[\s\.,;:!?'\"“”‘’「」『』]+$", "", candidate).strip()
+    candidate = re.sub(r"^(?:제목|작품명|타이틀|표지 문구|문구)\s*(?:은|는|을|를|:|=)?\s*", "", candidate).strip()
+    return candidate[:80].strip()
+
+
 def extract_quoted_cover_text(user_prompt: str) -> str:
     """
-    사용자가 표지에 넣을 정확한 문구를 따옴표로 직접 제공한 경우에만 추출한다.
+    사용자가 표지에 넣을 정확한 문구를 따옴표로 직접 제공한 경우 추출한다.
     일반 명령문인 '제목 넣어줘'가 표지 문구로 오인되는 것을 막기 위한 보조 함수다.
     """
     prompt = user_prompt or ""
-    if not is_text_insertion_requested(prompt):
+    if is_no_title_requested(prompt):
         return ""
 
     patterns = [
@@ -133,30 +189,63 @@ def extract_quoted_cover_text(user_prompt: str) -> str:
     for pattern in patterns:
         match = re.search(pattern, prompt)
         if match:
-            return match.group(1).strip()
+            return clean_cover_text_candidate(match.group(1))
+    return ""
+
+
+def extract_direct_cover_title(user_prompt: str) -> str:
+    """
+    사용자가 따옴표 없이 '제목은 ...로 해줘' 또는 '제목: ...' 형태로 직접 제목을 지정한 경우 추출한다.
+    단순 지시문인 '제목 넣어줘'는 제목으로 취급하지 않는다.
+    """
+    prompt = (user_prompt or "").strip()
+    if not prompt or is_no_title_requested(prompt):
+        return ""
+
+    quoted = extract_quoted_cover_text(prompt)
+    if quoted:
+        return quoted
+
+    patterns = [
+        r"(?:제목|작품명|타이틀|표지 문구|문구)\s*[:=]\s*([^\n]{1,80})",
+        r"(?:제목|작품명|타이틀)\s*(?:은|는)\s*([^\n]{1,80}?)(?:로|으로|라고|처럼)?\s*(?:해줘|해주세요|넣어줘|넣어|써줘|적어줘|표시해줘|추가해줘|배치해줘|부탁|$)",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, prompt)
+        if not match:
+            continue
+        candidate = clean_cover_text_candidate(match.group(1))
+        if not candidate:
+            continue
+        if any(keyword in candidate for keyword in ["넣어", "추가", "표시", "삽입", "써줘", "적어줘", "번역", "현지어"]):
+            continue
+        return candidate
+
     return ""
 
 
 def build_text_insertion_rules(*, work_title: str, user_prompt: str, has_user_prompt: bool, target_country: str = "") -> str:
     title = (work_title or "").strip()
-    country = normalize_country_code(target_country) if target_country else ""
-    explicit_text = extract_quoted_cover_text(user_prompt)
-    wants_text = is_text_insertion_requested(user_prompt)
-    wants_translation = is_title_translation_requested(user_prompt)
+    country = normalize_country_code(target_country) if target_country else "US"
+    target_language = get_target_title_language(country)
+    explicit_text = extract_direct_cover_title(user_prompt)
+    wants_no_title = is_no_title_requested(user_prompt)
 
-    if not has_user_prompt:
+    if wants_no_title:
         return dedent(
             """
-            - 사용자 추가 요청이 비어 있으므로 표지 안에는 작품명, 제목, 문구, 글자, 타이포그래피를 넣지 않는다.
-            - 원문 작품명은 표지 텍스트로 자동 삽입하지 않는다.
+            - 사용자가 제목/문구/텍스트 없이 생성하라고 요청했다.
+            - 표지 안에는 작품명, 제목, 문구, 글자, 타이포그래피를 넣지 않는다.
             - 글자가 없는 순수 커버 일러스트 이미지만 생성한다.
+            - 사용자 요청 문장 자체를 표지 텍스트로 사용하지 않는다.
             """
         ).strip()
 
     if explicit_text:
         return dedent(
             f"""
-            - 사용자가 표지에 넣을 정확한 문구를 따옴표로 직접 제공했다.
+            - 사용자가 표지에 넣을 정확한 제목/문구를 직접 제공했다.
             - 표지에 넣을 수 있는 텍스트는 정확히 "{explicit_text}" 하나뿐이다.
             - 허용된 문구를 한 글자도 번역, 의역, 로마자화, 영어 제목화, 현지어 제목화하지 않는다.
             - 사용자 요청 문장 전체를 표지 텍스트로 사용하지 않는다.
@@ -166,44 +255,29 @@ def build_text_insertion_rules(*, work_title: str, user_prompt: str, has_user_pr
             """
         ).strip()
 
-    if wants_text and title:
-        translation_note = (
-            "- 사용자가 제목 번역을 요청했더라도 현재 단계에서는 제목을 새로 번역하지 않는다. 번역 제목이 별도 값으로 제공되지 않았으므로 원문 작품 제목만 사용한다."
-            if wants_translation
-            else "- 사용자가 제목/작품명/타이틀 삽입을 요청했으므로 원문 작품 제목만 사용한다."
-        )
+    if title:
         return dedent(
             f"""
-            {translation_note}
-            - 표지에 넣을 수 있는 텍스트는 정확히 "{title}" 하나뿐이다.
-            - 허용된 제목을 한 글자도 번역, 의역, 로마자화, 영어 제목화, 현지어 제목화하지 않는다.
+            - 기본 정책: 사용자가 제목 없이 생성하라고 요청하지 않았으므로 표지에 작품 제목을 넣는다.
+            - 원문 작품 제목은 "{title}"이다.
+            - 표지에 넣을 제목은 원문 작품 제목을 대상 국가의 제목 언어인 {target_language}로 자연스럽게 번역한 짧은 제목 하나여야 한다.
+            - 번역 제목은 웹소설 표지용으로 짧고 읽기 쉽게 만들되, 원제의 의미를 벗어난 새 제목을 창작하지 않는다.
+            - 표지에 넣을 수 있는 텍스트는 이 번역 제목 하나뿐이다.
             - "제목 넣어줘", "타이틀 넣어줘", "작품명 넣어줘", "제목 번역해서 넣어줘" 같은 요청 문구 자체를 이미지 안에 절대 쓰지 않는다.
-            - 작품 제목을 임의로 번역하거나 의역하거나 새 제목으로 바꾸지 않는다.
-            - 대상 국가가 JP, CN, TH, KR이어도 정확히 허용된 제목만 복사하고 영어 제목을 새로 만들지 않는다.
+            - 사용자 추가 요청 문장 전체를 표지 텍스트로 사용하지 않는다.
             - 위치를 함께 적은 경우에는 가능한 한 해당 위치에 배치한다.
             - 위치를 적지 않은 경우에는 표지 구도에 어울리는 짧고 큰 제목 타이포그래피로 배치한다.
             """
         ).strip()
 
-    if wants_text and not title:
-        return dedent(
-            """
-            - 사용자가 제목/작품명/타이틀 삽입을 요청했지만 작품 제목 값이 비어 있다.
-            - 넣을 실제 제목이 없으므로 표지 안에는 제목, 문구, 글자, 타이포그래피를 넣지 않는다.
-            - "제목 넣어줘", "타이틀 넣어줘", "작품명 넣어줘", "제목 번역해서 넣어줘" 같은 요청 문구 자체를 이미지 안에 절대 쓰지 않는다.
-            - 작품 제목을 임의로 만들거나 번역하지 않는다.
-            """
-        ).strip()
-
     return dedent(
         """
-        - 사용자 추가 요청은 이미지 연출 요청으로만 반영한다.
-        - 표지에 넣을 정확한 제목/문구 삽입 요청이 없으므로 표지 안에는 제목, 문구, 글자, 타이포그래피를 넣지 않는다.
+        - 작품 제목 값이 비어 있고, 사용자가 표지에 넣을 정확한 제목/문구도 제공하지 않았다.
+        - 넣을 실제 제목이 없으므로 표지 안에는 제목, 문구, 글자, 타이포그래피를 넣지 않는다.
         - 사용자 요청 문장 자체를 표지 텍스트로 사용하지 않는다.
-        - 원문 작품명은 표지 텍스트로 자동 삽입하지 않는다.
+        - 작품 제목을 임의로 만들거나 번역하지 않는다.
         """
     ).strip()
-
 
 def character_priority(character: dict, index: int) -> tuple[int, int]:
     role = value(character, "role")
@@ -358,17 +432,17 @@ def refine_cover_prompt_with_llm(*, client: OpenAI, base_prompt: str) -> str:
         - Do not invent new story settings, characters, relationships, costumes, genres, or locations.
         - Preserve the original story setting, era, genre, character roles, and mood.
         - Country-market style may affect only presentation, composition, rendering, lighting, and market appeal.
-        - Do not automatically add cover title text.
-        - Include cover title/text only when the source prompt explicitly permits one exact text string.
-        - If the source prompt says the only allowed cover text is a quoted string, copy exactly that string and no other text.
-        - Never translate, romanize, paraphrase, localize, rewrite, or convert the allowed cover text into an English title.
-        - For JP, CN, TH, and KR targets, never create an English title unless that exact English text is the only allowed cover text provided by the user.
+        - Follow the source prompt's cover text policy exactly.
+        - If the source prompt says the user requested no title/no text, clearly instruct: no text, no title, no typography.
+        - If the source prompt gives one exact user-provided cover text string, copy exactly that string and no other text.
+        - Never translate, romanize, paraphrase, localize, rewrite, or convert a user-provided exact cover text string.
+        - If the source prompt says to translate the original work title into a target title language, create one short natural translated title in that target language and use only that translated title as cover text.
+        - When translating the original work title, preserve the title meaning and do not invent a new story, subtitle, tagline, or marketing sentence.
+        - For JP targets, the translated title should be Japanese; for CN targets, Simplified Chinese; for TH targets, Thai; for US targets, English; for KR targets, Korean.
         - Do not treat directive phrases such as "제목 넣어줘", "타이틀 넣어줘", "작품명 넣어줘", "제목 번역해서 넣어줘", "add title", or "put the title" as cover text.
-        - If the source prompt permits the original work title as cover text, use that original work title exactly as provided.
-        - Do not translate, localize, paraphrase, or invent a title unless the source prompt already provides the exact translated title text as the only allowed cover text.
         - If placement is provided, follow it as closely as possible.
         - If placement is not provided, place the text as short, large, simple cover typography in a visually appropriate area.
-        - If the source prompt does not explicitly permit one exact text string, clearly instruct: no text, no title, no typography.
+        - If the source prompt does not permit either one exact text string or one translated title, clearly instruct: no text, no title, no typography.
         - Keep the prompt concise, visual, and directly usable by an image generation model.
         - Include negative instructions for fake letters, logos, watermarks, real brands, speech bubbles, long text, and unsafe content.
         - Return only the final image prompt. Do not include explanations, markdown, JSON, or labels.
